@@ -2,6 +2,7 @@ package unicam.filiera_agricola_2425.controllers;
 
 
 
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -47,24 +48,41 @@ public class HomeController {
     }
 
     @PostMapping("/login")
-    public String loginSubmit(@ModelAttribute UtenteAutenticatoForm utenteForm, Model model) {
-        // ⚠️ Per ora solo logica semplificata — nessun controllo password
-        Optional<UtenteAutenticato> utente = utenteRepository.findByUsername(utenteForm.getUsername());
+    public String loginSubmit(@ModelAttribute UtenteAutenticatoForm utenteForm,
+                              Model model,
+                              HttpSession session) {
+        Optional<UtenteAutenticato> utenteOpt = utenteRepository.findByUsername(utenteForm.getUsername());
 
-        if (utente.isPresent() &&
-                utente.get().getPassword().equals(utenteForm.getPassword()) &&
-                utente.get().getRuolo().equals(utenteForm.getRuolo())) {
+        if (utenteOpt.isPresent()) {
+            UtenteAutenticato utente = utenteOpt.get();
 
-            model.addAttribute("username", utente.get().getUsername());
-            return "redirect:/marketplace"; // oppure una dashboard
+            if (utente.getPassword().equals(utenteForm.getPassword()) &&
+                    utente.getRuolo().equals(utenteForm.getRuolo())) {
+
+                // ✅ Salva in sessione l'username
+                session.setAttribute("username", utente.getUsername());
+
+                // ✅ Redirect in base al ruolo
+                return switch (utente.getRuolo()) {
+                    case PRODUTTORE -> "redirect:/produttore/dashboard";
+                    case CURATORE -> "redirect:/curatore/dashboard";
+                    case ANIMATORE -> "redirect:/animatore/dashboard";
+                    case GESTORE -> "redirect:/gestore/dashboard";
+                    case ACQUIRENTE -> "redirect:/acquirente/dashboard";
+                    case DISTRIBUTORE, TRASFORMATORE -> "redirect:/venditore/dashboard";
+                    default -> "redirect:/dashboard"; // fallback
+                };
+            }
         }
 
-        // Login fallito
+        //  Login fallito
         model.addAttribute("errore", "Credenziali non valide");
         model.addAttribute("utente", utenteForm);
         model.addAttribute("ruoli", Ruolo.values());
         return "login";
     }
+
+
 
 
     @GetMapping("/marketplace")

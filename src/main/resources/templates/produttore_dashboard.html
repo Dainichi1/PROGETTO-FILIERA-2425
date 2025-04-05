@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><title>Dashboard Produttore</title></head>
+<body>
+<h1>Benvenuto <span th:text="${nome}">[NOME]</span>, <span th:text="${ruolo}">[RUOLO]</span>!</h1>
+
+<form action="/produttore/crea-prodotto" method="get">
+    <button type="submit">Crea Prodotto</button>
+</form>
+</body>
+</html>

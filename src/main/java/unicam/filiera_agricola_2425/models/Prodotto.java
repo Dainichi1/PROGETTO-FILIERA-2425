@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Entity
 @Getter
 @Setter
@@ -16,9 +18,15 @@ public class Prodotto {
     private double prezzo;
     private int quantita;
     private String descrizione;
-    private String certificazione;
-    private String immagine; // URL o path
+    @OneToMany(mappedBy = "prodotto", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ImmagineProdotto> immagini;
+
+    @OneToMany(mappedBy = "prodotto", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CertificatoProdotto> certificazioni;
+
 
     @ManyToOne
     private Produttore produttore;
+
+
 }

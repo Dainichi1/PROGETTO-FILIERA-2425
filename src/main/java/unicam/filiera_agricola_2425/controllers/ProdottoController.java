@@ -5,13 +5,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import unicam.filiera_agricola_2425.dtos.ProdottoForm;
-import unicam.filiera_agricola_2425.models.Produttore;
-import unicam.filiera_agricola_2425.models.UtenteAutenticato;
+import unicam.filiera_agricola_2425.models.*;
+import unicam.filiera_agricola_2425.repositories.CertificatoProdottoRepository;
+import unicam.filiera_agricola_2425.repositories.ImmagineProdottoRepository;
 import unicam.filiera_agricola_2425.repositories.ProdottoRepository;
 import unicam.filiera_agricola_2425.repositories.UtenteRepository;
+import java.io.IOException;
+import java.nio.file.Path;
 
+
+
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.UUID;
 
 @Controller
 @RequestMapping("/produttore")
@@ -22,6 +31,13 @@ public class ProdottoController {
 
     @Autowired
     private UtenteRepository utenteRepository;
+
+    @Autowired
+    private ImmagineProdottoRepository immagineRepo;
+
+    @Autowired
+    private CertificatoProdottoRepository certificatoRepo;
+
 
     @GetMapping("/dashboard")
     public String dashboardProduttore(Model model,
@@ -57,7 +73,7 @@ public class ProdottoController {
 
 
     @PostMapping("/crea-prodotto")
-    public String salvaProdotto(@ModelAttribute ProdottoForm prodottoForm, HttpSession session) {
+    public String salvaProdotto(@ModelAttribute ProdottoForm prodottoForm, HttpSession session) throws IOException {
         String username = (String) session.getAttribute("username");
         if (username == null) return "redirect:/login";
 
@@ -66,9 +82,46 @@ public class ProdottoController {
             return "redirect:/login";
         }
 
-        prodottoRepository.save(prodottoForm.toProdotto(produttore));
+        // 1. Salva il prodotto base
+        Prodotto prodotto = prodottoForm.toProdotto(produttore);
+        prodotto = prodottoRepository.save(prodotto);
 
-        // 🔁 Redirect alla dashboard con messaggio di successo
+        // 2. Salva immagini
+        if (prodottoForm.getImmagini() != null) {
+            Path imgDir = Paths.get("uploads/immagini");
+            Files.createDirectories(imgDir);
+
+            for (MultipartFile img : prodottoForm.getImmagini()) {
+                if (!img.isEmpty()) {
+                    String fileName = UUID.randomUUID() + "_" + img.getOriginalFilename();
+                    img.transferTo(imgDir.resolve(fileName));
+
+                    ImmagineProdotto ip = new ImmagineProdotto();
+                    ip.setFileName(fileName);
+                    ip.setProdotto(prodotto);
+                    immagineRepo.save(ip);
+                }
+            }
+        }
+
+        // 3. Salva certificati
+        if (prodottoForm.getCertificati() != null) {
+            Path certDir = Paths.get("uploads/certificati");
+            Files.createDirectories(certDir);
+
+            for (MultipartFile cert : prodottoForm.getCertificati()) {
+                if (!cert.isEmpty()) {
+                    String fileName = UUID.randomUUID() + "_" + cert.getOriginalFilename();
+                    cert.transferTo(certDir.resolve(fileName));
+
+                    CertificatoProdotto cp = new CertificatoProdotto();
+                    cp.setFileName(fileName);
+                    cp.setProdotto(prodotto);
+                    certificatoRepo.save(cp);
+                }
+            }
+        }
+
         return "redirect:/produttore/dashboard?success=true";
     }
 }

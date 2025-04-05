@@ -1,8 +1,11 @@
 package unicam.filiera_agricola_2425.dtos;
 
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 import unicam.filiera_agricola_2425.models.Prodotto;
 import unicam.filiera_agricola_2425.models.Produttore;
+
+import java.util.List;
 
 @Data
 public class ProdottoForm {
@@ -10,8 +13,9 @@ public class ProdottoForm {
     private double prezzo;
     private int quantita;
     private String descrizione;
-    private String certificazione;
-    private String immagine;
+
+    private List<MultipartFile> immagini;
+    private List<MultipartFile> certificati;
 
     public Prodotto toProdotto(Produttore produttore) {
         Prodotto p = new Prodotto();
@@ -19,8 +23,6 @@ public class ProdottoForm {
         p.setPrezzo(prezzo);
         p.setQuantita(quantita);
         p.setDescrizione(descrizione);
-        p.setCertificazione(certificazione);
-        p.setImmagine(immagine);
         p.setProduttore(produttore);
         return p;
     }

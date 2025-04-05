@@ -17,7 +17,7 @@ public class Prodotto {
     private int quantita;
     private String descrizione;
     private String certificazione;
-    private String immagine;
+    private String immagine; // URL o path
 
     @ManyToOne
     private Produttore produttore;

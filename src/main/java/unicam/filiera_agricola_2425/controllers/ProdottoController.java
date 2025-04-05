@@ -24,11 +24,12 @@ public class ProdottoController {
     private UtenteRepository utenteRepository;
 
     @GetMapping("/dashboard")
-    public String dashboardProduttore(Model model, HttpSession session) {
+    public String dashboardProduttore(Model model,
+                                      HttpSession session,
+                                      @RequestParam(name = "toggleForm", required = false) Boolean toggleForm,
+                                      @RequestParam(name = "success", required = false) Boolean success) {
         String username = (String) session.getAttribute("username");
-        if (username == null) {
-            return "redirect:/login";
-        }
+        if (username == null) return "redirect:/login";
 
         Optional<UtenteAutenticato> utenteOpt = utenteRepository.findByUsername(username);
         if (utenteOpt.isEmpty() || !(utenteOpt.get() instanceof Produttore produttore)) {
@@ -37,33 +38,37 @@ public class ProdottoController {
 
         model.addAttribute("nome", produttore.getNome());
         model.addAttribute("ruolo", produttore.getRuolo());
+        model.addAttribute("prodotto", new ProdottoForm());
+
+        // ✅ Mostra/nascondi form
+        if (toggleForm != null && toggleForm) {
+            model.addAttribute("mostraForm", true);
+        }
+
+        if (Boolean.TRUE.equals(success)) {
+            model.addAttribute("successo", true);
+        }
+
+        model.addAttribute("prodotti", prodottoRepository.findByProduttore(produttore));
+
         return "produttore_dashboard";
     }
 
 
-    @GetMapping("/crea-prodotto")
-    public String mostraForm(Model model) {
-        model.addAttribute("prodotto", new ProdottoForm());
-        return "crea_prodotto";
-    }
 
     @PostMapping("/crea-prodotto")
     public String salvaProdotto(@ModelAttribute ProdottoForm prodottoForm, HttpSession session) {
-        // Recupera username dalla sessione
         String username = (String) session.getAttribute("username");
-        if (username == null) {
+        if (username == null) return "redirect:/login";
+
+        Optional<UtenteAutenticato> utenteOpt = utenteRepository.findByUsername(username);
+        if (utenteOpt.isEmpty() || !(utenteOpt.get() instanceof Produttore produttore)) {
             return "redirect:/login";
         }
 
-        // Cerca il produttore nel DB
-        Optional<UtenteAutenticato> utenteOpt = utenteRepository.findByUsername(username);
-        if (utenteOpt.isEmpty() || !(utenteOpt.get() instanceof Produttore produttore)) {
-            return "redirect:/login"; // non è un produttore valido
-        }
-
-        // Salva prodotto associato al produttore
         prodottoRepository.save(prodottoForm.toProdotto(produttore));
 
-        return "redirect:/produttore/dashboard";
+        // 🔁 Redirect alla dashboard con messaggio di successo
+        return "redirect:/produttore/dashboard?success=true";
     }
 }

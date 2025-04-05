@@ -64,7 +64,7 @@ public class HomeController {
 
                 // ✅ Redirect in base al ruolo
                 return switch (utente.getRuolo()) {
-                    case PRODUTTORE -> "redirect:/produttore/dashboard";
+                    case PRODUTTORE -> "redirect:/produttore/dashboard?showForm=true";
                     case CURATORE -> "redirect:/curatore/dashboard";
                     case ANIMATORE -> "redirect:/animatore/dashboard";
                     case GESTORE -> "redirect:/gestore/dashboard";
@@ -75,12 +75,13 @@ public class HomeController {
             }
         }
 
-        //  Login fallito
+        // ❌ Login fallito
         model.addAttribute("errore", "Credenziali non valide");
         model.addAttribute("utente", utenteForm);
         model.addAttribute("ruoli", Ruolo.values());
         return "login";
     }
+
 
 
 

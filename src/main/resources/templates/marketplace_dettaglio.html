@@ -1,0 +1,22 @@
+<h1 th:text="${prodotto.nome}"></h1>
+
+<p><strong>Prezzo:</strong> <span th:text="${prodotto.prezzo}"></span> €</p>
+<p><strong>Quantità:</strong> <span th:text="${prodotto.quantita}"></span></p>
+<p><strong>Descrizione:</strong> <span th:text="${prodotto.descrizione}"></span></p>
+<p><strong>Produttore:</strong> <span th:text="${prodotto.produttoreNome}"></span></p>
+
+<h3>Immagini</h3>
+<ul>
+  <li th:each="img : ${prodotto.immagini}">
+    <a th:href="@{'/uploads/immagini/' + ${img}}" th:text="${img}" target="_blank"></a>
+  </li>
+</ul>
+
+<h3>Certificati</h3>
+<ul>
+  <li th:each="cert : ${prodotto.certificati}">
+    <a th:href="@{'/uploads/certificati/' + ${cert}}" th:text="${cert}" target="_blank"></a>
+  </li>
+</ul>
+
+<a href="/marketplace">⬅ Torna indietro</a>

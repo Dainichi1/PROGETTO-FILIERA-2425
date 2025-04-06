@@ -102,10 +102,7 @@ public class HomeController {
 
 
 
-    @GetMapping("/marketplace")
-    public String marketplace() {
-        return "marketplace"; // pagina dummy
-    }
+
 
     @GetMapping("/mappa")
     public String mappa() {

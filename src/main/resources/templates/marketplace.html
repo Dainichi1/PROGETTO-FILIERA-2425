@@ -1,0 +1,6 @@
+<h2>Prodotti Approvati</h2>
+<ul>
+    <li th:each="p : ${prodotti}">
+        <a th:href="@{'/marketplace/' + ${p.id}}" th:text="${p.nome}"></a>
+    </li>
+</ul>

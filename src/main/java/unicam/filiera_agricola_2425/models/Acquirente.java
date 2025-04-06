@@ -6,4 +6,8 @@ import jakarta.persistence.Entity;
 @Entity
 public class Acquirente extends UtenteAutenticato {
 
+    @Override
+    protected String messaggioSpecifico() {
+        return "puoi inviare un nuovo prodotto al curatore.";
+    }
 }

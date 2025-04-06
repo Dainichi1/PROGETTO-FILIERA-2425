@@ -6,4 +6,10 @@ import jakarta.persistence.Entity;
 
 @Entity
 public class Trasformatore extends Venditore {
+
+    @Override
+    protected String messaggioSpecifico() {
+        return "puoi creare un prodotto e puoi inviare un nuovo prodotto al curatore.";
+    }
 }
+

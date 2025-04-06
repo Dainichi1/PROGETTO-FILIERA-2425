@@ -1,13 +1,28 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="UTF-8">
-  <title>Dashboard Curatore</title>
-</head>
-<body>
+<h1 th:text="${messaggio}">[Messaggio personalizzato]</h1>
 
-<h1>Benvenuto <span th:text="${nome}">[NOME]</span>, <span th:text="${ruolo}">[RUOLO]</span>!</h1>
+<h2>Prodotti in attesa di approvazione</h2>
+<ul>
+  <li th:each="p : ${prodotti}">
+    <strong th:text="${p.nome}"></strong> –
+    Prezzo: <span th:text="${p.prezzo}"></span>€ –
+    Q.tà: <span th:text="${p.quantita}"></span><br/>
+    Descrizione: <span th:text="${p.descrizione}"></span><br/>
+    Produttore: <span th:text="${p.produttore.nome}"></span><br/>
 
+    <div>
+      <h4>Immagini:</h4>
+      <ul>
+        <li th:each="img : ${p.immagini}">
+          <a th:href="@{'/uploads/immagini/' + ${img.fileName}}" target="_blank" th:text="${img.fileName}"></a>
+        </li>
+      </ul>
 
-</body>
-</html>
+      <h4>Certificati:</h4>
+      <ul>
+        <li th:each="cert : ${p.certificazioni}">
+          <a th:href="@{'/uploads/certificati/' + ${cert.fileName}}" target="_blank" th:text="${cert.fileName}"></a>
+        </li>
+      </ul>
+    </div>
+  </li>
+</ul>

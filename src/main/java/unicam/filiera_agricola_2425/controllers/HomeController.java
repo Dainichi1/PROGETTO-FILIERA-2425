@@ -11,6 +11,8 @@ import unicam.filiera_agricola_2425.models.Ruolo;
 import unicam.filiera_agricola_2425.models.UtenteAutenticato;
 import unicam.filiera_agricola_2425.repositories.UtenteRepository;
 import unicam.filiera_agricola_2425.dtos.UtenteAutenticatoForm;
+import unicam.filiera_agricola_2425.factories.UtenteFactory;
+import unicam.filiera_agricola_2425.factories.UtenteFactoryProvider;
 
 import java.util.Optional;
 
@@ -35,8 +37,21 @@ public class HomeController {
 
     @PostMapping("/registrazione")
     public String salvaUtente(@ModelAttribute UtenteAutenticatoForm utenteForm) {
-        UtenteAutenticato utente = utenteForm.toUtente(); // factory pattern qui!
+        UtenteFactory factory = UtenteFactoryProvider.getFactory(utenteForm.getRuolo());
+
+        if (factory == null) {
+            return "redirect:/registrazione?errore=factory_non_trovata";
+        }
+
+        UtenteAutenticato utente = factory.creaUtente(
+                utenteForm.getNome(),
+                utenteForm.getUsername(),
+                utenteForm.getPassword()
+        );
+
+        utente.setRuolo(utenteForm.getRuolo());
         utenteRepository.save(utente);
+
         return "redirect:/";
     }
 

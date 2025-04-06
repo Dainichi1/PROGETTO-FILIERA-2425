@@ -5,9 +5,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import unicam.filiera_agricola_2425.models.Prodotto;
 import unicam.filiera_agricola_2425.models.UtenteAutenticato;
+import unicam.filiera_agricola_2425.repositories.ProdottoRepository;
 import unicam.filiera_agricola_2425.repositories.UtenteRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Controller
@@ -16,6 +19,9 @@ public class CuratoreController {
 
     @Autowired
     private UtenteRepository utenteRepository;
+    @Autowired
+    private ProdottoRepository prodottoRepository;
+
 
     @GetMapping("/dashboard")
     public String dashboardCuratore(HttpSession session, Model model) {
@@ -25,10 +31,13 @@ public class CuratoreController {
         Optional<UtenteAutenticato> utenteOpt = utenteRepository.findByUsername(username);
         if (utenteOpt.isEmpty()) return "redirect:/login";
 
-        UtenteAutenticato utente = utenteOpt.get();
-        model.addAttribute("nome", utente.getNome());
-        model.addAttribute("ruolo", utente.getRuolo());
+        UtenteAutenticato curatore = utenteOpt.get();
+        model.addAttribute("messaggio", curatore.messaggioDashboard());
+
+        List<Prodotto> prodottiInAttesa = prodottoRepository.findByStato(Prodotto.StatoProdotto.IN_ATTESA_APPROVAZIONE);
+        model.addAttribute("prodotti", prodottiInAttesa);
 
         return "curatore_dashboard";
     }
+
 }

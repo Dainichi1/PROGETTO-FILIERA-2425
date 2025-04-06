@@ -1,60 +1,67 @@
-<h1>Benvenuto <span th:text="${nome}">[NOME]</span>, <span th:text="${ruolo}">[RUOLO]</span>!</h1>
+<h1 th:text="${messaggio}">[Messaggio personalizzato]</h1>
 
 <!-- Messaggio di successo -->
 <div th:if="${successo}">
     <p style="color: green;">✅ Prodotto creato con successo!</p>
 </div>
 
-<!-- Bottone per mostrare/nascondere il form (NO <form>!) -->
-<button id="toggleFormBtn" type="button">Crea Prodotto</button>
+<!-- Bottone per mostrare/nascondere il form -->
+<button id="toggleFormBtn" type="button">Apri Form</button>
 
-<!-- Form inizialmente nascosto -->
+<!-- ✅ FORM DI CREAZIONE -->
 <div id="formContainer" style="display: none; margin-top: 20px;">
     <h2>Nuovo Prodotto</h2>
-    <form th:action="@{/produttore/crea-prodotto}" th:object="${prodotto}" method="post" enctype="multipart/form-data">
+    <form th:action="@{/produttore/crea-prodotto}" th:object="${prodotto}" method="post" enctype="multipart/form-data" onsubmit="return confermaInvio()">
         <label>Nome:</label>
-        <input type="text" th:field="*{nome}" /><br/>
+        <input type="text" th:field="*{nome}" required /><br/>
 
         <label>Prezzo:</label>
-        <input type="number" step="0.01" th:field="*{prezzo}" /><br/>
+        <input type="number" step="0.01" th:field="*{prezzo}" required /><br/>
 
         <label>Quantità:</label>
-        <input type="number" th:field="*{quantita}" /><br/>
+        <input type="number" th:field="*{quantita}" required /><br/>
 
         <label>Descrizione:</label>
-        <textarea th:field="*{descrizione}"></textarea><br/>
+        <textarea th:field="*{descrizione}" required></textarea><br/>
 
         <label>Immagini prodotto:</label>
-        <input type="file" name="immagini" accept="image/*" multiple />
+        <input type="file" name="immagini" accept="image/*" multiple required /><br/>
 
         <label>Certificati:</label>
-        <input type="file" name="certificati" accept=".pdf,.docx" multiple />
+        <input type="file" name="certificati" accept=".pdf,.docx" multiple required /><br/>
 
+        <!-- ✅ Bottone dentro il form -->
         <button type="submit">Invia al Curatore</button>
     </form>
 </div>
 
-<!-- Lista dei prodotti -->
+<!-- ✅ LISTA DEI PRODOTTI - Senza pulsanti -->
 <div th:if="${prodotti} != null">
     <h2>I tuoi prodotti</h2>
     <ul>
         <li th:each="p : ${prodotti}">
-            <strong th:text="${p.nome}">Nome prodotto</strong> –
-            Prezzo: <span th:text="${p.prezzo}"></span>€ –
-            Q.tà: <span th:text="${p.quantita}"></span><br/>
-            <em th:text="${p.descrizione}">Descrizione</em>
+            <div>
+                <strong th:text="${p.nome}">Nome prodotto</strong> –
+                Prezzo: <span th:text="${p.prezzo}"></span>€ –
+                Q.tà: <span th:text="${p.quantita}"></span><br/>
+                <em th:text="${p.descrizione}">Descrizione</em>
+            </div>
         </li>
     </ul>
 </div>
 
-<!-- Script per mostrare/nascondere il form -->
+<!-- ✅ SCRIPT -->
 <script>
     const toggleBtn = document.getElementById("toggleFormBtn");
     const form = document.getElementById("formContainer");
 
     toggleBtn.addEventListener("click", () => {
-        const visibile = form.style.display === "block";
-        form.style.display = visibile ? "none" : "block";
-        toggleBtn.textContent = visibile ? "Crea Prodotto" : "Chiudi Form";
+        const isVisible = form.style.display === "block";
+        form.style.display = isVisible ? "none" : "block";
+        toggleBtn.textContent = isVisible ? "Apri Form" : "Chiudi Form";
     });
+
+    function confermaInvio() {
+        return confirm("Sei sicuro di voler inviare questo prodotto al curatore?");
+    }
 </script>

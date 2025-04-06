@@ -13,6 +13,9 @@ public class Prodotto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Enumerated(EnumType.STRING)
+    private StatoProdotto stato = StatoProdotto.IN_BOZZA;
+
 
     private String nome;
     private double prezzo;
@@ -28,5 +31,11 @@ public class Prodotto {
     @ManyToOne
     private Produttore produttore;
 
+    public enum StatoProdotto {
+        IN_BOZZA,
+        IN_ATTESA_APPROVAZIONE,
+        APPROVATO,
+        RIFIUTATO
+    }
 
 }

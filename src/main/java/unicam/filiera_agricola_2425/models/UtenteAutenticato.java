@@ -1,7 +1,5 @@
 package unicam.filiera_agricola_2425.models;
 
-
-
 import jakarta.persistence.*;
 
 @Entity
@@ -24,7 +22,17 @@ public abstract class UtenteAutenticato {
     @Enumerated(EnumType.STRING)
     private Ruolo ruolo;
 
-    // Getters e Setters
+    // TEMPLATE METHOD
+    public String messaggioDashboard() {
+        return "Benvenuto " + nome + " (" + ruolo + ") — " + messaggioSpecifico();
+    }
+
+    protected abstract String messaggioSpecifico(); // Hook method (verrà implementato nelle sottoclassi)
+
+
+
+
+// Getters e Setters
     public Long getId() { return id; }
 
     public void setId(Long id) { this.id = id; }

@@ -9,4 +9,6 @@ import java.util.List;
 public interface ProdottoRepository extends JpaRepository<Prodotto, Long> {
 
     List<Prodotto> findByProduttore(Produttore produttore);
+    List<Prodotto> findByStato(Prodotto.StatoProdotto stato);
+
 }

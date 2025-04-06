@@ -51,10 +51,9 @@ public class ProdottoController {
         if (utenteOpt.isEmpty() || !(utenteOpt.get() instanceof Produttore produttore)) {
             return "redirect:/login";
         }
-
-        model.addAttribute("nome", produttore.getNome());
-        model.addAttribute("ruolo", produttore.getRuolo());
+        model.addAttribute("messaggio", produttore.messaggioDashboard()); // TEMPLATE METHOD
         model.addAttribute("prodotto", new ProdottoForm());
+
 
         // ✅ Mostra/nascondi form
         if (toggleForm != null && toggleForm) {
@@ -84,6 +83,7 @@ public class ProdottoController {
 
         // 1. Salva il prodotto base
         Prodotto prodotto = prodottoForm.toProdotto(produttore);
+        prodotto.setStato(Prodotto.StatoProdotto.IN_ATTESA_APPROVAZIONE); // ⬅️ IMPOSTA STATO QUI
         prodotto = prodottoRepository.save(prodotto);
 
         // 2. Salva immagini
@@ -124,4 +124,28 @@ public class ProdottoController {
 
         return "redirect:/produttore/dashboard?success=true";
     }
+
+
+    @PostMapping("/invia-al-curatore/{id}")
+    public String inviaAlCuratore(@PathVariable Long id, HttpSession session) {
+        String username = (String) session.getAttribute("username");
+        if (username == null) return "redirect:/login";
+
+        Optional<UtenteAutenticato> utenteOpt = utenteRepository.findByUsername(username);
+        if (utenteOpt.isEmpty() || !(utenteOpt.get() instanceof Produttore produttore)) {
+            return "redirect:/login";
+        }
+
+        Optional<Prodotto> prodottoOpt = prodottoRepository.findById(id);
+        if (prodottoOpt.isPresent()) {
+            Prodotto prodotto = prodottoOpt.get();
+            if (prodotto.getProduttore().equals(produttore)) {
+                prodotto.setStato(Prodotto.StatoProdotto.IN_ATTESA_APPROVAZIONE);
+                prodottoRepository.save(prodotto);
+            }
+        }
+
+        return "redirect:/produttore/dashboard";
+    }
+
 }

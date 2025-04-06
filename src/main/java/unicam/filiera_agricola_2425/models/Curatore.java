@@ -9,14 +9,9 @@ import jakarta.persistence.Enumerated;
 
 @Entity
 public class Curatore extends UtenteAutenticato {
-    private String nome;
-    private String cognome;
 
-    @Column(unique = true)
-    private String username;
-
-    private String password;
-
-    @Enumerated(EnumType.STRING)
-    private Ruolo ruolo;
+    @Override
+    protected String messaggioSpecifico() {
+        return "controlla i prodotti in attesa di approvazione.";
+    }
 }

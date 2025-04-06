@@ -21,6 +21,7 @@ public class Prodotto {
     private double prezzo;
     private int quantita;
     private String descrizione;
+    private String commentoRifiuto;
     @OneToMany(mappedBy = "prodotto", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ImmagineProdotto> immagini;
 

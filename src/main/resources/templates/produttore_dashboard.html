@@ -3,6 +3,7 @@
 <!-- Messaggio di successo -->
 <div th:if="${successo}">
     <p style="color: green;">✅ Prodotto creato con successo!</p>
+    <p style="color: green;">✅ In attesa di approvazione da parte del Curatore</p>
 </div>
 
 <!-- Bottone per mostrare/nascondere il form -->
@@ -40,14 +41,22 @@
     <h2>I tuoi prodotti</h2>
     <ul>
         <li th:each="p : ${prodotti}">
-            <div>
+            <div style="margin-bottom: 1em; padding: 0.5em; border-bottom: 1px solid #ccc;">
                 <strong th:text="${p.nome}">Nome prodotto</strong> –
                 Prezzo: <span th:text="${p.prezzo}"></span>€ –
                 Q.tà: <span th:text="${p.quantita}"></span><br/>
-                <em th:text="${p.descrizione}">Descrizione</em>
+                <em th:text="${p.descrizione}">Descrizione</em><br/>
+
+                <!-- ✅ Mostra messaggio se il prodotto è stato rifiutato -->
+                <div th:if="${p.stato.name() == 'RIFIUTATO'}" style="color: red; margin-top: 0.5em;">
+                    ❌ <strong>Rifiutato dal Curatore</strong><br/>
+                    <span>Commento: </span>
+                    <em th:text="${p.commentoRifiuto}">[Commento mancante]</em>
+                </div>
             </div>
         </li>
     </ul>
+
 </div>
 
 <!-- ✅ SCRIPT -->

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import unicam.filiera_agricola_2425.models.Prodotto;
+import unicam.filiera_agricola_2425.models.Ruolo;
 import unicam.filiera_agricola_2425.models.UtenteAutenticato;
 import unicam.filiera_agricola_2425.repositories.ProdottoRepository;
 import unicam.filiera_agricola_2425.repositories.UtenteRepository;
@@ -26,7 +27,11 @@ public class CuratoreController {
     @GetMapping("/dashboard")
     public String dashboardCuratore(HttpSession session, Model model) {
         String username = (String) session.getAttribute("username");
-        if (username == null) return "redirect:/login";
+        Object ruoloObj = session.getAttribute("ruolo");
+
+        if (username == null || ruoloObj == null) return "redirect:/login";
+
+        if (!(ruoloObj instanceof Ruolo ruolo) || ruolo != Ruolo.CURATORE) return "redirect:/login";
 
         Optional<UtenteAutenticato> utenteOpt = utenteRepository.findByUsername(username);
         if (utenteOpt.isEmpty()) return "redirect:/login";
@@ -39,5 +44,40 @@ public class CuratoreController {
 
         return "curatore_dashboard";
     }
+
+
+    @PostMapping("/approva/{id}")
+    public String approvaProdotto(@PathVariable Long id, HttpSession session) {
+        if (!isCuratore(session)) return "redirect:/login";
+
+        prodottoRepository.findById(id).ifPresent(prodotto -> {
+            prodotto.setStato(Prodotto.StatoProdotto.APPROVATO);
+            prodotto.setCommentoRifiuto(null);
+            prodottoRepository.save(prodotto);
+        });
+        return "redirect:/curatore/dashboard";
+    }
+
+
+    @PostMapping("/rifiuta/{id}")
+    public String rifiutaProdotto(@PathVariable Long id,
+                                  @RequestParam String commento,
+                                  HttpSession session) {
+        if (!isCuratore(session)) return "redirect:/login";
+
+        prodottoRepository.findById(id).ifPresent(prodotto -> {
+            prodotto.setStato(Prodotto.StatoProdotto.RIFIUTATO);
+            prodotto.setCommentoRifiuto(commento);
+            prodottoRepository.save(prodotto);
+        });
+        return "redirect:/curatore/dashboard";
+    }
+    private boolean isCuratore(HttpSession session) {
+        Object ruoloObj = session.getAttribute("ruolo");
+        return ruoloObj instanceof Ruolo ruolo && ruolo == Ruolo.CURATORE;
+    }
+
+
+
 
 }

@@ -76,6 +76,7 @@ public class HomeController {
 
                 // ✅ Salva in sessione l'username
                 session.setAttribute("username", utente.getUsername());
+                session.setAttribute("ruolo", utente.getRuolo());
 
                 // ✅ Redirect in base al ruolo
                 return switch (utente.getRuolo()) {

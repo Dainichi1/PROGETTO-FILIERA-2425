@@ -37,23 +37,31 @@ public class HomeController {
 
     @PostMapping("/registrazione")
     public String salvaUtente(@ModelAttribute UtenteAutenticatoForm utenteForm) {
+        // 1) Recupero la factory dal ruolo selezionato
         UtenteFactory factory = UtenteFactoryProvider.getFactory(utenteForm.getRuolo());
 
         if (factory == null) {
             return "redirect:/registrazione?errore=factory_non_trovata";
         }
 
+        // 2) Uso la factory per creare l'oggetto SOTTOCLASSE (Produttore, Curatore, ecc.)
         UtenteAutenticato utente = factory.creaUtente(
                 utenteForm.getNome(),
                 utenteForm.getUsername(),
                 utenteForm.getPassword()
         );
 
+        // 3) Completo gli altri campi (cognome, ruolo, ecc.)
+        utente.setCognome(utenteForm.getCognome());
         utente.setRuolo(utenteForm.getRuolo());
+        // Se hai altri campi nel form (email, telefono...), impostali qui
+
+        // 4) Salvo
         utenteRepository.save(utente);
 
         return "redirect:/";
     }
+
 
     @GetMapping("/login")
     public String loginForm(Model model) {
@@ -70,6 +78,12 @@ public class HomeController {
 
         if (utenteOpt.isPresent()) {
             UtenteAutenticato utente = utenteOpt.get();
+
+            // DEBUG
+            System.out.println("DEBUG - Classe effettiva: " + utente.getClass().getName());
+            System.out.println("DEBUG - Ruolo in DB: " + utente.getRuolo());
+            System.out.println("DEBUG - Password in DB: " + utente.getPassword());
+            // Fine DEBUG
 
             if (utente.getPassword().equals(utenteForm.getPassword()) &&
                     utente.getRuolo().equals(utenteForm.getRuolo())) {
@@ -97,12 +111,6 @@ public class HomeController {
         model.addAttribute("ruoli", Ruolo.values());
         return "login";
     }
-
-
-
-
-
-
 
     @GetMapping("/mappa")
     public String mappa() {

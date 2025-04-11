@@ -36,7 +36,7 @@
     </form>
 </div>
 
-<!-- ✅ LISTA DEI PRODOTTI - Senza pulsanti -->
+<!-- ✅ LISTA DEI PRODOTTI -->
 <div th:if="${prodotti} != null">
     <h2>I tuoi prodotti</h2>
     <ul>
@@ -47,17 +47,37 @@
                 Q.tà: <span th:text="${p.quantita}"></span><br/>
                 <em th:text="${p.descrizione}">Descrizione</em><br/>
 
-                <!-- ✅ Mostra messaggio se il prodotto è stato rifiutato -->
-                <div th:if="${p.stato.name() == 'RIFIUTATO'}" style="color: red; margin-top: 0.5em;">
+                <!-- ✅ Se rifiutato, mostra il commento -->
+                <div th:if="${p.commentoRifiuto != null}" style="color: red; margin-top: 0.5em;">
                     ❌ <strong>Rifiutato dal Curatore</strong><br/>
                     <span>Commento: </span>
                     <em th:text="${p.commentoRifiuto}">[Commento mancante]</em>
                 </div>
+
+                <!-- ✅ Immagini -->
+                <div th:if="${p.immagini != null}">
+                    <h4>Immagini</h4>
+                    <ul>
+                        <li th:each="img : ${p.immagini}">
+                            <a th:href="@{'/uploads/immagini/' + ${img}}" th:text="${img}" target="_blank"></a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- ✅ Certificati -->
+                <div th:if="${p.certificati != null}">
+                    <h4>Certificati</h4>
+                    <ul>
+                        <li th:each="cert : ${p.certificati}">
+                            <a th:href="@{'/uploads/certificati/' + ${cert}}" th:text="${cert}" target="_blank"></a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </li>
     </ul>
-
 </div>
+
 
 <!-- ✅ SCRIPT -->
 <script>

@@ -1,41 +1,60 @@
 <h1 th:text="${messaggio}">[Messaggio personalizzato]</h1>
 
-<h2>Prodotti in attesa di approvazione</h2>
-<ul>
-  <li th:each="p : ${prodotti}">
-    <strong th:text="${p.nome}">Nome prodotto</strong> –
-    Prezzo: <span th:text="${p.prezzo}"></span>€ –
-    Q.tà: <span th:text="${p.quantita}"></span><br/>
-    Descrizione: <span th:text="${p.descrizione}"></span><br/>
-    Produttore: <span th:text="${p.produttore.nome}"></span><br/>
+<!-- Bottone per mostrare/nascondere la lista -->
+<button id="toggleProdottiBtn" type="button">📦 Visualizza prodotti in attesa di pubblicazione</button>
 
-    <!-- Immagini -->
-    <h4>Immagini:</h4>
-    <ul>
-      <li th:each="img : ${p.immagini}">
-        <a th:href="@{'/uploads/immagini/' + ${img.fileName}}" target="_blank" th:text="${img.fileName}"></a>
-      </li>
-    </ul>
+<!-- Elenco nascosto inizialmente -->
+<div id="listaProdotti" style="display: none; margin-top: 1em;">
+  <h2>Prodotti in attesa di approvazione</h2>
+  <ul>
+    <li th:each="p : ${prodotti}">
+      <strong th:text="${p.nome}">Nome prodotto</strong> –
+      Prezzo: <span th:text="${p.prezzo}"></span>€ –
+      Q.tà: <span th:text="${p.quantita}"></span><br/>
+      Descrizione: <span th:text="${p.descrizione}"></span><br/>
+      Produttore: <span th:text="${p.produttore.nome}"></span><br/>
 
-    <!-- Certificati -->
-    <h4>Certificati:</h4>
-    <ul>
-      <li th:each="cert : ${p.certificazioni}">
-        <a th:href="@{'/uploads/certificati/' + ${cert.fileName}}" target="_blank" th:text="${cert.fileName}"></a>
-      </li>
-    </ul>
+      <!-- Immagini -->
+      <h4>Immagini:</h4>
+      <ul>
+        <li th:each="img : ${p.immagini}">
+          <a th:href="@{'/uploads/immagini/' + ${img.fileName}}" target="_blank" th:text="${img.fileName}"></a>
+        </li>
+      </ul>
 
-    <!-- Azioni -->
-    <form th:action="@{/curatore/approva/{id}(id=${p.id})}" method="post" style="margin-top:10px;">
-      <button type="submit">✅ Approva</button>
-    </form>
+      <!-- Certificati -->
+      <h4>Certificati:</h4>
+      <ul>
+        <li th:each="cert : ${p.certificazioni}">
+          <a th:href="@{'/uploads/certificati/' + ${cert.fileName}}" target="_blank" th:text="${cert.fileName}"></a>
+        </li>
+      </ul>
 
-    <form th:action="@{/curatore/rifiuta/{id}(id=${p.id})}" method="post">
-      <textarea name="commento" placeholder="Commento per il produttore..."></textarea><br/>
-      <button type="submit">❌ Rifiuta</button>
-    </form>
+      <!-- Azioni -->
+      <form th:action="@{/curatore/approva/{id}(id=${p.id})}" method="post" style="margin-top:10px;">
+        <button type="submit">✅ Approva</button>
+      </form>
 
-    <hr/>
-  </li>
-</ul>
+      <form th:action="@{/curatore/rifiuta/{id}(id=${p.id})}" method="post">
+        <textarea name="commento" placeholder="Commento per il produttore..." required></textarea><br/>
+        <button type="submit">❌ Rifiuta</button>
+      </form>
 
+      <hr/>
+    </li>
+  </ul>
+</div>
+
+<!-- ✅ Script per toggle visibilità -->
+<script>
+  const toggleBtn = document.getElementById("toggleProdottiBtn");
+  const lista = document.getElementById("listaProdotti");
+
+  toggleBtn.addEventListener("click", () => {
+    const visibile = lista.style.display === "block";
+    lista.style.display = visibile ? "none" : "block";
+    toggleBtn.textContent = visibile
+            ? "📦 Visualizza prodotti in attesa di pubblicazione"
+            : "📦 Nascondi prodotti";
+  });
+</script>

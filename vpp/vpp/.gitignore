@@ -1,0 +1,4 @@
+# Ignora tutti i file di backup di Visual Paradigm
+*.vpp.bak_*
+*.vpp.lck
+

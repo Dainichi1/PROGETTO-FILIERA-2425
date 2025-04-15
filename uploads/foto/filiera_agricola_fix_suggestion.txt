@@ -1,0 +1,52 @@
+
+🔧 Problema rilevato:
+Dopo un'azione del curatore (approvazione o rifiuto), la sessione sembra essere sovrascritta con i dati del produttore.
+Di conseguenza, il titolo cambia e la sessione del curatore viene "persa".
+
+📌 Possibile causa:
+Nell'action dei metodi `approvaProdotto` o `rifiutaProdotto`, non stai facendo nulla sulla sessione,
+ma potresti avere un errore di logica dove un redirect o un'azione causa il caricamento sbagliato della dashboard.
+
+✅ Suggerimento per fix:
+1. Modifica la `CuratoreController` per **ricaricare sempre i dati del curatore da sessione** e mai da prodotto/produttore.
+
+Assicurati che la dashboard del curatore usi solo i suoi dati in sessione:
+
+```java
+@GetMapping("/dashboard")
+public String dashboardCuratore(HttpSession session, Model model) {
+    String username = (String) session.getAttribute("username");
+    if (username == null) return "redirect:/login";
+
+    Optional<UtenteAutenticato> utenteOpt = utenteRepository.findByUsername(username);
+    if (utenteOpt.isEmpty() || !(utenteOpt.get().getRuolo() == Ruolo.CURATORE)) {
+        return "redirect:/login";
+    }
+
+    UtenteAutenticato curatore = utenteOpt.get();
+    model.addAttribute("messaggio", curatore.messaggioDashboard());
+
+    List<Prodotto> prodottiInAttesa = prodottoRepository.findByStato(Prodotto.StatoProdotto.IN_ATTESA_APPROVAZIONE);
+    model.addAttribute("prodotti", prodottiInAttesa);
+
+    return "curatore_dashboard";
+}
+```
+
+2. Controlla che nessun altro controller (come `ProdottoController`) stia modificando la sessione in modo improprio.
+
+Ad esempio: **mai usare**
+```java
+session.setAttribute("username", produttore.getUsername());
+```
+dentro operazioni secondarie (come invio prodotto), altrimenti si cambia l'utente loggato.
+
+📌 Soluzione strutturale:
+Se più utenti interagiscono contemporaneamente, considera una sessione *per utente autenticato*, o aggiungi `ruolo` esplicitamente al contesto della sessione.
+
+Esempio:
+```java
+session.setAttribute("username", utente.getUsername());
+session.setAttribute("ruolo", utente.getRuolo());
+```
+E verifica sempre che `ruolo == CURATORE` dove serve.

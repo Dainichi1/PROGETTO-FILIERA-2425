@@ -3,6 +3,9 @@ package unicam.filiera.view;
 import unicam.filiera.controller.AutenticazioneController;
 import unicam.filiera.model.Ruolo;
 import unicam.filiera.model.UtenteAutenticato;
+import unicam.filiera.view.PannelloCuratore;
+import unicam.filiera.view.PannelloProduttore;
+
 
 import javax.swing.*;
 import java.awt.*;
@@ -53,9 +56,22 @@ public class LoginPanel extends JPanel {
                         JOptionPane.INFORMATION_MESSAGE);
 
                 // Passaggio a finestra dedicata al ruolo (es. produttore)
-                parentFrame.setContentPane(new PannelloProduttore(utente));
+                // Passaggio a finestra dedicata al ruolo
+                switch (utente.getRuolo()) {
+                    case PRODUTTORE -> parentFrame.setContentPane(new PannelloProduttore(utente));
+                    case CURATORE -> parentFrame.setContentPane(new PannelloCuratore(utente));
+                    // Altri ruoli futuri possono essere aggiunti qui con altri pannelli
+                    default -> {
+                        JOptionPane.showMessageDialog(this,
+                                "Nessun pannello associato a questo ruolo.",
+                                "Ruolo non gestito",
+                                JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                }
                 parentFrame.revalidate();
                 parentFrame.repaint();
+
             }
         });
 

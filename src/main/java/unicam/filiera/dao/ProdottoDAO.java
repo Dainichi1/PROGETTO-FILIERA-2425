@@ -1,6 +1,7 @@
 package unicam.filiera.dao;
 
 import unicam.filiera.model.Prodotto;
+import unicam.filiera.model.StatoProdotto;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,9 +38,10 @@ public class ProdottoDAO {
                     .collect(Collectors.toList());
 
             String sql = """
-                INSERT INTO prodotti (nome, descrizione, quantita, prezzo, certificati, foto, creato_da)
-                VALUES (?, ?, ?, ?, ?, ?, ?);
+                INSERT INTO prodotti (nome, descrizione, quantita, prezzo, certificati, foto, creato_da, stato)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?);
             """;
+
 
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, prodotto.getNome());
@@ -49,8 +51,7 @@ public class ProdottoDAO {
                 stmt.setString(5, String.join(",", nomiCertificati));
                 stmt.setString(6, String.join(",", nomiFoto));
                 stmt.setString(7, prodotto.getCreatoDa());
-
-                stmt.executeUpdate();
+                stmt.setString(8, "IN_ATTESA");                stmt.executeUpdate();
                 return true;
             }
 
@@ -84,6 +85,7 @@ public class ProdottoDAO {
                 while (rs.next()) {
                     List<String> certificati = List.of(rs.getString("certificati").split(","));
                     List<String> foto = List.of(rs.getString("foto").split(","));
+                    StatoProdotto stato = StatoProdotto.valueOf(rs.getString("stato"));
 
                     Prodotto prodotto = new Prodotto(
                             rs.getString("nome"),
@@ -92,7 +94,8 @@ public class ProdottoDAO {
                             rs.getDouble("prezzo"),
                             certificati,
                             foto,
-                            rs.getString("creato_da")
+                            rs.getString("creato_da"),
+                            stato
                     );
 
                     prodotti.add(prodotto);
@@ -104,6 +107,7 @@ public class ProdottoDAO {
 
         return prodotti;
     }
+
 
     public List<Prodotto> getTuttiIProdotti() {
         List<Prodotto> prodotti = new ArrayList<>();
@@ -115,6 +119,8 @@ public class ProdottoDAO {
                 while (rs.next()) {
                     List<String> certificati = List.of(rs.getString("certificati").split(","));
                     List<String> foto = List.of(rs.getString("foto").split(","));
+                    StatoProdotto stato = StatoProdotto.valueOf(rs.getString("stato"));
+
                     Prodotto prodotto = new Prodotto(
                             rs.getString("nome"),
                             rs.getString("descrizione"),
@@ -122,7 +128,8 @@ public class ProdottoDAO {
                             rs.getDouble("prezzo"),
                             certificati,
                             foto,
-                            rs.getString("creato_da")
+                            rs.getString("creato_da"),
+                            stato
                     );
                     prodotti.add(prodotto);
                 }
@@ -133,6 +140,57 @@ public class ProdottoDAO {
 
         return prodotti;
     }
+
+    public List<Prodotto> getProdottiByStato(StatoProdotto stato) {
+        List<Prodotto> prodotti = new ArrayList<>();
+        try (Connection conn = DatabaseManager.getConnection()) {
+            String sql = "SELECT * FROM prodotti WHERE stato = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, stato.name());
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    List<String> certificati = List.of(rs.getString("certificati").split(","));
+                    List<String> foto = List.of(rs.getString("foto").split(","));
+                    Prodotto prodotto = new Prodotto(
+                            rs.getString("nome"),
+                            rs.getString("descrizione"),
+                            rs.getInt("quantita"),
+                            rs.getDouble("prezzo"),
+                            certificati,
+                            foto,
+                            rs.getString("creato_da"),
+                            StatoProdotto.valueOf(rs.getString("stato"))
+                    );
+                    prodotti.add(prodotto);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return prodotti;
+    }
+
+    public boolean aggiornaStatoProdotto(Prodotto prodotto, StatoProdotto nuovoStato) {
+        String sql = "UPDATE prodotti SET stato = ? WHERE nome = ? AND creato_da = ?";
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, nuovoStato.name());
+            stmt.setString(2, prodotto.getNome());
+            stmt.setString(3, prodotto.getCreatoDa());
+
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Errore aggiornamento stato prodotto: " + e.getMessage());
+            return false;
+        }
+    }
+
+
+
 
 
 

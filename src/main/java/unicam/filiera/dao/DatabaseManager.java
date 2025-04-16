@@ -39,11 +39,13 @@ public class DatabaseManager {
                     descrizione VARCHAR(500),
                     quantita INT,
                     prezzo DOUBLE,
-                    certificati TEXT, -- separati da virgola
-                    foto TEXT,        -- separati da virgola
-                    creato_da VARCHAR(50) -- username
+                    certificati TEXT,
+                    foto TEXT,
+                    creato_da VARCHAR(50),
+                    stato VARCHAR(20) DEFAULT 'IN_ATTESA'
                 );
             """;
+
 
             stmt.executeUpdate(utentiSql);
             stmt.executeUpdate(prodottiSql);

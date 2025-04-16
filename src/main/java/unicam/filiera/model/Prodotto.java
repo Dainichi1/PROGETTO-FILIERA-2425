@@ -10,9 +10,11 @@ public class Prodotto {
     private List<String> certificati;
     private List<String> foto;
     private String creatoDa; // username o nome del produttore
+    private StatoProdotto stato;
 
     public Prodotto(String nome, String descrizione, int quantita, double prezzo,
-                    List<String> certificati, List<String> foto, String creatoDa) {
+                    List<String> certificati, List<String> foto, String creatoDa,
+                    StatoProdotto stato) {
         this.nome = nome;
         this.descrizione = descrizione;
         this.quantita = quantita;
@@ -20,6 +22,7 @@ public class Prodotto {
         this.certificati = certificati;
         this.foto = foto;
         this.creatoDa = creatoDa;
+        this.stato = stato;
     }
 
     public String getNome() { return nome; }
@@ -33,23 +36,31 @@ public class Prodotto {
     @Override
     public String toString() {
         return """
-            Prodotto:
-              - Nome: %s
-              - Descrizione: %s
-              - Quantità: %d
-              - Prezzo: %.2f €
-              - Certificati: %s
-              - Foto: %s
-              - Creato da: %s
-            """.formatted(
+        Prodotto:
+          - Nome: %s
+          - Descrizione: %s
+          - Quantità: %d
+          - Prezzo: %.2f €
+          - Certificati: %s
+          - Foto: %s
+          - Creato da: %s
+          - Stato: %s
+        """.formatted(
                 nome,
                 descrizione,
                 quantita,
                 prezzo,
                 certificati != null ? String.join(", ", certificati) : "Nessuno",
                 foto != null ? String.join(", ", foto) : "Nessuna",
-                creatoDa
+                creatoDa,
+                stato != null ? stato.name() : "N/D"
         );
     }
+
+    public StatoProdotto getStato() {
+        return stato;
+    }
+
+
 
 }

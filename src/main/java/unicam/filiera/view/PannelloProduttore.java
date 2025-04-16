@@ -2,6 +2,7 @@ package unicam.filiera.view;
 
 import unicam.filiera.dao.ProdottoDAO;
 import unicam.filiera.model.Prodotto;
+import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.model.UtenteAutenticato;
 
 import javax.swing.*;
@@ -42,7 +43,7 @@ public class PannelloProduttore extends JPanel {
         JLabel labelCertificati = new JLabel("Nessun file selezionato");
         JLabel labelFoto = new JLabel("Nessun file selezionato");
 
-        JButton btnSalva = new JButton("Salva Prodotto");
+        JButton btnSalva = new JButton("Invia al Curatore");
 
         // Aggiungi componenti al form
         formPanel.add(new JLabel("Nome prodotto:"));
@@ -70,13 +71,13 @@ public class PannelloProduttore extends JPanel {
         add(formPanel, BorderLayout.CENTER);
 
         // Tabella prodotti
-        String[] colonne = {"Nome", "Quantità", "Prezzo", "Certificati", "Foto"};
+        String[] colonne = {"Nome", "Quantità", "Prezzo", "Certificati", "Foto", "Stato"};
         DefaultTableModel tableModel = new DefaultTableModel(colonne, 0);
         JTable tabella = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(tabella);
         add(scrollPane, BorderLayout.EAST); // oppure BorderLayout.SOUTH se preferisci
 
-// Metodo per aggiornare la tabella
+        // Metodo per aggiornare la tabella
         Runnable aggiornaTabella = () -> {
             tableModel.setRowCount(0); // svuota la tabella
             ProdottoDAO dao = new ProdottoDAO();
@@ -87,9 +88,11 @@ public class PannelloProduttore extends JPanel {
                         p.getQuantita(),
                         p.getPrezzo(),
                         String.join(", ", p.getCertificati()),
-                        String.join(", ", p.getFoto())
+                        String.join(", ", p.getFoto()),
+                        p.getStato() != null ? p.getStato().name() : "N/D"
                 });
             }
+
         };
 
 
@@ -128,6 +131,14 @@ public class PannelloProduttore extends JPanel {
 
         // Salva Prodotto
         btnSalva.addActionListener(e -> {
+            int conferma = JOptionPane.showConfirmDialog(this,
+                    "Sei sicuro di voler inviare il prodotto al curatore per approvazione?",
+                    "Conferma invio", JOptionPane.YES_NO_OPTION);
+
+            if (conferma != JOptionPane.YES_OPTION) {
+                return; // Utente ha cliccato NO
+            }
+
             try {
                 String nome = nomeField.getText().trim();
                 String descrizione = descrizioneField.getText().trim();
@@ -141,14 +152,15 @@ public class PannelloProduttore extends JPanel {
 
                 Prodotto prodotto = new Prodotto(
                         nome, descrizione, quantita, prezzo,
-                        null, null, utente.getUsername()
+                        null, null, utente.getUsername(),
+                        StatoProdotto.IN_ATTESA
                 );
 
                 ProdottoDAO dao = new ProdottoDAO();
                 boolean success = dao.salvaProdotto(prodotto, certificatiSelezionati, fotoSelezionate);
 
                 if (success) {
-                    JOptionPane.showMessageDialog(this, "Prodotto salvato!", "Successo", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Prodotto inviato al curatore!", "Successo", JOptionPane.INFORMATION_MESSAGE);
                     nomeField.setText("");
                     descrizioneField.setText("");
                     quantitaField.setText("");
@@ -157,8 +169,7 @@ public class PannelloProduttore extends JPanel {
                     fotoSelezionate.clear();
                     labelCertificati.setText("Nessun file selezionato");
                     labelFoto.setText("Nessun file selezionato");
-                    aggiornaTabella.run(); // aggiorna la tabella dopo il salvataggio
-
+                    aggiornaTabella.run();
                 } else {
                     JOptionPane.showMessageDialog(this, "Errore durante il salvataggio.", "Errore", JOptionPane.ERROR_MESSAGE);
                 }
@@ -166,8 +177,8 @@ public class PannelloProduttore extends JPanel {
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "Quantità e Prezzo devono essere numeri validi.", "Errore", JOptionPane.ERROR_MESSAGE);
             }
-
         });
+
         aggiornaTabella.run();
 
     }

@@ -1,6 +1,6 @@
 package unicam.filiera.view;
 
-import unicam.filiera.dao.ProdottoDAO;
+import unicam.filiera.controller.ProduttoreController;
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.model.UtenteAutenticato;
@@ -19,33 +19,38 @@ public class PannelloProduttore extends JPanel {
     private final List<File> certificatiSelezionati = new ArrayList<>();
     private final List<File> fotoSelezionate = new ArrayList<>();
 
+    // Riferimento al controller (logica) del produttore
+    private final ProduttoreController produttoreController;
+
+    // Campi interfaccia
+    private final JTextField nomeField = new JTextField();
+    private final JTextField descrizioneField = new JTextField();
+    private final JTextField quantitaField = new JTextField();
+    private final JTextField prezzoField = new JTextField();
+
+    private final JLabel labelCertificati = new JLabel("Nessun file selezionato");
+    private final JLabel labelFoto = new JLabel("Nessun file selezionato");
+
+    private final JButton btnToggleForm = new JButton("Crea Prodotto");
+    private final JButton btnCertificati = new JButton("Seleziona certificati");
+    private final JButton btnFoto = new JButton("Seleziona foto");
+    private final JButton btnSalva = new JButton("Invia al Curatore");
+
+    private final DefaultTableModel tableModel;
+    private final JTable tabella;
+
     public PannelloProduttore(UtenteAutenticato utente) {
-        setLayout(new BorderLayout());
+        super(new BorderLayout());
+
+        this.produttoreController = new ProduttoreController();
 
         JLabel benvenuto = new JLabel("Benvenuto " + utente.getNome() + ", " + utente.getRuolo(), SwingConstants.CENTER);
         benvenuto.setFont(new Font("Arial", Font.BOLD, 18));
         add(benvenuto, BorderLayout.NORTH);
 
-        JButton btnToggleForm = new JButton("Crea Prodotto");
         add(btnToggleForm, BorderLayout.SOUTH);
 
-
-
-        // Campi form
-        JTextField nomeField = new JTextField();
-        JTextField descrizioneField = new JTextField();
-        JTextField quantitaField = new JTextField();
-        JTextField prezzoField = new JTextField();
-
-        JButton btnCertificati = new JButton("Seleziona certificati");
-        JButton btnFoto = new JButton("Seleziona foto");
-
-        JLabel labelCertificati = new JLabel("Nessun file selezionato");
-        JLabel labelFoto = new JLabel("Nessun file selezionato");
-
-        JButton btnSalva = new JButton("Invia al Curatore");
-
-        // Aggiungi componenti al form
+        // Pannello form
         formPanel.add(new JLabel("Nome prodotto:"));
         formPanel.add(nomeField);
 
@@ -67,36 +72,17 @@ public class PannelloProduttore extends JPanel {
         formPanel.add(new JLabel()); // spazio vuoto
         formPanel.add(btnSalva);
 
-        formPanel.setVisible(false); // inizialmente nascosto
+        formPanel.setVisible(false);
         add(formPanel, BorderLayout.CENTER);
 
-        // Tabella prodotti
-        String[] colonne = {"Nome", "Quantità", "Prezzo", "Certificati", "Foto", "Stato"};
-        DefaultTableModel tableModel = new DefaultTableModel(colonne, 0);
-        JTable tabella = new JTable(tableModel);
+        // Tabella
+        String[] colonne = {"Nome", "Quantità", "Prezzo", "Certificati", "Foto", "Stato", "Commento"};
+        tableModel = new DefaultTableModel(colonne, 0);
+        tabella = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(tabella);
-        add(scrollPane, BorderLayout.EAST); // oppure BorderLayout.SOUTH se preferisci
+        add(scrollPane, BorderLayout.EAST);
 
-        // Metodo per aggiornare la tabella
-        Runnable aggiornaTabella = () -> {
-            tableModel.setRowCount(0); // svuota la tabella
-            ProdottoDAO dao = new ProdottoDAO();
-            List<Prodotto> prodotti = dao.getProdottiByCreatore(utente.getUsername());
-            for (Prodotto p : prodotti) {
-                tableModel.addRow(new Object[]{
-                        p.getNome(),
-                        p.getQuantita(),
-                        p.getPrezzo(),
-                        String.join(", ", p.getCertificati()),
-                        String.join(", ", p.getFoto()),
-                        p.getStato() != null ? p.getStato().name() : "N/D"
-                });
-            }
-
-        };
-
-
-        // Toggle visibilità
+        // Listener per il toggle del form
         btnToggleForm.addActionListener(e -> {
             formVisibile = !formVisibile;
             formPanel.setVisible(formVisibile);
@@ -105,7 +91,7 @@ public class PannelloProduttore extends JPanel {
             repaint();
         });
 
-        // FileChooser: Certificati
+        // Seleziona certificati
         btnCertificati.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
             chooser.setMultiSelectionEnabled(true);
@@ -117,7 +103,7 @@ public class PannelloProduttore extends JPanel {
             }
         });
 
-        // FileChooser: Foto
+        // Seleziona foto
         btnFoto.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
             chooser.setMultiSelectionEnabled(true);
@@ -129,38 +115,46 @@ public class PannelloProduttore extends JPanel {
             }
         });
 
-        // Salva Prodotto
+        // Salva Prodotto (chiama il controller)
         btnSalva.addActionListener(e -> {
-            int conferma = JOptionPane.showConfirmDialog(this,
+            int conferma = JOptionPane.showConfirmDialog(
+                    this,
                     "Sei sicuro di voler inviare il prodotto al curatore per approvazione?",
-                    "Conferma invio", JOptionPane.YES_NO_OPTION);
+                    "Conferma invio",
+                    JOptionPane.YES_NO_OPTION
+            );
 
             if (conferma != JOptionPane.YES_OPTION) {
-                return; // Utente ha cliccato NO
+                return;
             }
 
             try {
+                // Leggiamo i valori dalla GUI
                 String nome = nomeField.getText().trim();
                 String descrizione = descrizioneField.getText().trim();
                 int quantita = Integer.parseInt(quantitaField.getText().trim());
                 double prezzo = Double.parseDouble(prezzoField.getText().trim());
 
-                if (nome.isEmpty() || descrizione.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Compila tutti i campi.", "Errore", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                Prodotto prodotto = new Prodotto(
-                        nome, descrizione, quantita, prezzo,
-                        null, null, utente.getUsername(),
-                        StatoProdotto.IN_ATTESA
+                // Invoca il metodo “creaNuovoProdotto” del controller
+                boolean success = produttoreController.creaNuovoProdotto(
+                        nome,
+                        descrizione,
+                        quantita,
+                        prezzo,
+                        certificatiSelezionati,
+                        fotoSelezionate,
+                        utente.getUsername()
                 );
 
-                ProdottoDAO dao = new ProdottoDAO();
-                boolean success = dao.salvaProdotto(prodotto, certificatiSelezionati, fotoSelezionate);
-
                 if (success) {
-                    JOptionPane.showMessageDialog(this, "Prodotto inviato al curatore!", "Successo", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Prodotto inviato al curatore!",
+                            "Successo",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+
+                    // Svuota il form
                     nomeField.setText("");
                     descrizioneField.setText("");
                     quantitaField.setText("");
@@ -169,19 +163,56 @@ public class PannelloProduttore extends JPanel {
                     fotoSelezionate.clear();
                     labelCertificati.setText("Nessun file selezionato");
                     labelFoto.setText("Nessun file selezionato");
-                    aggiornaTabella.run();
+
+                    // Ricarichiamo la tabella
+                    aggiornaTabella(utente.getUsername());
                 } else {
-                    JOptionPane.showMessageDialog(this, "Errore durante il salvataggio.", "Errore", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Errore durante il salvataggio.",
+                            "Errore",
+                            JOptionPane.ERROR_MESSAGE
+                    );
                 }
 
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Quantità e Prezzo devono essere numeri validi.", "Errore", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Quantità e Prezzo devono essere numeri validi.",
+                        "Errore",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Errore: " + ex.getMessage(),
+                        "Errore",
+                        JOptionPane.ERROR_MESSAGE
+                );
             }
         });
 
-        aggiornaTabella.run();
-
+        // Carica la tabella iniziale
+        aggiornaTabella(utente.getUsername());
     }
 
+    /**
+     * Aggiorna la tabella leggendo i prodotti dal controller (invece che dal DAO).
+     */
+    private void aggiornaTabella(String username) {
+        tableModel.setRowCount(0);
+        List<Prodotto> prodotti = produttoreController.getProdottiCreatiDa(username);
 
+        for (Prodotto p : prodotti) {
+            tableModel.addRow(new Object[]{
+                    p.getNome(),
+                    p.getQuantita(),
+                    p.getPrezzo(),
+                    String.join(", ", p.getCertificati()),
+                    String.join(", ", p.getFoto()),
+                    p.getStato() != null ? p.getStato().name() : "N/D",
+                    p.getCommento() != null ? p.getCommento() : ""
+            });
+        }
+    }
 }

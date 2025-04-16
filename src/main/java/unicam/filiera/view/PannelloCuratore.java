@@ -1,6 +1,6 @@
 package unicam.filiera.view;
 
-import unicam.filiera.dao.ProdottoDAO;
+import unicam.filiera.controller.CuratoreController;
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.model.UtenteAutenticato;
@@ -18,8 +18,13 @@ public class PannelloCuratore extends JPanel {
     private final JScrollPane scrollPane;
     private final JButton toggleButton;
 
+    // Riferimento al controller
+    private final CuratoreController curatoreController;
+
     public PannelloCuratore(UtenteAutenticato utente) {
         setLayout(new BorderLayout());
+
+        this.curatoreController = new CuratoreController();
 
         JLabel benvenuto = new JLabel("Benvenuto " + utente.getNome() + ", " + utente.getRuolo(), SwingConstants.CENTER);
         benvenuto.setFont(new Font("Arial", Font.BOLD, 18));
@@ -34,18 +39,16 @@ public class PannelloCuratore extends JPanel {
             }
         };
 
-
         tabella = new JTable(model);
         tabella.setRowHeight(40);
 
-        // Impostiamo sia il renderer che l'editor personalizzato sulle colonne "Accetta" e "Rifiuta"
+        // Renderer + Editor personalizzati per i pulsanti Accetta / Rifiuta
         tabella.getColumn("Accetta").setCellRenderer(new ComponentCellRenderer());
         tabella.getColumn("Accetta").setCellEditor(new ComponentCellEditor());
 
         tabella.getColumn("Rifiuta").setCellRenderer(new ComponentCellRenderer());
         tabella.getColumn("Rifiuta").setCellEditor(new ComponentCellEditor());
 
-        // Per la colonna "Commento" basta il renderer (se non vogliamo editarla con un componente particolare)
         tabella.getColumn("Commento").setCellRenderer(new ComponentCellRenderer());
 
         scrollPane = new JScrollPane(tabella);
@@ -57,10 +60,12 @@ public class PannelloCuratore extends JPanel {
         toggleButton.addActionListener(e -> {
             boolean visibile = scrollPane.isVisible();
 
+            // Se era nascosta, carica i prodotti
             if (!visibile) {
                 caricaProdottiInAttesa();
             }
 
+            // Mostra/nasconde lo scrollPane
             scrollPane.setVisible(!visibile);
             toggleButton.setText(!visibile
                     ? "Nascondi lista prodotti"
@@ -80,19 +85,18 @@ public class PannelloCuratore extends JPanel {
     }
 
     /**
-     * Carica tutti i prodotti in stato "IN_ATTESA" e li aggiunge alla tabella.
+     * Carica tutti i prodotti in stato "IN_ATTESA" dal controller e li aggiunge alla tabella.
      */
     private void caricaProdottiInAttesa() {
         model.setRowCount(0); // Pulisce la tabella
 
-        ProdottoDAO dao = new ProdottoDAO();
-        List<Prodotto> prodottiInAttesa = dao.getProdottiByStato(StatoProdotto.IN_ATTESA);
+        List<Prodotto> prodottiInAttesa = curatoreController.getProdottiInAttesa();
 
         for (Prodotto p : prodottiInAttesa) {
+            // Crea i JButton
             JButton btnAccetta = new JButton("✔");
             JButton btnRifiuta = new JButton("✖");
 
-            // Aggiungiamo una nuova riga con i valori e i due JButton
             model.addRow(new Object[]{
                     p.getNome(),
                     p.getDescrizione(),
@@ -101,14 +105,14 @@ public class PannelloCuratore extends JPanel {
                     p.getCreatoDa(),
                     btnAccetta,
                     btnRifiuta,
-                    ""
+                    "" // campo commento inizialmente vuoto
             });
 
             int rowIndex = model.getRowCount() - 1;
 
             // Listener per pulsante “Accetta”
             btnAccetta.addActionListener(e -> {
-                boolean success = dao.aggiornaStatoProdotto(p, StatoProdotto.APPROVATO);
+                boolean success = curatoreController.approvaProdotto(p);
                 if (success) {
                     JOptionPane.showMessageDialog(this, "Prodotto approvato!");
                     model.removeRow(rowIndex); // Rimuove la riga dalla tabella
@@ -122,11 +126,24 @@ public class PannelloCuratore extends JPanel {
 
             // Listener per pulsante “Rifiuta”
             btnRifiuta.addActionListener(e -> {
+                // Recupera il testo inserito nella colonna "Commento"
                 String commento = (String) model.getValueAt(rowIndex, 7);
-                dao.aggiornaStatoProdotto(p, StatoProdotto.RIFIUTATO);
-                JOptionPane.showMessageDialog(this,
-                        "Prodotto rifiutato!" + (commento.isEmpty() ? "" : "\nCommento: " + commento));
-                caricaProdottiInAttesa();
+
+                boolean success = curatoreController.rifiutaProdotto(p, commento);
+
+                if (success) {
+                    JOptionPane.showMessageDialog(this,
+                            "Prodotto rifiutato!"
+                                    + ((commento != null && !commento.isEmpty())
+                                    ? "\nCommento: " + commento
+                                    : ""));
+                    caricaProdottiInAttesa(); // ricarica la lista
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "Errore durante il rifiuto!",
+                            "Errore",
+                            JOptionPane.ERROR_MESSAGE);
+                }
             });
         }
     }
@@ -141,6 +158,7 @@ public class PannelloCuratore extends JPanel {
                                                      boolean isSelected,
                                                      int row,
                                                      int column) {
+            // value è il JButton
             return (Component) value;
         }
 

@@ -42,9 +42,11 @@ public class DatabaseManager {
                     certificati TEXT,
                     foto TEXT,
                     creato_da VARCHAR(50),
-                    stato VARCHAR(20) DEFAULT 'IN_ATTESA'
+                    stato VARCHAR(20) DEFAULT 'IN_ATTESA',
+                    commento VARCHAR(255) DEFAULT NULL
                 );
             """;
+
 
 
             stmt.executeUpdate(utentiSql);

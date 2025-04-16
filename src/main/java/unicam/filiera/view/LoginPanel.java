@@ -55,12 +55,16 @@ public class LoginPanel extends JPanel {
                         "Accesso riuscito",
                         JOptionPane.INFORMATION_MESSAGE);
 
-                // Passaggio a finestra dedicata al ruolo (es. produttore)
-                // Passaggio a finestra dedicata al ruolo
+                // ✅ APRI NUOVA FINESTRA in base al ruolo
+                JFrame nuovaFinestra = new JFrame("Dashboard - " + utente.getRuolo());
+                nuovaFinestra.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                nuovaFinestra.setSize(900, 600); // oppure usa pack()
+                nuovaFinestra.setLocationRelativeTo(null);
+
                 switch (utente.getRuolo()) {
-                    case PRODUTTORE -> parentFrame.setContentPane(new PannelloProduttore(utente));
-                    case CURATORE -> parentFrame.setContentPane(new PannelloCuratore(utente));
-                    // Altri ruoli futuri possono essere aggiunti qui con altri pannelli
+                    case PRODUTTORE -> nuovaFinestra.setContentPane(new PannelloProduttore(utente));
+                    case CURATORE -> nuovaFinestra.setContentPane(new PannelloCuratore(utente));
+                    // Altri ruoli
                     default -> {
                         JOptionPane.showMessageDialog(this,
                                 "Nessun pannello associato a questo ruolo.",
@@ -69,11 +73,11 @@ public class LoginPanel extends JPanel {
                         return;
                     }
                 }
-                parentFrame.revalidate();
-                parentFrame.repaint();
 
+                nuovaFinestra.setVisible(true);
             }
         });
+
 
         btnIndietro.addActionListener(e -> {
             if (parentFrame instanceof MainWindow mainWindow) {

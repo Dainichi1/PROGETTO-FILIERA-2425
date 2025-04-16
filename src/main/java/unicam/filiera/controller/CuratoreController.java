@@ -32,6 +32,8 @@ public class CuratoreController {
      * Rifiuta un prodotto, aggiornando sia lo stato che il commento.
      */
     public boolean rifiutaProdotto(Prodotto prodotto, String commento) {
+        // Evita commenti nulli per sicurezza
+        if (commento == null) commento = "";
         return prodottoDAO.aggiornaStatoECommentoProdotto(prodotto, StatoProdotto.RIFIUTATO, commento);
     }
 }

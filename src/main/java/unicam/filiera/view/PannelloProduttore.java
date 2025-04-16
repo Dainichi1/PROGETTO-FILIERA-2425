@@ -2,7 +2,6 @@ package unicam.filiera.view;
 
 import unicam.filiera.controller.ProduttoreController;
 import unicam.filiera.model.Prodotto;
-import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.model.UtenteAutenticato;
 
 import javax.swing.*;
@@ -19,10 +18,8 @@ public class PannelloProduttore extends JPanel {
     private final List<File> certificatiSelezionati = new ArrayList<>();
     private final List<File> fotoSelezionate = new ArrayList<>();
 
-    // Riferimento al controller (logica) del produttore
     private final ProduttoreController produttoreController;
 
-    // Campi interfaccia
     private final JTextField nomeField = new JTextField();
     private final JTextField descrizioneField = new JTextField();
     private final JTextField quantitaField = new JTextField();
@@ -38,6 +35,8 @@ public class PannelloProduttore extends JPanel {
 
     private final DefaultTableModel tableModel;
     private final JTable tabella;
+
+    private final Timer timerAggiornamento; // ✅ TIMER aggiunto
 
     public PannelloProduttore(UtenteAutenticato utente) {
         super(new BorderLayout());
@@ -69,7 +68,7 @@ public class PannelloProduttore extends JPanel {
         formPanel.add(btnFoto);
         formPanel.add(labelFoto);
 
-        formPanel.add(new JLabel()); // spazio vuoto
+        formPanel.add(new JLabel());
         formPanel.add(btnSalva);
 
         formPanel.setVisible(false);
@@ -82,7 +81,6 @@ public class PannelloProduttore extends JPanel {
         JScrollPane scrollPane = new JScrollPane(tabella);
         add(scrollPane, BorderLayout.EAST);
 
-        // Listener per il toggle del form
         btnToggleForm.addActionListener(e -> {
             formVisibile = !formVisibile;
             formPanel.setVisible(formVisibile);
@@ -91,7 +89,6 @@ public class PannelloProduttore extends JPanel {
             repaint();
         });
 
-        // Seleziona certificati
         btnCertificati.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
             chooser.setMultiSelectionEnabled(true);
@@ -103,7 +100,6 @@ public class PannelloProduttore extends JPanel {
             }
         });
 
-        // Seleziona foto
         btnFoto.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
             chooser.setMultiSelectionEnabled(true);
@@ -115,7 +111,6 @@ public class PannelloProduttore extends JPanel {
             }
         });
 
-        // Salva Prodotto (chiama il controller)
         btnSalva.addActionListener(e -> {
             int conferma = JOptionPane.showConfirmDialog(
                     this,
@@ -124,37 +119,23 @@ public class PannelloProduttore extends JPanel {
                     JOptionPane.YES_NO_OPTION
             );
 
-            if (conferma != JOptionPane.YES_OPTION) {
-                return;
-            }
+            if (conferma != JOptionPane.YES_OPTION) return;
 
             try {
-                // Leggiamo i valori dalla GUI
                 String nome = nomeField.getText().trim();
                 String descrizione = descrizioneField.getText().trim();
                 int quantita = Integer.parseInt(quantitaField.getText().trim());
                 double prezzo = Double.parseDouble(prezzoField.getText().trim());
 
-                // Invoca il metodo “creaNuovoProdotto” del controller
                 boolean success = produttoreController.creaNuovoProdotto(
-                        nome,
-                        descrizione,
-                        quantita,
-                        prezzo,
-                        certificatiSelezionati,
-                        fotoSelezionate,
+                        nome, descrizione, quantita, prezzo,
+                        certificatiSelezionati, fotoSelezionate,
                         utente.getUsername()
                 );
 
                 if (success) {
-                    JOptionPane.showMessageDialog(
-                            this,
-                            "Prodotto inviato al curatore!",
-                            "Successo",
-                            JOptionPane.INFORMATION_MESSAGE
-                    );
+                    JOptionPane.showMessageDialog(this, "Prodotto inviato al curatore!", "Successo", JOptionPane.INFORMATION_MESSAGE);
 
-                    // Svuota il form
                     nomeField.setText("");
                     descrizioneField.setText("");
                     quantitaField.setText("");
@@ -164,41 +145,26 @@ public class PannelloProduttore extends JPanel {
                     labelCertificati.setText("Nessun file selezionato");
                     labelFoto.setText("Nessun file selezionato");
 
-                    // Ricarichiamo la tabella
                     aggiornaTabella(utente.getUsername());
                 } else {
-                    JOptionPane.showMessageDialog(
-                            this,
-                            "Errore durante il salvataggio.",
-                            "Errore",
-                            JOptionPane.ERROR_MESSAGE
-                    );
+                    JOptionPane.showMessageDialog(this, "Errore durante il salvataggio.", "Errore", JOptionPane.ERROR_MESSAGE);
                 }
 
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Quantità e Prezzo devono essere numeri validi.",
-                        "Errore",
-                        JOptionPane.ERROR_MESSAGE
-                );
+                JOptionPane.showMessageDialog(this, "Quantità e Prezzo devono essere numeri validi.", "Errore", JOptionPane.ERROR_MESSAGE);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Errore: " + ex.getMessage(),
-                        "Errore",
-                        JOptionPane.ERROR_MESSAGE
-                );
+                JOptionPane.showMessageDialog(this, "Errore: " + ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
             }
         });
 
-        // Carica la tabella iniziale
+        // Carica tabella iniziale
         aggiornaTabella(utente.getUsername());
+
+        // ✅ Timer per aggiornamento automatico
+        timerAggiornamento = new Timer(5000, e -> aggiornaTabella(utente.getUsername())); // ogni 5 secondi
+        timerAggiornamento.start();
     }
 
-    /**
-     * Aggiorna la tabella leggendo i prodotti dal controller (invece che dal DAO).
-     */
     private void aggiornaTabella(String username) {
         tableModel.setRowCount(0);
         List<Prodotto> prodotti = produttoreController.getProdottiCreatiDa(username);

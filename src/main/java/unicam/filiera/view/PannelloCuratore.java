@@ -112,6 +112,8 @@ public class PannelloCuratore extends JPanel {
 
             // Listener per pulsante “Accetta”
             btnAccetta.addActionListener(e -> {
+                if (tabella.isEditing()) tabella.getCellEditor().stopCellEditing();
+
                 boolean success = curatoreController.approvaProdotto(p);
                 if (success) {
                     JOptionPane.showMessageDialog(this, "Prodotto approvato!");
@@ -124,20 +126,19 @@ public class PannelloCuratore extends JPanel {
                 }
             });
 
+
             // Listener per pulsante “Rifiuta”
             btnRifiuta.addActionListener(e -> {
-                // Recupera il testo inserito nella colonna "Commento"
-                String commento = (String) model.getValueAt(rowIndex, 7);
+                if (tabella.isEditing()) tabella.getCellEditor().stopCellEditing();
 
+                String commento = (String) model.getValueAt(rowIndex, 7);
                 boolean success = curatoreController.rifiutaProdotto(p, commento);
 
                 if (success) {
                     JOptionPane.showMessageDialog(this,
-                            "Prodotto rifiutato!"
-                                    + ((commento != null && !commento.isEmpty())
-                                    ? "\nCommento: " + commento
-                                    : ""));
-                    caricaProdottiInAttesa(); // ricarica la lista
+                            "Prodotto rifiutato!" + ((commento != null && !commento.isEmpty())
+                                    ? "\nCommento: " + commento : ""));
+                    caricaProdottiInAttesa(); // Ricarica lista
                 } else {
                     JOptionPane.showMessageDialog(this,
                             "Errore durante il rifiuto!",
@@ -145,6 +146,7 @@ public class PannelloCuratore extends JPanel {
                             JOptionPane.ERROR_MESSAGE);
                 }
             });
+
         }
     }
 

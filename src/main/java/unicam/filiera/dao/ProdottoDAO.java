@@ -252,4 +252,59 @@ public class ProdottoDAO {
             return false;
         }
     }
+
+    public Prodotto getProdottoByNome(String nome) {
+        String query = "SELECT * FROM prodotti WHERE nome = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, nome);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return new Prodotto(
+                        rs.getString("nome"),
+                        rs.getString("descrizione"),
+                        rs.getInt("quantita"),
+                        rs.getDouble("prezzo"),
+                        List.of(rs.getString("certificati").split(",")),
+                        List.of(rs.getString("foto").split(",")),
+                        rs.getString("creato_da"),
+                        StatoProdotto.valueOf(rs.getString("stato")),
+                        rs.getString("commento")
+                );
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    public boolean salvaDettagli(Prodotto prodotto) {
+        try (Connection conn = DatabaseManager.getConnection()) {
+            String sql = """
+                INSERT INTO prodotti 
+                    (nome, descrizione, quantita, prezzo, certificati, foto, creato_da, stato, commento)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+            """;
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, prodotto.getNome());
+                stmt.setString(2, prodotto.getDescrizione());
+                stmt.setInt(3, prodotto.getQuantita());
+                stmt.setDouble(4, prodotto.getPrezzo());
+                stmt.setString(5, ""); // placeholder, aggiornati dopo con uploadFile()
+                stmt.setString(6, "");
+                stmt.setString(7, prodotto.getCreatoDa());
+                stmt.setString(8, prodotto.getStato().name());
+                stmt.setNull(9, Types.VARCHAR);
+                stmt.executeUpdate();
+                return true;
+            }
+        } catch (SQLException e) {
+            System.err.println("Errore invio dati prodotto: " + e.getMessage());
+            return false;
+        }
+    }
+
+
 }

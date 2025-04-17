@@ -1,12 +1,14 @@
 package unicam.filiera.view;
 
+import unicam.filiera.factory.PannelloFactory;
+
 import javax.swing.*;
 import java.awt.*;
 
 public class MainWindow extends JFrame {
 
     private final JPanel homePanel;
-    private PannelloMarketplace marketplacePanel;
+    private MarketplacePanel marketplacePanel;
     private boolean marketplaceVisibile = false;
 
 
@@ -49,18 +51,18 @@ public class MainWindow extends JFrame {
 
         // Marketplace (placeholder)
         btnMarketplace.addActionListener(e -> {
-            if (!marketplaceVisibile) {
-                marketplacePanel = new PannelloMarketplace(this);
-                setContentPane(marketplacePanel);
-                marketplaceVisibile = true;
-            } else {
-                tornaAllaHome();
-                marketplaceVisibile = false;
+            JPanel marketplace = PannelloFactory.creaMarketplacePanel();
+            setContentPane(marketplace);
+
+            // Per tornare indietro alla home
+            if (marketplace instanceof MarketplacePanel mp) {
+                mp.getBtnIndietro().addActionListener(ev -> tornaAllaHome());
             }
 
             revalidate();
             repaint();
         });
+
 
     }
 

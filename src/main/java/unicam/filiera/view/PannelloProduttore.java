@@ -75,7 +75,7 @@ public class PannelloProduttore extends JPanel {
         add(formPanel, BorderLayout.CENTER);
 
         // Tabella
-        String[] colonne = {"Nome", "Quantità", "Prezzo", "Certificati", "Foto", "Stato", "Commento"};
+        String[] colonne = {"Nome", "Descrizione", "Quantità", "Prezzo", "Certificati", "Foto", "Stato", "Commento"};
         tableModel = new DefaultTableModel(colonne, 0);
         tabella = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(tabella);
@@ -127,13 +127,23 @@ public class PannelloProduttore extends JPanel {
                 int quantita = Integer.parseInt(quantitaField.getText().trim());
                 double prezzo = Double.parseDouble(prezzoField.getText().trim());
 
-                boolean success = produttoreController.creaNuovoProdotto(
-                        nome, descrizione, quantita, prezzo,
-                        certificatiSelezionati, fotoSelezionate,
-                        utente.getUsername()
-                );
+                // 1. Crea il prodotto
+                Prodotto prodotto = produttoreController.creaNuovoProdotto(
+                        nome, descrizione, quantita, prezzo, utente.getUsername());
 
-                if (success) {
+                // 2. Carica i file
+                boolean fileOk = produttoreController.uploadFile(certificatiSelezionati, fotoSelezionate, prodotto);
+
+                // 3. Aggiorna stato → IN_ATTESA
+                boolean statoOk = produttoreController.inoltraModulo(prodotto);
+
+                // 4. Salva i dati nel DB
+                boolean datiOk = produttoreController.inviaDatiProdotto(prodotto);
+
+                // 5. Aggiungi in lista approvazione
+                boolean approvaOk = produttoreController.inviaNuovoProdotto(prodotto);
+
+                if (fileOk && statoOk && datiOk && approvaOk) {
                     JOptionPane.showMessageDialog(this, "Prodotto inviato al curatore!", "Successo", JOptionPane.INFORMATION_MESSAGE);
 
                     nomeField.setText("");
@@ -147,7 +157,7 @@ public class PannelloProduttore extends JPanel {
 
                     aggiornaTabella(utente.getUsername());
                 } else {
-                    JOptionPane.showMessageDialog(this, "Errore durante il salvataggio.", "Errore", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Errore durante l'invio. Verifica i dati.", "Errore", JOptionPane.ERROR_MESSAGE);
                 }
 
             } catch (NumberFormatException ex) {
@@ -156,6 +166,7 @@ public class PannelloProduttore extends JPanel {
                 JOptionPane.showMessageDialog(this, "Errore: " + ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
             }
         });
+
 
         // Carica tabella iniziale
         aggiornaTabella(utente.getUsername());
@@ -172,6 +183,7 @@ public class PannelloProduttore extends JPanel {
         for (Prodotto p : prodotti) {
             tableModel.addRow(new Object[]{
                     p.getNome(),
+                    p.getDescrizione(),
                     p.getQuantita(),
                     p.getPrezzo(),
                     String.join(", ", p.getCertificati()),
@@ -179,6 +191,7 @@ public class PannelloProduttore extends JPanel {
                     p.getStato() != null ? p.getStato().name() : "N/D",
                     p.getCommento() != null ? p.getCommento() : ""
             });
+
         }
     }
 }

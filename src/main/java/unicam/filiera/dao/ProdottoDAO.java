@@ -306,5 +306,37 @@ public class ProdottoDAO {
         }
     }
 
+    public boolean salvaFile(List<File> certificati, List<File> foto, Prodotto prodotto) {
+        try (Connection conn = DatabaseManager.getConnection()) {
+            List<String> nomiCertificati = certificati.stream()
+                    .map(file -> copiaFile(file, CERTIFICATI_DIR))
+                    .collect(Collectors.toList());
+
+            List<String> nomiFoto = foto.stream()
+                    .map(file -> copiaFile(file, FOTO_DIR))
+                    .collect(Collectors.toList());
+
+            String sql = "UPDATE prodotti SET certificati = ?, foto = ? WHERE nome = ? AND creato_da = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, String.join(",", nomiCertificati));
+                stmt.setString(2, String.join(",", nomiFoto));
+                stmt.setString(3, prodotto.getNome());
+                stmt.setString(4, prodotto.getCreatoDa());
+                stmt.executeUpdate();
+                return true;
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Errore durante salvaFile: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean aggiungiInListaApprovazioni(Prodotto prodotto) {
+        return aggiornaStatoProdotto(prodotto, StatoProdotto.IN_ATTESA);
+    }
+
+
+
 
 }

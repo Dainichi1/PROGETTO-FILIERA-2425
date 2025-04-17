@@ -31,7 +31,7 @@ public class PannelloCuratore extends JPanel {
         add(benvenuto, BorderLayout.NORTH);
 
         // Colonne
-        String[] colonne = {"Nome", "Descrizione", "Quantità", "Prezzo", "Creato da", "Accetta", "Rifiuta", "Commento"};
+        String[] colonne = {"Nome", "Descrizione", "Quantità", "Prezzo", "Creato da", "Certificati", "Foto", "Accetta", "Rifiuta", "Commento"};
         model = new DefaultTableModel(colonne, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -103,6 +103,8 @@ public class PannelloCuratore extends JPanel {
                     p.getQuantita(),
                     p.getPrezzo(),
                     p.getCreatoDa(),
+                    String.join(", ", p.getCertificati()),
+                    String.join(", ", p.getFoto()),
                     btnAccetta,
                     btnRifiuta,
                     "" // campo commento inizialmente vuoto

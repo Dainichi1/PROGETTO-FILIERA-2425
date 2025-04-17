@@ -35,8 +35,9 @@ public class PannelloCuratore extends JPanel {
         model = new DefaultTableModel(colonne, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 5 || column == 6 || column == 7;
+                return column == 7 || column == 8 || column == 9;
             }
+
         };
 
         tabella = new JTable(model);
@@ -90,7 +91,7 @@ public class PannelloCuratore extends JPanel {
     private void caricaProdottiInAttesa() {
         model.setRowCount(0); // Pulisce la tabella
 
-        List<Prodotto> prodottiInAttesa = curatoreController.getProdottiInAttesa();
+        List<Prodotto> prodottiInAttesa = curatoreController.getProdottiDaApprovare();
 
         for (Prodotto p : prodottiInAttesa) {
             // Crea i JButton
@@ -133,7 +134,7 @@ public class PannelloCuratore extends JPanel {
             btnRifiuta.addActionListener(e -> {
                 if (tabella.isEditing()) tabella.getCellEditor().stopCellEditing();
 
-                String commento = (String) model.getValueAt(rowIndex, 7);
+                String commento = (String) model.getValueAt(rowIndex, 9);
                 boolean success = curatoreController.rifiutaProdotto(p, commento);
 
                 if (success) {

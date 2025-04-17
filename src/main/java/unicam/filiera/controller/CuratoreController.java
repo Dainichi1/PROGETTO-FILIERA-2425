@@ -17,7 +17,7 @@ public class CuratoreController {
     /**
      * Restituisce tutti i prodotti che hanno stato "IN_ATTESA".
      */
-    public List<Prodotto> getProdottiInAttesa() {
+    public List<Prodotto> getProdottiDaApprovare() {
         return prodottoDAO.getProdottiByStato(StatoProdotto.IN_ATTESA);
     }
 

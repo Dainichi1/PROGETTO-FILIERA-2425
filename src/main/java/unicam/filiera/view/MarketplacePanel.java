@@ -15,46 +15,64 @@ public class MarketplacePanel extends JPanel {
     private final JButton btnIndietro = new JButton("Torna alla Home");
 
     private final MarketplaceController controller;
+    private final JFrame frameChiamante; // Aggiunto campo
 
-    public MarketplacePanel(MarketplaceController controller) {
+    public MarketplacePanel(JFrame frameChiamante, MarketplaceController controller) {
+        this.frameChiamante = frameChiamante; // ✅ Inizializzazione
         this.controller = controller;
 
         setLayout(new BorderLayout());
 
-        // Lista dei nomi prodotti
+        // Lista prodotti (a sinistra)
         listaProdotti.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         add(new JScrollPane(listaProdotti), BorderLayout.WEST);
 
-        // Area dettagli
+        // Area Dettagli (a destra)
         dettagliArea.setEditable(false);
         add(new JScrollPane(dettagliArea), BorderLayout.CENTER);
 
-        // Bottone per chiudere
+        // Pannello sud con bottone
         JPanel sud = new JPanel();
         sud.add(btnIndietro);
         add(sud, BorderLayout.SOUTH);
 
+        // ✅ Bottone indietro
+        btnIndietro.addActionListener(e -> {
+            if (frameChiamante instanceof MainWindow main) {
+                main.tornaAllaHome();
+            }
+        });
+
+        // Azione selezione prodotto
         listaProdotti.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 String selezionato = listaProdotti.getSelectedValue();
                 if (selezionato != null) {
                     Prodotto prodotto = controller.espandiProdotto(selezionato);
-                    mostraDettagliProdotto(prodotto);
+                    mostraSezioneEspansa(prodotto);
                 }
             }
         });
+
+        // Osservatore
+        controller.registraOsservatore(this::mostraMarketplace);
+
+        // Timer aggiornamento
+        Timer timer = new Timer(5000, e -> controller.notificaOsservatori());
+        timer.start();
+
+        // Caricamento iniziale
+        controller.notificaOsservatori();
     }
 
-    // Usato dal controller per mostrare i prodotti
-    public void mostraProdotti(List<Prodotto> prodotti) {
+    public void mostraMarketplace(List<Prodotto> prodotti) {
         modelloLista.clear();
         for (Prodotto p : prodotti) {
             modelloLista.addElement(p.getNome());
         }
     }
 
-    // Espandi prodotto selezionato
-    private void mostraDettagliProdotto(Prodotto p) {
+    private void mostraSezioneEspansa(Prodotto p) {
         String dettagli = """
                 Nome: %s
                 Descrizione: %s

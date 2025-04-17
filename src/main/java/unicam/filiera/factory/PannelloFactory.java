@@ -7,14 +7,11 @@ import javax.swing.*;
 
 public class PannelloFactory {
 
-    public static JPanel creaMarketplacePanel() {
+    public static JPanel creaMarketplacePanel(JFrame frameChiamante) {
         MarketplaceController controller = new MarketplaceController();
-        MarketplacePanel panel = new MarketplacePanel(controller);
+        MarketplacePanel panel = new MarketplacePanel(frameChiamante, controller);
 
-        // Collega la view come osservatore
-        controller.registraOsservatore(panel::mostraProdotti);
-
-        // Inizializza con dati
+        controller.registraOsservatore(panel::mostraMarketplace);
         controller.notificaOsservatori();
 
         return panel;

@@ -51,7 +51,7 @@ public class MainWindow extends JFrame {
 
         // Marketplace (placeholder)
         btnMarketplace.addActionListener(e -> {
-            JPanel marketplace = PannelloFactory.creaMarketplacePanel();
+            JPanel marketplace = PannelloFactory.creaMarketplacePanel(this);
             setContentPane(marketplace);
 
             // Per tornare indietro alla home

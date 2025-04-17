@@ -124,28 +124,52 @@ public class PannelloProduttore extends JPanel {
             try {
                 String nome = nomeField.getText().trim();
                 String descrizione = descrizioneField.getText().trim();
-                int quantita = Integer.parseInt(quantitaField.getText().trim());
-                double prezzo = Double.parseDouble(prezzoField.getText().trim());
+                String qStr = quantitaField.getText().trim();
+                String pStr = prezzoField.getText().trim();
 
-                // 1. Crea il prodotto
+                // ✅ Validazioni campi obbligatori
+                if (nome.isEmpty() || descrizione.isEmpty() || qStr.isEmpty() || pStr.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Compila tutti i campi!", "Errore", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // ✅ Validazioni certificati / foto
+                if (certificatiSelezionati.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Seleziona almeno un certificato!", "Errore", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                if (fotoSelezionate.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Seleziona almeno una foto!", "Errore", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                int quantita = Integer.parseInt(qStr);
+                double prezzo = Double.parseDouble(pStr);
+
+                // 1. Crea l'oggetto prodotto
                 Prodotto prodotto = produttoreController.creaNuovoProdotto(
-                        nome, descrizione, quantita, prezzo, utente.getUsername());
+                        nome, descrizione, quantita, prezzo,
+                        utente.getUsername()
+                );
 
-                // 2. Carica i file
+// 2. Salva i dettagli nel DB (prima!)
+                boolean dettagliOk = produttoreController.inviaDatiProdotto(prodotto);
+
+// 3. Salva i file (dopo che il prodotto esiste nel DB)
                 boolean fileOk = produttoreController.uploadFile(certificatiSelezionati, fotoSelezionate, prodotto);
 
-                // 3. Aggiorna stato → IN_ATTESA
+// 4. Aggiorna stato
                 boolean statoOk = produttoreController.inoltraModulo(prodotto);
 
-                // 4. Salva i dati nel DB
-                boolean datiOk = produttoreController.inviaDatiProdotto(prodotto);
+// 5. Invia nel marketplace
+                boolean finaleOk = produttoreController.inviaNuovoProdotto(prodotto);
 
-                // 5. Aggiungi in lista approvazione
-                boolean approvaOk = produttoreController.inviaNuovoProdotto(prodotto);
 
-                if (fileOk && statoOk && datiOk && approvaOk) {
+                if (fileOk && statoOk && dettagliOk && finaleOk) {
                     JOptionPane.showMessageDialog(this, "Prodotto inviato al curatore!", "Successo", JOptionPane.INFORMATION_MESSAGE);
 
+                    // Reset campi
                     nomeField.setText("");
                     descrizioneField.setText("");
                     quantitaField.setText("");
@@ -157,7 +181,7 @@ public class PannelloProduttore extends JPanel {
 
                     aggiornaTabella(utente.getUsername());
                 } else {
-                    JOptionPane.showMessageDialog(this, "Errore durante l'invio. Verifica i dati.", "Errore", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Errore durante il salvataggio.", "Errore", JOptionPane.ERROR_MESSAGE);
                 }
 
             } catch (NumberFormatException ex) {
@@ -166,6 +190,8 @@ public class PannelloProduttore extends JPanel {
                 JOptionPane.showMessageDialog(this, "Errore: " + ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
             }
         });
+
+
 
 
         // Carica tabella iniziale

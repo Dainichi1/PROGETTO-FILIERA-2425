@@ -6,6 +6,9 @@ import java.awt.*;
 public class MainWindow extends JFrame {
 
     private final JPanel homePanel;
+    private PannelloMarketplace marketplacePanel;
+    private boolean marketplaceVisibile = false;
+
 
     public MainWindow() {
         setTitle("Filiera Agricola - Benvenuto");
@@ -46,8 +49,19 @@ public class MainWindow extends JFrame {
 
         // Marketplace (placeholder)
         btnMarketplace.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Marketplace non ancora implementato.");
+            if (!marketplaceVisibile) {
+                marketplacePanel = new PannelloMarketplace(this);
+                setContentPane(marketplacePanel);
+                marketplaceVisibile = true;
+            } else {
+                tornaAllaHome();
+                marketplaceVisibile = false;
+            }
+
+            revalidate();
+            repaint();
         });
+
     }
 
     public void tornaAllaHome() {

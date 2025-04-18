@@ -17,6 +17,7 @@ import java.util.List;
 import unicam.filiera.model.observer.OsservatoreProdotto;
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.controller.ObserverManager;
+import unicam.filiera.util.ValidatoreProdotto;
 
 
 public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
@@ -132,61 +133,25 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
             try {
                 String nome = nomeField.getText().trim();
                 String descrizione = descrizioneField.getText().trim();
-                String qStr = quantitaField.getText().trim();
-                String pStr = prezzoField.getText().trim();
+                int quantita = Integer.parseInt(quantitaField.getText().trim());
+                double prezzo = Double.parseDouble(prezzoField.getText().trim());
 
-                // ✅ Validazioni campi obbligatori
-                if (nome.isEmpty() || descrizione.isEmpty() || qStr.isEmpty() || pStr.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Compila tutti i campi!", "Errore", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
+                // Validazione spostata fuori dalla view
+                ValidatoreProdotto.valida(nome, descrizione, quantita, prezzo);
+                ValidatoreProdotto.validaFileCaricati(certificatiSelezionati.size(), fotoSelezionate.size());
 
-                // ✅ Validazioni certificati / foto
-                if (certificatiSelezionati.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Seleziona almeno un certificato!", "Errore", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                if (fotoSelezionate.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Seleziona almeno una foto!", "Errore", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                int quantita = Integer.parseInt(qStr);
-                double prezzo = Double.parseDouble(pStr);
-
-                // 1. Crea l'oggetto prodotto
                 Prodotto prodotto = produttoreController.creaNuovoProdotto(
-                        nome, descrizione, quantita, prezzo,
-                        utente.getUsername()
+                        nome, descrizione, quantita, prezzo, utente.getUsername()
                 );
 
-                // 2. Salva i dettagli nel DB (prima!)
                 boolean dettagliOk = produttoreController.inviaDatiProdotto(prodotto);
-
-                // 3. Salva i file (dopo che il prodotto esiste nel DB)
                 boolean fileOk = produttoreController.uploadFile(certificatiSelezionati, fotoSelezionate, prodotto);
-
-                // 4. Aggiorna stato
                 boolean statoOk = produttoreController.inoltraModulo(prodotto);
-
-                // 5. Invia nel marketplace
                 boolean finaleOk = produttoreController.inviaNuovoProdotto(prodotto);
-
 
                 if (fileOk && statoOk && dettagliOk && finaleOk) {
                     JOptionPane.showMessageDialog(this, "Prodotto inviato al curatore!", "Successo", JOptionPane.INFORMATION_MESSAGE);
-
-                    // Reset campi
-                    nomeField.setText("");
-                    descrizioneField.setText("");
-                    quantitaField.setText("");
-                    prezzoField.setText("");
-                    certificatiSelezionati.clear();
-                    fotoSelezionate.clear();
-                    labelCertificati.setText("Nessun file selezionato");
-                    labelFoto.setText("Nessun file selezionato");
-
+                    resetForm();
                     aggiornaTabella(utente.getUsername());
                 } else {
                     JOptionPane.showMessageDialog(this, "Errore durante il salvataggio.", "Errore", JOptionPane.ERROR_MESSAGE);
@@ -194,10 +159,13 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
 
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "Quantità e Prezzo devono essere numeri validi.", "Errore", JOptionPane.ERROR_MESSAGE);
+            } catch (IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Errore: " + ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
             }
         });
+
 
 
         // Carica tabella iniziale
@@ -257,6 +225,18 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
         super.removeNotify();
         ObserverManager.rimuoviOsservatore(this);
     }
+
+    private void resetForm() {
+        nomeField.setText("");
+        descrizioneField.setText("");
+        quantitaField.setText("");
+        prezzoField.setText("");
+        certificatiSelezionati.clear();
+        fotoSelezionate.clear();
+        labelCertificati.setText("Nessun file selezionato");
+        labelFoto.setText("Nessun file selezionato");
+    }
+
 
 
 }

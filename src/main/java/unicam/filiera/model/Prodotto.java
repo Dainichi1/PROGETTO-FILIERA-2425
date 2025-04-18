@@ -9,33 +9,21 @@ public class Prodotto {
     private double prezzo;
     private List<String> certificati;
     private List<String> foto;
-    private String creatoDa; // username o nome del produttore
+    private String creatoDa;
     private StatoProdotto stato;
-
-    // Nuovo campo per il commento
     private String commento;
 
-    // Costruttore originale (senza commento)
-    public Prodotto(String nome, String descrizione, int quantita, double prezzo,
-                    List<String> certificati, List<String> foto, String creatoDa,
-                    StatoProdotto stato) {
-        this.nome = nome;
-        this.descrizione = descrizione;
-        this.quantita = quantita;
-        this.prezzo = prezzo;
-        this.certificati = certificati;
-        this.foto = foto;
-        this.creatoDa = creatoDa;
-        this.stato = stato;
-        this.commento = null;  // di default null
-    }
-
-    // Costruttore aggiuntivo (con commento)
-    public Prodotto(String nome, String descrizione, int quantita, double prezzo,
-                    List<String> certificati, List<String> foto, String creatoDa,
-                    StatoProdotto stato, String commento) {
-        this(nome, descrizione, quantita, prezzo, certificati, foto, creatoDa, stato);
-        this.commento = commento;
+    // Costruttore privato usato solo dal Builder
+    private Prodotto(Builder builder) {
+        this.nome = builder.nome;
+        this.descrizione = builder.descrizione;
+        this.quantita = builder.quantita;
+        this.prezzo = builder.prezzo;
+        this.certificati = builder.certificati;
+        this.foto = builder.foto;
+        this.creatoDa = builder.creatoDa;
+        this.stato = builder.stato;
+        this.commento = builder.commento;
     }
 
     // Getter e Setter
@@ -79,20 +67,85 @@ public class Prodotto {
         this.commento = commento;
     }
 
+    // Builder interno statico
+    public static class Builder {
+        private String nome;
+        private String descrizione;
+        private int quantita;
+        private double prezzo;
+        private List<String> certificati;
+        private List<String> foto;
+        private String creatoDa;
+        private StatoProdotto stato;
+        private String commento;
+
+        public Builder nome(String nome) {
+            this.nome = nome;
+            return this;
+        }
+
+        public Builder descrizione(String descrizione) {
+            this.descrizione = descrizione;
+            return this;
+        }
+
+        public Builder quantita(int quantita) {
+            this.quantita = quantita;
+            return this;
+        }
+
+        public Builder prezzo(double prezzo) {
+            this.prezzo = prezzo;
+            return this;
+        }
+
+        public Builder certificati(List<String> certificati) {
+            this.certificati = certificati;
+            return this;
+        }
+
+        public Builder foto(List<String> foto) {
+            this.foto = foto;
+            return this;
+        }
+
+        public Builder creatoDa(String creatoDa) {
+            this.creatoDa = creatoDa;
+            return this;
+        }
+
+        public Builder stato(StatoProdotto stato) {
+            this.stato = stato;
+            return this;
+        }
+
+        public Builder commento(String commento) {
+            this.commento = commento;
+            return this;
+        }
+
+        public Prodotto build() {
+            // (Facoltativo) Validazioni
+            if (nome == null || descrizione == null || creatoDa == null || stato == null)
+                throw new IllegalStateException("Campi obbligatori mancanti");
+            return new Prodotto(this);
+        }
+    }
+
     @Override
     public String toString() {
         return """
-            Prodotto:
-              - Nome: %s
-              - Descrizione: %s
-              - Quantità: %d
-              - Prezzo: %.2f €
-              - Certificati: %s
-              - Foto: %s
-              - Creato da: %s
-              - Stato: %s
-              - Commento: %s
-            """.formatted(
+                Prodotto:
+                  - Nome: %s
+                  - Descrizione: %s
+                  - Quantità: %d
+                  - Prezzo: %.2f €
+                  - Certificati: %s
+                  - Foto: %s
+                  - Creato da: %s
+                  - Stato: %s
+                  - Commento: %s
+                """.formatted(
                 nome,
                 descrizione,
                 quantita,

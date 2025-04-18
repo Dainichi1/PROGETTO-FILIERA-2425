@@ -4,6 +4,7 @@ import unicam.filiera.dao.ProdottoDAO;
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.model.observer.ProdottoNotifier;
+import unicam.filiera.util.ValidatoreProdotto;
 
 import java.io.File;
 import java.util.List;
@@ -18,37 +19,44 @@ public class ProduttoreController {
 
     /**
      * Corrisponde a createProdotto() nel diagramma UML.
-     * Istanzia un nuovo oggetto prodotto.
      */
     public Prodotto creaNuovoProdotto(String nome,
-                                   String descrizione,
-                                   int quantita,
-                                   double prezzo,
-                                   String creatoDa) {
-        if (nome == null || nome.isEmpty()) throw new IllegalArgumentException("Nome mancante");
-        if (descrizione == null || descrizione.isEmpty()) throw new IllegalArgumentException("Descrizione mancante");
-        if (quantita < 1) throw new IllegalArgumentException("Quantità non valida");
-        if (prezzo < 0) throw new IllegalArgumentException("Prezzo non valido");
+                                      String descrizione,
+                                      int quantita,
+                                      double prezzo,
+                                      String creatoDa) {
+        // Validazione centralizzata
+        ValidatoreProdotto.valida(nome, descrizione, quantita, prezzo);
 
-        return new Prodotto(nome, descrizione, quantita, prezzo, null, null, creatoDa, StatoProdotto.IN_ATTESA);
+        return new Prodotto.Builder()
+                .nome(nome)
+                .descrizione(descrizione)
+                .quantita(quantita)
+                .prezzo(prezzo)
+                .creatoDa(creatoDa)
+                .stato(StatoProdotto.IN_ATTESA)
+                .build();
     }
 
     /**
-     * Corrisponde a inviaDatiProdotto() nel diagramma UML.
+     * Salva i dettagli base del prodotto (senza file).
      */
     public boolean inviaDatiProdotto(Prodotto prodotto) {
         return prodottoDAO.salvaDettagli(prodotto);
     }
 
     /**
-     * Corrisponde a uploadFile(files) nel diagramma UML.
+     * Salva i file nel filesystem e aggiorna il DB.
      */
     public boolean uploadFile(List<File> certificati, List<File> foto, Prodotto prodotto) {
+        // Validazione dei file
+        ValidatoreProdotto.validaFileCaricati(certificati.size(), foto.size());
+
         return prodottoDAO.salvaFile(certificati, foto, prodotto);
     }
 
     /**
-     * Corrisponde a inviaModuloAlCuratore() → inoltraModulo()
+     * Notifica che il prodotto è in attesa del curatore.
      */
     public boolean inoltraModulo(Prodotto prodotto) {
         boolean success = prodottoDAO.aggiornaStatoProdotto(prodotto, StatoProdotto.IN_ATTESA);
@@ -61,14 +69,14 @@ public class ProduttoreController {
     }
 
     /**
-     * Corrisponde a inviaNuovoProdotto() nel diagramma UML.
+     * Per coerenza, questa operazione potrebbe anche essere accorpata a inoltraModulo()
      */
     public boolean inviaNuovoProdotto(Prodotto prodotto) {
         return prodottoDAO.aggiungiInListaApprovazioni(prodotto);
     }
 
     /**
-     * Recupera i prodotti creati da un produttore.
+     * Recupera i prodotti creati da un produttore specifico.
      */
     public List<Prodotto> getProdottiCreatiDa(String username) {
         return prodottoDAO.getProdottiByCreatore(username);

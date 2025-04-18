@@ -3,9 +3,7 @@ package unicam.filiera.view;
 import unicam.filiera.controller.AutenticazioneController;
 import unicam.filiera.model.Ruolo;
 import unicam.filiera.model.UtenteAutenticato;
-import unicam.filiera.view.PannelloCuratore;
-import unicam.filiera.view.PannelloProduttore;
-
+import unicam.filiera.util.ValidatoreLogin;
 
 import javax.swing.*;
 import java.awt.*;
@@ -39,32 +37,40 @@ public class LoginPanel extends JPanel {
         AutenticazioneController controller = new AutenticazioneController();
 
         btnLogin.addActionListener(e -> {
-            String username = usernameField.getText().trim();
-            String password = new String(passwordField.getPassword());
-            Ruolo ruolo = (Ruolo) ruoloComboBox.getSelectedItem();
+            try {
+                String username = usernameField.getText().trim();
+                String password = new String(passwordField.getPassword());
+                Ruolo ruolo = (Ruolo) ruoloComboBox.getSelectedItem();
 
-            UtenteAutenticato utente = controller.login(username, password);
+                // Validazione con utility separata
+                ValidatoreLogin.valida(username, password);
 
-            if (utente == null) {
-                JOptionPane.showMessageDialog(this, "Credenziali errate", "Errore", JOptionPane.ERROR_MESSAGE);
-            } else if (utente.getRuolo() != ruolo) {
-                JOptionPane.showMessageDialog(this, "Ruolo non corrispondente a questo utente", "Errore", JOptionPane.ERROR_MESSAGE);
-            } else {
+                UtenteAutenticato utente = controller.login(username, password);
+
+                if (utente == null) {
+                    JOptionPane.showMessageDialog(this, "Credenziali errate", "Errore", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                if (utente.getRuolo() != ruolo) {
+                    JOptionPane.showMessageDialog(this, "Ruolo non corrispondente a questo utente", "Errore", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
                 JOptionPane.showMessageDialog(this,
                         "Benvenuto " + utente.getNome() + ", " + utente.getRuolo(),
                         "Accesso riuscito",
                         JOptionPane.INFORMATION_MESSAGE);
 
-                // APRI NUOVA FINESTRA in base al ruolo
+                // Apri nuova finestra in base al ruolo
                 JFrame nuovaFinestra = new JFrame("Dashboard - " + utente.getRuolo());
                 nuovaFinestra.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                nuovaFinestra.setSize(900, 600); // oppure usa pack()
+                nuovaFinestra.setSize(900, 600);
                 nuovaFinestra.setLocationRelativeTo(null);
 
                 switch (utente.getRuolo()) {
                     case PRODUTTORE -> nuovaFinestra.setContentPane(new PannelloProduttore(utente));
                     case CURATORE -> nuovaFinestra.setContentPane(new PannelloCuratore(utente));
-                    // Altri ruoli
                     default -> {
                         JOptionPane.showMessageDialog(this,
                                 "Nessun pannello associato a questo ruolo.",
@@ -75,6 +81,11 @@ public class LoginPanel extends JPanel {
                 }
 
                 nuovaFinestra.setVisible(true);
+
+            } catch (IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Errore imprevisto: " + ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -83,6 +94,5 @@ public class LoginPanel extends JPanel {
                 mainWindow.tornaAllaHome();
             }
         });
-
     }
 }

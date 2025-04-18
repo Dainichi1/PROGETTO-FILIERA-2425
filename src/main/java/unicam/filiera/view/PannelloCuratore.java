@@ -11,6 +11,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 import java.awt.*;
 import java.util.List;
+
 import unicam.filiera.model.observer.OsservatoreProdotto;
 import unicam.filiera.model.Prodotto;
 

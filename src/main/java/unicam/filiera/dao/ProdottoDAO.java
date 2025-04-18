@@ -57,17 +57,18 @@ public class ProdottoDAO {
                         String commento = rs.getString("commento");
 
                         // Usa il costruttore di Prodotto che gestisce il commento
-                        Prodotto prodotto = new Prodotto(
-                                rs.getString("nome"),
-                                rs.getString("descrizione"),
-                                rs.getInt("quantita"),
-                                rs.getDouble("prezzo"),
-                                certificati,
-                                foto,
-                                rs.getString("creato_da"),
-                                stato,
-                                commento
-                        );
+                        Prodotto prodotto = new Prodotto.Builder()
+                                .nome(rs.getString("nome"))
+                                .descrizione(rs.getString("descrizione"))
+                                .quantita(rs.getInt("quantita"))
+                                .prezzo(rs.getDouble("prezzo"))
+                                .certificati(certificati)
+                                .foto(foto)
+                                .creatoDa(rs.getString("creato_da"))
+                                .stato(stato)
+                                .commento(commento)
+                                .build();
+
 
                         prodotti.add(prodotto);
                     }
@@ -97,17 +98,18 @@ public class ProdottoDAO {
                     StatoProdotto stato = StatoProdotto.valueOf(rs.getString("stato"));
                     String commento = rs.getString("commento"); // può essere null
 
-                    Prodotto prodotto = new Prodotto(
-                            rs.getString("nome"),
-                            rs.getString("descrizione"),
-                            rs.getInt("quantita"),
-                            rs.getDouble("prezzo"),
-                            certificati,
-                            foto,
-                            rs.getString("creato_da"),
-                            stato,
-                            commento
-                    );
+                    Prodotto prodotto = new Prodotto.Builder()
+                            .nome(rs.getString("nome"))
+                            .descrizione(rs.getString("descrizione"))
+                            .quantita(rs.getInt("quantita"))
+                            .prezzo(rs.getDouble("prezzo"))
+                            .certificati(certificati)
+                            .foto(foto)
+                            .creatoDa(rs.getString("creato_da"))
+                            .stato(stato)
+                            .commento(commento)
+                            .build();
+
                     prodotti.add(prodotto);
                 }
             }
@@ -134,17 +136,18 @@ public class ProdottoDAO {
                         List<String> foto = List.of(rs.getString("foto").split(","));
                         String commento = rs.getString("commento");
 
-                        Prodotto prodotto = new Prodotto(
-                                rs.getString("nome"),
-                                rs.getString("descrizione"),
-                                rs.getInt("quantita"),
-                                rs.getDouble("prezzo"),
-                                certificati,
-                                foto,
-                                rs.getString("creato_da"),
-                                StatoProdotto.valueOf(rs.getString("stato")),
-                                commento
-                        );
+                        Prodotto prodotto = new Prodotto.Builder()
+                                .nome(rs.getString("nome"))
+                                .descrizione(rs.getString("descrizione"))
+                                .quantita(rs.getInt("quantita"))
+                                .prezzo(rs.getDouble("prezzo"))
+                                .certificati(certificati)
+                                .foto(foto)
+                                .creatoDa(rs.getString("creato_da"))
+                                .stato(stato)
+                                .commento(commento)
+                                .build();
+
                         prodotti.add(prodotto);
                     }
                 }
@@ -213,17 +216,21 @@ public class ProdottoDAO {
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
-                return new Prodotto(
-                        rs.getString("nome"),
-                        rs.getString("descrizione"),
-                        rs.getInt("quantita"),
-                        rs.getDouble("prezzo"),
-                        List.of(rs.getString("certificati").split(",")),
-                        List.of(rs.getString("foto").split(",")),
-                        rs.getString("creato_da"),
-                        StatoProdotto.valueOf(rs.getString("stato")),
-                        rs.getString("commento")
-                );
+                List<String> certificati = List.of(rs.getString("certificati").split(","));
+                List<String> foto = List.of(rs.getString("foto").split(","));
+                String commento = rs.getString("commento");
+
+                return new Prodotto.Builder()
+                        .nome(rs.getString("nome"))
+                        .descrizione(rs.getString("descrizione"))
+                        .quantita(rs.getInt("quantita"))
+                        .prezzo(rs.getDouble("prezzo"))
+                        .certificati(certificati)
+                        .foto(foto)
+                        .creatoDa(rs.getString("creato_da"))
+                        .stato(StatoProdotto.valueOf(rs.getString("stato")))
+                        .commento(commento)
+                        .build();
             }
 
         } catch (Exception e) {
@@ -232,13 +239,14 @@ public class ProdottoDAO {
         return null;
     }
 
+
     public boolean salvaDettagli(Prodotto prodotto) {
         try (Connection conn = DatabaseManager.getConnection()) {
             String sql = """
-                INSERT INTO prodotti 
-                    (nome, descrizione, quantita, prezzo, certificati, foto, creato_da, stato, commento)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
-            """;
+                        INSERT INTO prodotti 
+                            (nome, descrizione, quantita, prezzo, certificati, foto, creato_da, stato, commento)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+                    """;
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, prodotto.getNome());
                 stmt.setString(2, prodotto.getDescrizione());

@@ -3,6 +3,7 @@ package unicam.filiera.view;
 import unicam.filiera.controller.AutenticazioneController;
 import unicam.filiera.controller.RegistrazioneEsito;
 import unicam.filiera.model.Ruolo;
+import unicam.filiera.util.ValidatoreUtente;
 
 import javax.swing.*;
 import java.awt.*;
@@ -63,25 +64,28 @@ public class RegisterPanel extends JPanel {
             String cognome = cognomeField.getText().trim();
             Ruolo ruolo = (Ruolo) ruoloComboBox.getSelectedItem();
 
-            if (username.isEmpty() || password.isEmpty() || nome.isEmpty() || cognome.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Compila tutti i campi!", "Errore", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+            try {
+                // Validazione campi
+                ValidatoreUtente.validaRegistrazione(username, password, nome, cognome);
 
-            RegistrazioneEsito esito = controller.registrati(username, password, nome, cognome, ruolo);
+                // Una sola chiamata
+                RegistrazioneEsito esito = controller.registrati(username, password, nome, cognome, ruolo);
 
-            switch (esito) {
-                case SUCCESSO -> {
-                    JOptionPane.showMessageDialog(this, "Registrazione completata!", "Successo", JOptionPane.INFORMATION_MESSAGE);
-                    parentFrame.setContentPane(new MainWindow().getContentPane());
-                    parentFrame.revalidate();
+                switch (esito) {
+                    case SUCCESSO -> {
+                        JOptionPane.showMessageDialog(this, "Registrazione completata!", "Successo", JOptionPane.INFORMATION_MESSAGE);
+                        parentFrame.setContentPane(new MainWindow().getContentPane());
+                        parentFrame.revalidate();
+                    }
+                    case USERNAME_GIA_ESISTENTE -> JOptionPane.showMessageDialog(this, "Username già registrato. Scegli un altro.", "Errore", JOptionPane.ERROR_MESSAGE);
+                    case PERSONA_GIA_REGISTRATA -> JOptionPane.showMessageDialog(this, "Questa persona è già registrata con un altro ruolo!", "Errore", JOptionPane.ERROR_MESSAGE);
                 }
-                case USERNAME_GIA_ESISTENTE ->
-                        JOptionPane.showMessageDialog(this, "Username già registrato. Scegli un altro.", "Errore", JOptionPane.ERROR_MESSAGE);
-                case PERSONA_GIA_REGISTRATA ->
-                        JOptionPane.showMessageDialog(this, "Questa persona è già registrata con un altro ruolo!", "Errore", JOptionPane.ERROR_MESSAGE);
+
+            } catch (IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
             }
         });
+
 
         // Azione: torna alla schermata principale
         btnIndietro.addActionListener(e -> {

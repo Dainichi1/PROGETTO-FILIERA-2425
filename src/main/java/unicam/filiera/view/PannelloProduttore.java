@@ -3,6 +3,9 @@ package unicam.filiera.view;
 import unicam.filiera.controller.ProduttoreController;
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.UtenteAutenticato;
+import unicam.filiera.controller.ObserverManager;
+import unicam.filiera.model.observer.OsservatoreProdotto;
+
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -10,9 +13,14 @@ import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import unicam.filiera.model.observer.OsservatoreProdotto;
+import unicam.filiera.model.Prodotto;
+import unicam.filiera.controller.ObserverManager;
 
-public class PannelloProduttore extends JPanel {
 
+public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
+
+    private final UtenteAutenticato utente;
     private boolean formVisibile = false;
     private final JPanel formPanel = new JPanel(new GridLayout(8, 2, 10, 10));
     private final List<File> certificatiSelezionati = new ArrayList<>();
@@ -36,11 +44,11 @@ public class PannelloProduttore extends JPanel {
     private final DefaultTableModel tableModel;
     private final JTable tabella;
 
-    private final Timer timerAggiornamento; // ✅ TIMER aggiunto
 
     public PannelloProduttore(UtenteAutenticato utente) {
         super(new BorderLayout());
 
+        this.utente = utente;
         this.produttoreController = new ProduttoreController();
 
         JLabel benvenuto = new JLabel("Benvenuto " + utente.getNome() + ", " + utente.getRuolo(), SwingConstants.CENTER);
@@ -197,9 +205,8 @@ public class PannelloProduttore extends JPanel {
         // Carica tabella iniziale
         aggiornaTabella(utente.getUsername());
 
-        // ✅ Timer per aggiornamento automatico
-        timerAggiornamento = new Timer(5000, e -> aggiornaTabella(utente.getUsername())); // ogni 5 secondi
-        timerAggiornamento.start();
+        ObserverManager.registraOsservatore(this);
+
     }
 
     private void aggiornaTabella(String username) {
@@ -220,4 +227,38 @@ public class PannelloProduttore extends JPanel {
 
         }
     }
+
+    @Override
+    public void notifica(Prodotto prodotto, String evento) {
+        if (!prodotto.getCreatoDa().equalsIgnoreCase(utente.getUsername())) return;
+
+        SwingUtilities.invokeLater(() -> {
+            if ("APPROVATO".equals(evento)) {
+                JOptionPane.showMessageDialog(this,
+                        "✔ Il tuo prodotto \"" + prodotto.getNome() + "\" è stato APPROVATO!",
+                        "Prodotto approvato",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else if ("RIFIUTATO".equals(evento)) {
+                String messaggio = "❌ Il tuo prodotto \"" + prodotto.getNome() + "\" è stato RIFIUTATO.";
+                if (prodotto.getCommento() != null && !prodotto.getCommento().isBlank()) {
+                    messaggio += "\nCommento del curatore: " + prodotto.getCommento();
+                }
+                JOptionPane.showMessageDialog(this,
+                        messaggio,
+                        "Prodotto rifiutato",
+                        JOptionPane.WARNING_MESSAGE);
+            }
+
+            // 🔄 Aggiorna la tabella ogni volta che cambia qualcosa
+            aggiornaTabella(utente.getUsername());
+        });
+    }
+
+    @Override
+    public void removeNotify() {
+        super.removeNotify();
+        ObserverManager.rimuoviOsservatore(this);
+    }
+
+
 }

@@ -1,6 +1,7 @@
 package unicam.filiera.view;
 
 import unicam.filiera.controller.CuratoreController;
+import unicam.filiera.controller.ObserverManager;
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.model.UtenteAutenticato;
@@ -10,8 +11,12 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 import java.awt.*;
 import java.util.List;
+import unicam.filiera.model.observer.OsservatoreProdotto;
+import unicam.filiera.model.Prodotto;
 
-public class PannelloCuratore extends JPanel {
+
+public class PannelloCuratore extends JPanel implements OsservatoreProdotto {
+
 
     private final JTable tabella;
     private final DefaultTableModel model;
@@ -37,13 +42,12 @@ public class PannelloCuratore extends JPanel {
             public boolean isCellEditable(int row, int column) {
                 return column == 7 || column == 8 || column == 9;
             }
-
         };
 
         tabella = new JTable(model);
         tabella.setRowHeight(40);
 
-        // Renderer + Editor personalizzati per i pulsanti Accetta / Rifiuta
+        // Renderer + Editor per pulsanti
         tabella.getColumn("Accetta").setCellRenderer(new ComponentCellRenderer());
         tabella.getColumn("Accetta").setCellEditor(new ComponentCellEditor());
 
@@ -53,29 +57,26 @@ public class PannelloCuratore extends JPanel {
         tabella.getColumn("Commento").setCellRenderer(new ComponentCellRenderer());
 
         scrollPane = new JScrollPane(tabella);
-        scrollPane.setVisible(false); // inizialmente nascosto
+        scrollPane.setVisible(false);
         add(scrollPane, BorderLayout.CENTER);
 
-        // Bottone toggle visualizzazione
+        // Bottone toggle
         toggleButton = new JButton("Visualizza prodotti in attesa di approvazione");
         toggleButton.addActionListener(e -> {
             boolean visibile = scrollPane.isVisible();
 
-            // Se era nascosta, carica i prodotti
             if (!visibile) {
                 caricaProdottiInAttesa();
             }
 
-            // Mostra/nasconde lo scrollPane
             scrollPane.setVisible(!visibile);
             toggleButton.setText(!visibile
                     ? "Nascondi lista prodotti"
                     : "Visualizza prodotti in attesa di approvazione");
 
-            // Forza l’aggiornamento del frame padre
             Window window = SwingUtilities.getWindowAncestor(this);
             if (window instanceof JFrame frame) {
-                frame.pack(); // ridimensiona il frame per aggiornare il layout
+                frame.pack();
             }
 
             this.revalidate();
@@ -83,7 +84,20 @@ public class PannelloCuratore extends JPanel {
         });
 
         add(toggleButton, BorderLayout.SOUTH);
+
+        //  REGISTRA QUESTO PANNELLO COME OSSERVATORE
+        ObserverManager.registraOsservatore(this);
+        caricaProdottiInAttesa();
     }
+
+    @Override
+    public void notifica(Prodotto prodotto, String evento) {
+        if ("NUOVO_PRODOTTO".equals(evento)) {
+            SwingUtilities.invokeLater(this::caricaProdottiInAttesa);
+        }
+    }
+
+
 
     /**
      * Carica tutti i prodotti in stato "IN_ATTESA" dal controller e li aggiunge alla tabella.
@@ -172,4 +186,11 @@ public class PannelloCuratore extends JPanel {
             return null;
         }
     }
+
+    @Override
+    public void removeNotify() {
+        super.removeNotify();
+        ObserverManager.rimuoviOsservatore(this);
+    }
+
 }

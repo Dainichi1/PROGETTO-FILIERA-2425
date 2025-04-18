@@ -3,6 +3,7 @@ package unicam.filiera.controller;
 import unicam.filiera.dao.ProdottoDAO;
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.StatoProdotto;
+import unicam.filiera.model.observer.ProdottoNotifier;
 
 import java.io.File;
 import java.util.List;
@@ -46,12 +47,20 @@ public class ProduttoreController {
         return prodottoDAO.salvaFile(certificati, foto, prodotto);
     }
 
+
     /**
      * Corrisponde a inviaModuloAlCuratore() → inoltraModulo()
      */
     public boolean inoltraModulo(Prodotto prodotto) {
-        return prodottoDAO.aggiornaStatoProdotto(prodotto, StatoProdotto.IN_ATTESA);
+        boolean success = prodottoDAO.aggiornaStatoProdotto(prodotto, StatoProdotto.IN_ATTESA);
+
+        if (success) {
+            ProdottoNotifier.getInstance().notificaTutti(prodotto, "NUOVO_PRODOTTO");
+        }
+
+        return success;
     }
+
 
     /**
      * Corrisponde a inviaNuovoProdotto() nel diagramma UML.

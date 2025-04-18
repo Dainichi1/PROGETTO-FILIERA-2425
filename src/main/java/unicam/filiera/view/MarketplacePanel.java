@@ -2,12 +2,17 @@ package unicam.filiera.view;
 
 import unicam.filiera.controller.MarketplaceController;
 import unicam.filiera.model.Prodotto;
+import unicam.filiera.model.observer.OsservatoreProdotto;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
+import unicam.filiera.model.observer.OsservatoreProdotto;
+import unicam.filiera.controller.ObserverManager;
 
-public class MarketplacePanel extends JPanel {
+
+public class MarketplacePanel extends JPanel implements OsservatoreProdotto {
+
 
     private final DefaultListModel<String> modelloLista = new DefaultListModel<>();
     private final JList<String> listaProdotti = new JList<>(modelloLista);
@@ -57,9 +62,9 @@ public class MarketplacePanel extends JPanel {
         // Osservatore
         controller.registraOsservatore(this::mostraMarketplace);
 
-        // Timer aggiornamento
-        Timer timer = new Timer(5000, e -> controller.notificaOsservatori());
-        timer.start();
+        ObserverManager.registraOsservatore(this);
+        mostraMarketplace(controller.ottieniListaProdotti()); // carica all’avvio
+
 
         // Caricamento iniziale
         controller.notificaOsservatori();
@@ -90,6 +95,24 @@ public class MarketplacePanel extends JPanel {
         );
         dettagliArea.setText(dettagli);
     }
+
+    @Override
+    public void notifica(Prodotto prodotto, String evento) {
+        if ("APPROVATO".equals(evento)) {
+            SwingUtilities.invokeLater(() -> {
+                // aggiorna la lista dei prodotti
+                mostraMarketplace(controller.ottieniListaProdotti());
+            });
+        }
+    }
+
+    @Override
+    public void removeNotify() {
+        super.removeNotify();
+        ObserverManager.rimuoviOsservatore(this);
+    }
+
+
 
     public JButton getBtnIndietro() {
         return btnIndietro;

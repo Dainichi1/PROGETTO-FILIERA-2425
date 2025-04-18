@@ -37,7 +37,7 @@ public class UtenteDAO {
                 }
             }
 
-            // 🔐 Controllo: nome + cognome già registrati
+            // Controllo: nome + cognome già registrati
             String checkPersonaSql = "SELECT COUNT(*) FROM utenti WHERE nome = ? AND cognome = ?";
             try (PreparedStatement personaStmt = conn.prepareStatement(checkPersonaSql)) {
                 personaStmt.setString(1, utente.getNome());
@@ -67,8 +67,6 @@ public class UtenteDAO {
         }
     }
 
-
-
     // LOGIN UTENTE
     public UtenteAutenticato login(String username, String password) {
         try (Connection conn = DatabaseManager.getConnection()) {
@@ -93,7 +91,6 @@ public class UtenteDAO {
         return null;
     }
 
-    // (OPZIONALE) LISTA TUTTI GLI UTENTI
     public List<UtenteAutenticato> getTuttiGliUtenti() {
         List<UtenteAutenticato> utenti = new ArrayList<>();
         try (Connection conn = DatabaseManager.getConnection();
@@ -144,5 +141,4 @@ public class UtenteDAO {
             return false;
         }
     }
-
 }

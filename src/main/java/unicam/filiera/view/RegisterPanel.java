@@ -46,7 +46,6 @@ public class RegisterPanel extends JPanel {
         add(cognomeField);
 
 
-
         add(new JLabel("Ruolo:"));
         add(ruoloComboBox);
 
@@ -90,7 +89,6 @@ public class RegisterPanel extends JPanel {
                 mainWindow.tornaAllaHome();
             }
         });
-
 
 
     }

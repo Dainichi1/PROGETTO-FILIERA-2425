@@ -11,7 +11,6 @@ public class MainWindow extends JFrame {
     private MarketplacePanel marketplacePanel;
     private boolean marketplaceVisibile = false;
 
-
     public MainWindow() {
         setTitle("Filiera Agricola - Benvenuto");
         setSize(500, 400);
@@ -62,7 +61,6 @@ public class MainWindow extends JFrame {
             revalidate();
             repaint();
         });
-
 
     }
 

@@ -47,7 +47,6 @@ public class ProduttoreController {
         return prodottoDAO.salvaFile(certificati, foto, prodotto);
     }
 
-
     /**
      * Corrisponde a inviaModuloAlCuratore() → inoltraModulo()
      */
@@ -61,12 +60,10 @@ public class ProduttoreController {
         return success;
     }
 
-
     /**
      * Corrisponde a inviaNuovoProdotto() nel diagramma UML.
      */
     public boolean inviaNuovoProdotto(Prodotto prodotto) {
-        // Potresti aggiungere logiche aggiuntive prima di inserirlo in lista approvati
         return prodottoDAO.aggiungiInListaApprovazioni(prodotto);
     }
 

@@ -31,7 +31,7 @@ public class DatabaseManager {
                 );
             """;
 
-            // ✅ Nuova tabella prodotti
+            // Nuova tabella prodotti
             String prodottiSql = """
                 CREATE TABLE IF NOT EXISTS prodotti (
                     id IDENTITY PRIMARY KEY,
@@ -46,8 +46,6 @@ public class DatabaseManager {
                     commento VARCHAR(255) DEFAULT NULL
                 );
             """;
-
-
 
             stmt.executeUpdate(utentiSql);
             stmt.executeUpdate(prodottiSql);

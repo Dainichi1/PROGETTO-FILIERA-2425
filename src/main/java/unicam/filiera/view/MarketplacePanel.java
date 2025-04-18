@@ -13,7 +13,6 @@ import unicam.filiera.controller.ObserverManager;
 
 public class MarketplacePanel extends JPanel implements OsservatoreProdotto {
 
-
     private final DefaultListModel<String> modelloLista = new DefaultListModel<>();
     private final JList<String> listaProdotti = new JList<>(modelloLista);
     private final JTextArea dettagliArea = new JTextArea();
@@ -111,8 +110,6 @@ public class MarketplacePanel extends JPanel implements OsservatoreProdotto {
         super.removeNotify();
         ObserverManager.rimuoviOsservatore(this);
     }
-
-
 
     public JButton getBtnIndietro() {
         return btnIndietro;

@@ -55,7 +55,7 @@ public class LoginPanel extends JPanel {
                         "Accesso riuscito",
                         JOptionPane.INFORMATION_MESSAGE);
 
-                // ✅ APRI NUOVA FINESTRA in base al ruolo
+                // APRI NUOVA FINESTRA in base al ruolo
                 JFrame nuovaFinestra = new JFrame("Dashboard - " + utente.getRuolo());
                 nuovaFinestra.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                 nuovaFinestra.setSize(900, 600); // oppure usa pack()
@@ -77,7 +77,6 @@ public class LoginPanel extends JPanel {
                 nuovaFinestra.setVisible(true);
             }
         });
-
 
         btnIndietro.addActionListener(e -> {
             if (parentFrame instanceof MainWindow mainWindow) {

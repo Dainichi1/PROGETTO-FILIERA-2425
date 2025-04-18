@@ -25,55 +25,6 @@ public class ProdottoDAO {
         new File(FOTO_DIR).mkdirs();
     }
 
-    /**
-     * Salvataggio di un nuovo prodotto nel DB.
-     * Aggiungiamo la colonna commento nel campo INSERT con un valore di default (null).
-     */
-    public boolean salvaProdotto(Prodotto prodotto, List<File> certificati, List<File> foto) {
-        try (Connection conn = DatabaseManager.getConnection()) {
-
-            // Copia fisica dei file (certificati e foto) e ottiene i nomi
-            List<String> nomiCertificati = certificati.stream()
-                    .map(file -> copiaFile(file, CERTIFICATI_DIR))
-                    .collect(Collectors.toList());
-
-            List<String> nomiFoto = foto.stream()
-                    .map(file -> copiaFile(file, FOTO_DIR))
-                    .collect(Collectors.toList());
-
-            // Aggiungiamo il campo commento nell'INSERT, con valore di default null
-            // (se nella tua tabella hai la colonna "commento" che può essere null)
-            String sql = """
-                INSERT INTO prodotti 
-                    (nome, descrizione, quantita, prezzo, certificati, foto, creato_da, stato, commento)
-                VALUES 
-                    (?, ?, ?, ?, ?, ?, ?, ?, ?);
-            """;
-
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, prodotto.getNome());
-                stmt.setString(2, prodotto.getDescrizione());
-                stmt.setInt(3, prodotto.getQuantita());
-                stmt.setDouble(4, prodotto.getPrezzo());
-                stmt.setString(5, String.join(",", nomiCertificati));
-                stmt.setString(6, String.join(",", nomiFoto));
-                stmt.setString(7, prodotto.getCreatoDa());
-                stmt.setString(8, "IN_ATTESA");
-
-                // Se vuoi, puoi gestire un commento iniziale.
-                // Se non esiste (quasi sempre), metti null.
-                stmt.setNull(9, Types.VARCHAR);
-
-                stmt.executeUpdate();
-                return true;
-            }
-
-        } catch (SQLException e) {
-            System.err.println("Errore salvataggio prodotto: " + e.getMessage());
-            return false;
-        }
-    }
-
     private String copiaFile(File file, String destinazione) {
         try {
             Path destPath = Paths.get(destinazione, file.getName());
@@ -280,6 +231,7 @@ public class ProdottoDAO {
         }
         return null;
     }
+
     public boolean salvaDettagli(Prodotto prodotto) {
         try (Connection conn = DatabaseManager.getConnection()) {
             String sql = """
@@ -335,8 +287,4 @@ public class ProdottoDAO {
     public boolean aggiungiInListaApprovazioni(Prodotto prodotto) {
         return aggiornaStatoProdotto(prodotto, StatoProdotto.IN_ATTESA);
     }
-
-
-
-
 }

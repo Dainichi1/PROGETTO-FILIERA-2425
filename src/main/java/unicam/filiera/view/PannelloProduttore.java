@@ -13,6 +13,7 @@ import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
 import unicam.filiera.model.observer.OsservatoreProdotto;
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.controller.ObserverManager;
@@ -43,7 +44,6 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
 
     private final DefaultTableModel tableModel;
     private final JTable tabella;
-
 
     public PannelloProduttore(UtenteAutenticato utente) {
         super(new BorderLayout());
@@ -161,16 +161,16 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
                         utente.getUsername()
                 );
 
-// 2. Salva i dettagli nel DB (prima!)
+                // 2. Salva i dettagli nel DB (prima!)
                 boolean dettagliOk = produttoreController.inviaDatiProdotto(prodotto);
 
-// 3. Salva i file (dopo che il prodotto esiste nel DB)
+                // 3. Salva i file (dopo che il prodotto esiste nel DB)
                 boolean fileOk = produttoreController.uploadFile(certificatiSelezionati, fotoSelezionate, prodotto);
 
-// 4. Aggiorna stato
+                // 4. Aggiorna stato
                 boolean statoOk = produttoreController.inoltraModulo(prodotto);
 
-// 5. Invia nel marketplace
+                // 5. Invia nel marketplace
                 boolean finaleOk = produttoreController.inviaNuovoProdotto(prodotto);
 
 
@@ -198,8 +198,6 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
                 JOptionPane.showMessageDialog(this, "Errore: " + ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
             }
         });
-
-
 
 
         // Carica tabella iniziale
@@ -249,7 +247,7 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
                         JOptionPane.WARNING_MESSAGE);
             }
 
-            // 🔄 Aggiorna la tabella ogni volta che cambia qualcosa
+            // Aggiorna la tabella ogni volta che cambia qualcosa
             aggiornaTabella(utente.getUsername());
         });
     }

@@ -14,9 +14,7 @@ import java.util.List;
 import unicam.filiera.model.observer.OsservatoreProdotto;
 import unicam.filiera.model.Prodotto;
 
-
 public class PannelloCuratore extends JPanel implements OsservatoreProdotto {
-
 
     private final JTable tabella;
     private final DefaultTableModel model;
@@ -96,8 +94,6 @@ public class PannelloCuratore extends JPanel implements OsservatoreProdotto {
             SwingUtilities.invokeLater(this::caricaProdottiInAttesa);
         }
     }
-
-
 
     /**
      * Carica tutti i prodotti in stato "IN_ATTESA" dal controller e li aggiunge alla tabella.

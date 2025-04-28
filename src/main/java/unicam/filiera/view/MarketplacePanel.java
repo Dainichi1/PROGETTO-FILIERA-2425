@@ -40,7 +40,7 @@ public class MarketplacePanel extends JPanel implements OsservatoreProdotto {
         sud.add(btnIndietro);
         add(sud, BorderLayout.SOUTH);
 
-        // ✅ Bottone indietro
+        // Bottone indietro
         btnIndietro.addActionListener(e -> {
             if (frameChiamante instanceof MainWindow main) {
                 main.tornaAllaHome();
@@ -81,6 +81,7 @@ public class MarketplacePanel extends JPanel implements OsservatoreProdotto {
                 Nome: %s
                 Descrizione: %s
                 Prezzo: %.2f €
+                Indirizzo: %s
                 Quantità: %d
                 Certificati: %s
                 Foto: %s
@@ -88,6 +89,7 @@ public class MarketplacePanel extends JPanel implements OsservatoreProdotto {
                 p.getNome(),
                 p.getDescrizione(),
                 p.getPrezzo(),
+                p.getIndirizzo(),
                 p.getQuantita(),
                 String.join(", ", p.getCertificati()),
                 String.join(", ", p.getFoto())

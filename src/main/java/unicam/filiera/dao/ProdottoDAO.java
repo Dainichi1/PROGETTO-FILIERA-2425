@@ -62,6 +62,7 @@ public class ProdottoDAO {
                                 .descrizione(rs.getString("descrizione"))
                                 .quantita(rs.getInt("quantita"))
                                 .prezzo(rs.getDouble("prezzo"))
+                                .indirizzo(rs.getString("indirizzo"))
                                 .certificati(certificati)
                                 .foto(foto)
                                 .creatoDa(rs.getString("creato_da"))
@@ -103,6 +104,7 @@ public class ProdottoDAO {
                             .descrizione(rs.getString("descrizione"))
                             .quantita(rs.getInt("quantita"))
                             .prezzo(rs.getDouble("prezzo"))
+                            .indirizzo(rs.getString("indirizzo"))
                             .certificati(certificati)
                             .foto(foto)
                             .creatoDa(rs.getString("creato_da"))
@@ -141,6 +143,7 @@ public class ProdottoDAO {
                                 .descrizione(rs.getString("descrizione"))
                                 .quantita(rs.getInt("quantita"))
                                 .prezzo(rs.getDouble("prezzo"))
+                                .indirizzo(rs.getString("indirizzo"))
                                 .certificati(certificati)
                                 .foto(foto)
                                 .creatoDa(rs.getString("creato_da"))
@@ -225,6 +228,7 @@ public class ProdottoDAO {
                         .descrizione(rs.getString("descrizione"))
                         .quantita(rs.getInt("quantita"))
                         .prezzo(rs.getDouble("prezzo"))
+                        .indirizzo(rs.getString("indirizzo"))
                         .certificati(certificati)
                         .foto(foto)
                         .creatoDa(rs.getString("creato_da"))
@@ -244,19 +248,20 @@ public class ProdottoDAO {
         try (Connection conn = DatabaseManager.getConnection()) {
             String sql = """
                         INSERT INTO prodotti 
-                            (nome, descrizione, quantita, prezzo, certificati, foto, creato_da, stato, commento)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+                            (nome, descrizione, quantita, prezzo, indirizzo, certificati, foto, creato_da, stato, commento)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
                     """;
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, prodotto.getNome());
                 stmt.setString(2, prodotto.getDescrizione());
                 stmt.setInt(3, prodotto.getQuantita());
                 stmt.setDouble(4, prodotto.getPrezzo());
-                stmt.setString(5, ""); // placeholder, aggiornati dopo con uploadFile()
-                stmt.setString(6, "");
-                stmt.setString(7, prodotto.getCreatoDa());
-                stmt.setString(8, prodotto.getStato().name());
-                stmt.setNull(9, Types.VARCHAR);
+                stmt.setString(5, prodotto.getIndirizzo());
+                stmt.setString(6, ""); // placeholder, aggiornati dopo con uploadFile()
+                stmt.setString(7, "");
+                stmt.setString(8, prodotto.getCreatoDa());
+                stmt.setString(9, prodotto.getStato().name());
+                stmt.setNull(10, Types.VARCHAR);
                 stmt.executeUpdate();
                 return true;
             }

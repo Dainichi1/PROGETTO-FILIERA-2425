@@ -35,7 +35,7 @@ public class PannelloCuratore extends JPanel implements OsservatoreProdotto {
         add(benvenuto, BorderLayout.NORTH);
 
         // Colonne
-        String[] colonne = {"Nome", "Descrizione", "Quantità", "Prezzo", "Creato da", "Certificati", "Foto", "Accetta", "Rifiuta", "Commento"};
+        String[] colonne = {"Nome", "Descrizione", "Quantità", "Prezzo", "Indirizzo", "Creato da", "Certificati", "Foto", "Accetta", "Rifiuta", "Commento"};
         model = new DefaultTableModel(colonne, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -114,6 +114,7 @@ public class PannelloCuratore extends JPanel implements OsservatoreProdotto {
                     p.getDescrizione(),
                     p.getQuantita(),
                     p.getPrezzo(),
+                    p.getIndirizzo(),
                     p.getCreatoDa(),
                     String.join(", ", p.getCertificati()),
                     String.join(", ", p.getFoto()),

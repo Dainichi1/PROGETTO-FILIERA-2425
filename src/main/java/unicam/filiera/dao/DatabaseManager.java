@@ -1,9 +1,6 @@
 package unicam.filiera.dao;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 public class DatabaseManager {
 
@@ -16,6 +13,24 @@ public class DatabaseManager {
         }
         return connection;
     }
+
+    public static void checkAndUpdateDatabase() {
+        try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
+            // Controlla se la colonna "indirizzo" esiste già
+            ResultSet rs = conn.getMetaData().getColumns(null, null, "PRODOTTI", "INDIRIZZO");
+            if (!rs.next()) { // Se NON esiste
+                System.out.println("[DB] Colonna 'indirizzo' non trovata. Aggiornamento struttura tabella...");
+                String alterSql = "ALTER TABLE prodotti ADD COLUMN indirizzo VARCHAR(255) DEFAULT NULL;";
+                stmt.executeUpdate(alterSql);
+                System.out.println("[DB] Colonna 'indirizzo' aggiunta con successo.");
+            } else {
+                System.out.println("[DB] Colonna 'indirizzo' già presente.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public static void initDatabase() {
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
@@ -39,6 +54,7 @@ public class DatabaseManager {
                     descrizione VARCHAR(500),
                     quantita INT,
                     prezzo DOUBLE,
+                    indirizzo VARCHAR(255),
                     certificati TEXT,
                     foto TEXT,
                     creato_da VARCHAR(50),

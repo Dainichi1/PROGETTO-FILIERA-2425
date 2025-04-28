@@ -34,6 +34,8 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
     private final JTextField descrizioneField = new JTextField();
     private final JTextField quantitaField = new JTextField();
     private final JTextField prezzoField = new JTextField();
+    private final JTextField indirizzoField = new JTextField();
+
 
     private final JLabel labelCertificati = new JLabel("Nessun file selezionato");
     private final JLabel labelFoto = new JLabel("Nessun file selezionato");
@@ -71,6 +73,10 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
         formPanel.add(new JLabel("Prezzo:"));
         formPanel.add(prezzoField);
 
+        formPanel.add(new JLabel("Indirizzo:"));
+        formPanel.add(indirizzoField);
+
+
         formPanel.add(btnCertificati);
         formPanel.add(labelCertificati);
 
@@ -84,7 +90,7 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
         add(formPanel, BorderLayout.CENTER);
 
         // Tabella
-        String[] colonne = {"Nome", "Descrizione", "Quantità", "Prezzo", "Certificati", "Foto", "Stato", "Commento"};
+        String[] colonne = {"Nome", "Descrizione", "Quantità", "Prezzo", "Indirizzo", "Certificati", "Foto", "Stato", "Commento"};
         tableModel = new DefaultTableModel(colonne, 0);
         tabella = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(tabella);
@@ -135,13 +141,14 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
                 String descrizione = descrizioneField.getText().trim();
                 int quantita = Integer.parseInt(quantitaField.getText().trim());
                 double prezzo = Double.parseDouble(prezzoField.getText().trim());
+                String indirizzo = indirizzoField.getText().trim();
 
                 // Validazione spostata fuori dalla view
                 ValidatoreProdotto.valida(nome, descrizione, quantita, prezzo);
                 ValidatoreProdotto.validaFileCaricati(certificatiSelezionati.size(), fotoSelezionate.size());
 
                 Prodotto prodotto = produttoreController.creaNuovoProdotto(
-                        nome, descrizione, quantita, prezzo, utente.getUsername()
+                        nome, descrizione, quantita, prezzo, indirizzo, utente.getUsername()
                 );
 
                 boolean dettagliOk = produttoreController.inviaDatiProdotto(prodotto);
@@ -185,6 +192,7 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
                     p.getDescrizione(),
                     p.getQuantita(),
                     p.getPrezzo(),
+                    p.getIndirizzo(),
                     String.join(", ", p.getCertificati()),
                     String.join(", ", p.getFoto()),
                     p.getStato() != null ? p.getStato().name() : "N/D",
@@ -231,6 +239,7 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
         descrizioneField.setText("");
         quantitaField.setText("");
         prezzoField.setText("");
+        indirizzoField.setText("");
         certificatiSelezionati.clear();
         fotoSelezionate.clear();
         labelCertificati.setText("Nessun file selezionato");

@@ -12,6 +12,8 @@ public class Prodotto {
     private String creatoDa;
     private StatoProdotto stato;
     private String commento;
+    private String indirizzo;
+
 
     // Costruttore privato usato solo dal Builder
     private Prodotto(Builder builder) {
@@ -24,6 +26,8 @@ public class Prodotto {
         this.creatoDa = builder.creatoDa;
         this.stato = builder.stato;
         this.commento = builder.commento;
+        this.indirizzo = builder.indirizzo;
+
     }
 
     // Getter e Setter
@@ -63,6 +67,11 @@ public class Prodotto {
         return commento;
     }
 
+    public String getIndirizzo() {
+        return indirizzo;
+    }
+
+
     public void setCommento(String commento) {
         this.commento = commento;
     }
@@ -78,6 +87,12 @@ public class Prodotto {
         private String creatoDa;
         private StatoProdotto stato;
         private String commento;
+        private String indirizzo;
+
+        public Builder indirizzo(String indirizzo) {
+            this.indirizzo = indirizzo;
+            return this;
+        }
 
         public Builder nome(String nome) {
             this.nome = nome;
@@ -145,6 +160,7 @@ public class Prodotto {
                   - Creato da: %s
                   - Stato: %s
                   - Commento: %s
+                  - Indirizzo: %s
                 """.formatted(
                 nome,
                 descrizione,
@@ -154,7 +170,8 @@ public class Prodotto {
                 foto != null ? String.join(", ", foto) : "Nessuna",
                 creatoDa,
                 stato != null ? stato.name() : "N/D",
-                commento != null ? commento : "N/D"
+                commento != null ? commento : "N/D",
+                indirizzo != null ? indirizzo : "N/D"
         );
     }
 }

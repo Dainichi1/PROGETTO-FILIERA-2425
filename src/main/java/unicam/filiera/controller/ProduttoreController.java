@@ -24,6 +24,7 @@ public class ProduttoreController {
                                       String descrizione,
                                       int quantita,
                                       double prezzo,
+                                      String indirizzo,
                                       String creatoDa) {
         // Validazione centralizzata
         ValidatoreProdotto.valida(nome, descrizione, quantita, prezzo);
@@ -33,6 +34,7 @@ public class ProduttoreController {
                 .descrizione(descrizione)
                 .quantita(quantita)
                 .prezzo(prezzo)
+                .indirizzo(indirizzo)
                 .creatoDa(creatoDa)
                 .stato(StatoProdotto.IN_ATTESA)
                 .build();

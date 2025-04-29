@@ -31,10 +31,10 @@ public class MainWindow extends JFrame {
         setContentPane(homePanel);
 
         // Listener per login
-        btnLogin.addActionListener(e -> mostraPannello(new LoginPanel(this)));
+        btnLogin.addActionListener(e -> mostraPannello(PannelloFactory.creaLoginPanel(this)));
 
         // Listener per registrazione
-        btnRegister.addActionListener(e -> mostraPannello(new RegisterPanel(this)));
+        btnRegister.addActionListener(e -> mostraPannello(PannelloFactory.creaRegisterPanel(this)));
 
         // Marketplace
         btnMarketplace.addActionListener(e -> {

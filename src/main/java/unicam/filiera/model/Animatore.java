@@ -1,8 +1,8 @@
 package unicam.filiera.model;
 
 public class Animatore extends UtenteAutenticato {
-
-    public Animatore(String username, String password, String nome, String cognome) {
+    public Animatore(String username, String password,
+                     String nome, String cognome) {
         super(username, password, nome, cognome, Ruolo.ANIMATORE);
     }
 

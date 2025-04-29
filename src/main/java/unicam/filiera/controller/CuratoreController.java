@@ -1,65 +1,91 @@
 package unicam.filiera.controller;
 
-import unicam.filiera.dao.PacchettoDAO;
 import unicam.filiera.dao.ProdottoDAO;
-import unicam.filiera.model.Pacchetto;
+import unicam.filiera.dao.PacchettoDAO;
+import unicam.filiera.dao.JdbcProdottoDAO;
+import unicam.filiera.dao.JdbcPacchettoDAO;
 import unicam.filiera.model.Prodotto;
+import unicam.filiera.model.Pacchetto;
 import unicam.filiera.model.StatoProdotto;
-import unicam.filiera.model.observer.PacchettoNotifier;
 import unicam.filiera.model.observer.ProdottoNotifier;
+import unicam.filiera.model.observer.PacchettoNotifier;
 
 import java.util.List;
 
+/**
+ * Controller del Curatore per approvazione prodotti e pacchetti.
+ * Usa iniezione di DAO e aggiorna lo stato attraverso l'interfaccia generica.
+ */
 public class CuratoreController {
 
     private final ProdottoDAO prodottoDAO;
     private final PacchettoDAO pacchettoDAO;
+    private final ProdottoNotifier prodottoNotifier;
+    private final PacchettoNotifier pacchettoNotifier;
 
+    /** Iniezione delle dipendenze (utile per test) */
+    public CuratoreController(ProdottoDAO prodottoDAO, PacchettoDAO pacchettoDAO) {
+        this.prodottoDAO      = prodottoDAO;
+        this.pacchettoDAO     = pacchettoDAO;
+        this.prodottoNotifier = ProdottoNotifier.getInstance();
+        this.pacchettoNotifier= PacchettoNotifier.getInstance();
+    }
+
+    /** Costruttore di convenienza per l'app reale */
     public CuratoreController() {
-        this.prodottoDAO = new ProdottoDAO();
-        this.pacchettoDAO = new PacchettoDAO();
+        this(JdbcProdottoDAO.getInstance(), JdbcPacchettoDAO.getInstance());
     }
 
+    /** Prodotti in attesa di approvazione */
     public List<Prodotto> getProdottiDaApprovare() {
-        return prodottoDAO.getProdottiByStato(StatoProdotto.IN_ATTESA);
+        return prodottoDAO.findByStato(StatoProdotto.IN_ATTESA);
     }
 
+    /** Pacchetti in attesa di approvazione */
     public List<Pacchetto> getPacchettiDaApprovare() {
-        return pacchettoDAO.getPacchettiByStato(StatoProdotto.IN_ATTESA);
+        return pacchettoDAO.findByStato(StatoProdotto.IN_ATTESA);
     }
 
+    /** Approva un prodotto e notifica gli osservatori */
     public boolean approvaProdotto(Prodotto prodotto) {
-        boolean success = prodottoDAO.aggiornaStatoProdotto(prodotto, StatoProdotto.APPROVATO);
+        prodotto.setStato(StatoProdotto.APPROVATO);
+        prodotto.setCommento(null);
+        boolean success = prodottoDAO.update(prodotto);
         if (success) {
-            ProdottoNotifier.getInstance().notificaTutti(prodotto, "APPROVATO");
+            prodottoNotifier.notificaTutti(prodotto, "APPROVATO");
         }
         return success;
     }
 
+    /** Rifiuta un prodotto con commento e notifica */
     public boolean rifiutaProdotto(Prodotto prodotto, String commento) {
-        if (commento == null) commento = "";
-
-        boolean success = prodottoDAO.aggiornaStatoECommentoProdotto(prodotto, StatoProdotto.RIFIUTATO, commento);
+        prodotto.setStato(StatoProdotto.RIFIUTATO);
+        prodotto.setCommento(commento != null ? commento : "");
+        boolean success = prodottoDAO.update(prodotto);
         if (success) {
-            ProdottoNotifier.getInstance().notificaTutti(prodotto, "RIFIUTATO");
+            prodottoNotifier.notificaTutti(prodotto, "RIFIUTATO");
         }
         return success;
     }
 
+    /** Approva un pacchetto e notifica gli osservatori */
     public boolean approvaPacchetto(Pacchetto pacchetto) {
-        boolean success = pacchettoDAO.aggiornaStatoPacchetto(pacchetto, StatoProdotto.APPROVATO);
+        pacchetto.setStato(StatoProdotto.APPROVATO);
+        pacchetto.setCommento(null);
+        boolean success = pacchettoDAO.update(pacchetto);
         if (success) {
-            PacchettoNotifier.getInstance().notificaTutti(pacchetto, "APPROVATO");
+            pacchettoNotifier.notificaTutti(pacchetto, "APPROVATO");
         }
         return success;
     }
 
+    /** Rifiuta un pacchetto con commento e notifica */
     public boolean rifiutaPacchetto(Pacchetto pacchetto, String commento) {
-        if (commento == null) commento = "";
-
-        boolean success = pacchettoDAO.aggiornaStatoECommentoPacchetto(pacchetto, StatoProdotto.RIFIUTATO, commento);
+        pacchetto.setStato(StatoProdotto.RIFIUTATO);
+        pacchetto.setCommento(commento != null ? commento : "");
+        boolean success = pacchettoDAO.update(pacchetto);
         if (success) {
-            PacchettoNotifier.getInstance().notificaTutti(pacchetto, "RIFIUTATO");
+            pacchettoNotifier.notificaTutti(pacchetto, "RIFIUTATO");
         }
         return success;
     }

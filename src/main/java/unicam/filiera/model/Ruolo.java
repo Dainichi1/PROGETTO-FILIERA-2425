@@ -10,12 +10,6 @@ public enum Ruolo {
     ACQUIRENTE(true);
 
     private final boolean visibile;
-
-    Ruolo(boolean visibile) {
-        this.visibile = visibile;
-    }
-
-    public boolean isVisibile() {
-        return visibile;
-    }
+    Ruolo(boolean visibile) { this.visibile = visibile; }
+    public boolean isVisibile() { return visibile; }
 }

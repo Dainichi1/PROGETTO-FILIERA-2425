@@ -1,7 +1,9 @@
 package unicam.filiera.controller;
 
+import unicam.filiera.dao.JdbcUtenteDAO;
 import unicam.filiera.dao.UtenteDAO;
 import unicam.filiera.factory.UtenteFactory;
+import unicam.filiera.model.Utente;
 import unicam.filiera.model.UtenteAutenticato;
 import unicam.filiera.model.Ruolo;
 
@@ -9,35 +11,61 @@ public class AutenticazioneController {
 
     private final UtenteDAO utenteDAO;
 
-    public AutenticazioneController() {
-        this.utenteDAO = UtenteDAO.getInstance();
+    /**
+     * Iniezione di dipendenza per facilitare i test
+     */
+    public AutenticazioneController(UtenteDAO utenteDAO) {
+        this.utenteDAO = utenteDAO;
     }
 
     /**
-     * Registra un nuovo utente autenticato.
-     *
-     * @return esito dettagliato della registrazione
+     * Costruttore di convenienza per l'app reale
      */
-    public RegistrazioneEsito registrati(String username, String password, String nome, String cognome, Ruolo ruolo) {
+    public AutenticazioneController() {
+        this(JdbcUtenteDAO.getInstance());
+    }
+
+    /**
+     * Registra un nuovo utente autenticato nel database.
+     * Usa la factory per creare l'oggetto UtenteAutenticato.
+     */
+    public RegistrazioneEsito registrati(
+            String username, String password,
+            String nome, String cognome,
+            Ruolo ruolo) {
         // Controllo: username già esistente
-        if (utenteDAO.esisteUsername(username)) {
+        if (utenteDAO.existsUsername(username)) {
             return RegistrazioneEsito.USERNAME_GIA_ESISTENTE;
         }
 
         // Controllo: persona già registrata
-        if (utenteDAO.esistePersona(nome, cognome)) {
+        if (utenteDAO.existsPersona(nome, cognome)) {
             return RegistrazioneEsito.PERSONA_GIA_REGISTRATA;
         }
 
-        UtenteAutenticato nuovoUtente = UtenteFactory.creaUtente(username, password, nome, cognome, ruolo);
+        // Crea l'utente da registrare
+        UtenteAutenticato nuovoUtente = (UtenteAutenticato) UtenteFactory.creaUtenteRegistrazione(
+                username, password, nome, cognome, ruolo);
+
         boolean success = utenteDAO.registraUtente(nuovoUtente);
         return success ? RegistrazioneEsito.SUCCESSO : RegistrazioneEsito.USERNAME_GIA_ESISTENTE;
     }
 
     /**
-     * Esegue il login
+     * Esegue il login e restituisce l'attore corretto (sottotipo di UtenteAutenticato).
+     * Ritorna null se le credenziali non sono valide.
      */
-    public UtenteAutenticato login(String username, String password) {
-        return utenteDAO.login(username, password);
+    public Utente login(String username, String password) {
+        // login grezzo dal DAO
+        UtenteAutenticato raw = utenteDAO.login(username, password);
+        if (raw == null) {
+            return null;
+        }
+
+        // Usa la factory per ottenere il sottotipo corretto
+        return UtenteFactory.creaAttore(
+                raw.getUsername(), raw.getPassword(),
+                raw.getNome(), raw.getCognome(),
+                raw.getRuolo());
     }
 }

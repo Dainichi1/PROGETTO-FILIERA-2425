@@ -1,8 +1,9 @@
 package unicam.filiera.model;
 
-public class Curatore extends UtenteAutenticato {
 
-    public Curatore(String username, String password, String nome, String cognome) {
+public class Curatore extends UtenteAutenticato {
+    public Curatore(String username, String password,
+                    String nome, String cognome) {
         super(username, password, nome, cognome, Ruolo.CURATORE);
     }
 

@@ -1,8 +1,8 @@
 package unicam.filiera.model;
 
 public class Acquirente extends UtenteAutenticato {
-
-    public Acquirente(String username, String password, String nome, String cognome) {
+    public Acquirente(String username, String password,
+                      String nome, String cognome) {
         super(username, password, nome, cognome, Ruolo.ACQUIRENTE);
     }
 

@@ -1,26 +1,71 @@
-/* ==================================================================== */
-/*  PannelloFactory.java                                                */
-/* ==================================================================== */
 package unicam.filiera.factory;
 
+import unicam.filiera.controller.AutenticazioneController;
 import unicam.filiera.controller.MarketplaceController;
+import unicam.filiera.model.UtenteAutenticato;
+import unicam.filiera.view.LoginPanel;
 import unicam.filiera.view.MarketplacePanel;
+import unicam.filiera.view.PannelloCuratore;
+import unicam.filiera.view.PannelloDistributore;
+import unicam.filiera.view.PannelloProduttore;
+import unicam.filiera.view.RegisterPanel;
 
 import javax.swing.*;
+import java.awt.*;
 
+/**
+ * Factory centralizzata per la creazione dei pannelli.
+ */
 public final class PannelloFactory {
 
-    private PannelloFactory() {}          // utility-class
+    private PannelloFactory() {}
 
+    /**
+     * Crea il pannello del marketplace.
+     */
     public static JPanel creaMarketplacePanel(JFrame frameChiamante) {
-
-
         MarketplaceController controller = new MarketplaceController();
-        MarketplacePanel      panel      = new MarketplacePanel(frameChiamante, controller);
-
-
+        MarketplacePanel panel = new MarketplacePanel(frameChiamante, controller);
         controller.notificaOsservatori();
-
         return panel;
+    }
+
+    /**
+     * Crea il pannello di login.
+     */
+    public static JPanel creaLoginPanel(JFrame frameChiamante) {
+        AutenticazioneController controller = new AutenticazioneController();
+        return new LoginPanel(frameChiamante, controller);
+    }
+
+    /**
+     * Crea il pannello di registrazione.
+     */
+    public static JPanel creaRegisterPanel(JFrame frameChiamante) {
+        return new RegisterPanel(frameChiamante);
+    }
+
+    /**
+     * Crea il pannello corrispondente al ruolo dell'utente.
+     */
+    public static JPanel creaPannelloRuolo(JFrame frame, UtenteAutenticato utente) {
+        return switch (utente.getRuolo()) {
+            case PRODUTTORE -> creaProduttorePanel(frame, utente);
+            case CURATORE -> creaCuratorePanel(frame, utente);
+            case DISTRIBUTORE_TIPICITA -> creaDistributorePanel(frame, utente);
+            default -> null;
+        };
+    }
+
+    public static JPanel creaProduttorePanel(JFrame frame, UtenteAutenticato utente) {
+        return new PannelloProduttore(utente);
+    }
+
+    public static JPanel creaCuratorePanel(JFrame frame, UtenteAutenticato utente) {
+        return new PannelloCuratore(utente);
+    }
+
+    public static JPanel creaDistributorePanel(JFrame frame, UtenteAutenticato utente) {
+        return new PannelloDistributore(utente);
     }
 }

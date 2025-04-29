@@ -147,6 +147,13 @@ public class Prodotto {
         }
     }
 
+    /** Permette al Curatore di aggiornare lo stato */
+    public void setStato(StatoProdotto stato) {
+        this.stato = stato;
+    }
+
+
+
     @Override
     public String toString() {
         return """

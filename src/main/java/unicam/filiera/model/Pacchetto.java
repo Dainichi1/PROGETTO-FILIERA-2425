@@ -109,6 +109,16 @@ public class Pacchetto {
         }
     }
 
+    /** Permette al Curatore di aggiornare lo stato */
+    public void setStato(StatoProdotto stato) {
+        this.stato = stato;
+    }
+
+    /** Permette al Curatore di lasciare un commento di rifiuto */
+    public void setCommento(String commento) {
+        this.commento = commento;
+    }
+
     @Override
     public String toString() {
         return """

@@ -1,6 +1,10 @@
+// -------- UtenteAutenticato.java --------
 package unicam.filiera.model;
 
-public class UtenteAutenticato {
+/**
+ * Super‐classe per tutti gli utenti autenticati con un ruolo.
+ */
+public class UtenteAutenticato implements Utente {
     private String username;
     private String password;
     private String nome;
@@ -10,23 +14,27 @@ public class UtenteAutenticato {
     public UtenteAutenticato(String username, String password, String nome, String cognome, Ruolo ruolo) {
         this.username = username;
         this.password = password;
-        this.nome = nome;
-        this.cognome = cognome;
-        this.ruolo = ruolo;
+        this.nome     = nome;
+        this.cognome  = cognome;
+        this.ruolo    = ruolo;
     }
 
+    @Override
     public String getUsername() {
         return username;
     }
 
+    // il getter della password lo puoi lasciare privato o package‐private se non serve nell'interfaccia
     public String getPassword() {
         return password;
     }
 
+    @Override
     public String getNome() {
         return nome;
     }
 
+    @Override
     public String getCognome() {
         return cognome;
     }
@@ -51,11 +59,9 @@ public class UtenteAutenticato {
     public String toString() {
         return "UtenteAutenticato{" +
                 "username='" + username + '\'' +
-                ", password='" + password + '\'' +
                 ", nome='" + nome + '\'' +
                 ", cognome='" + cognome + '\'' +
                 ", ruolo=" + ruolo +
                 '}';
     }
-
 }

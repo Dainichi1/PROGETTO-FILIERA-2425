@@ -27,7 +27,7 @@ public class ProduttoreController {
                                       String indirizzo,
                                       String creatoDa) {
         // Validazione centralizzata
-        ValidatoreProdotto.valida(nome, descrizione, quantita, prezzo);
+        ValidatoreProdotto.valida(nome, descrizione, indirizzo, quantita, prezzo);
 
         return new Prodotto.Builder()
                 .nome(nome)

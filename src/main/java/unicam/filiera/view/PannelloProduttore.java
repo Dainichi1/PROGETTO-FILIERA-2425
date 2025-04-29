@@ -73,7 +73,7 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
         formPanel.add(new JLabel("Prezzo:"));
         formPanel.add(prezzoField);
 
-        formPanel.add(new JLabel("Indirizzo:"));
+        formPanel.add(new JLabel("Indirizzo luogo vendita:"));
         formPanel.add(indirizzoField);
 
 
@@ -144,7 +144,7 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
                 String indirizzo = indirizzoField.getText().trim();
 
                 // Validazione spostata fuori dalla view
-                ValidatoreProdotto.valida(nome, descrizione, quantita, prezzo);
+                ValidatoreProdotto.valida(nome, descrizione, indirizzo, quantita, prezzo);
                 ValidatoreProdotto.validaFileCaricati(certificatiSelezionati.size(), fotoSelezionate.size());
 
                 Prodotto prodotto = produttoreController.creaNuovoProdotto(

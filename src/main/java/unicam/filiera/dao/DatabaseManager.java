@@ -63,6 +63,23 @@ public class DatabaseManager {
                 );
             """;
 
+            String pacchettiSql = """
+            CREATE TABLE IF NOT EXISTS pacchetti (
+                id IDENTITY PRIMARY KEY,
+                nome VARCHAR(100),
+                descrizione VARCHAR(500),
+                indirizzo VARCHAR(255),
+                prezzo_totale DOUBLE,
+                prodotti TEXT,
+                certificati TEXT,
+                foto TEXT,
+                creato_da VARCHAR(50),
+                stato VARCHAR(20) DEFAULT 'IN_ATTESA',
+                commento VARCHAR(255) DEFAULT NULL
+            );
+        """;
+
+            stmt.executeUpdate(pacchettiSql);
             stmt.executeUpdate(utentiSql);
             stmt.executeUpdate(prodottiSql);
 

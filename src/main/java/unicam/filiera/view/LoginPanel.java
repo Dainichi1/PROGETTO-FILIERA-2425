@@ -71,6 +71,8 @@ public class LoginPanel extends JPanel {
                 switch (utente.getRuolo()) {
                     case PRODUTTORE -> nuovaFinestra.setContentPane(new PannelloProduttore(utente));
                     case CURATORE -> nuovaFinestra.setContentPane(new PannelloCuratore(utente));
+                    case DISTRIBUTORE_TIPICITA -> nuovaFinestra.setContentPane(new PannelloDistributore(utente));
+
                     default -> {
                         JOptionPane.showMessageDialog(this,
                                 "Nessun pannello associato a questo ruolo.",

@@ -7,23 +7,31 @@ public class ValidatoreProdotto {
      *
      * @throws IllegalArgumentException se un campo non è valido.
      */
-    public static void valida(String nome, String descrizione, int quantita, double prezzo) {
+    public static void valida(String nome,
+                              String descrizione,
+                              String indirizzo,      // <-- nuovo
+                              int    quantita,
+                              double prezzo) {
+
         if (nome == null || nome.isBlank())
             throw new IllegalArgumentException("⚠ Nome mancante o vuoto");
 
         if (descrizione == null || descrizione.isBlank())
             throw new IllegalArgumentException("⚠ Descrizione mancante o vuota");
 
+        if (indirizzo == null || indirizzo.isBlank())
+            throw new IllegalArgumentException("⚠ Indirizzo mancante o vuoto");
+
         if (quantita <= 0)
             throw new IllegalArgumentException("⚠ La quantità deve essere maggiore di zero");
 
-        if (prezzo < 0)
-            throw new IllegalArgumentException("⚠ Il prezzo non può essere negativo");
+        if (prezzo <= 0)
+            throw new IllegalArgumentException("⚠ Il prezzo deve essere maggiore di zero");
     }
 
-    /**
-     * Valida se almeno un file è presente.
-     */
+    /* ------------------------------------------------------------------ */
+
+    /** Valida la presenza di almeno un certificato e di almeno una foto. */
     public static void validaFileCaricati(int numCertificati, int numFoto) {
         if (numCertificati < 1)
             throw new IllegalArgumentException("⚠ Devi selezionare almeno un certificato!");

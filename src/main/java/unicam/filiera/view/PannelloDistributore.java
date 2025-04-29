@@ -1,3 +1,6 @@
+/* ==================================================================== */
+/*  PannelloDistributore.java                                           */
+/* ==================================================================== */
 package unicam.filiera.view;
 
 import unicam.filiera.controller.DistributoreController;
@@ -15,27 +18,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * View pura: presenta l’interfaccia e delega la logica
- * al DistributoreController.
+ * View pura: mostra l’interfaccia e delega la logica
+ * a {@link DistributoreController}.
  */
 public class PannelloDistributore extends JPanel implements OsservatorePacchetto {
 
     /* ------------------------------------------------------------------ */
     /*  D A T A                                                            */
     /* ------------------------------------------------------------------ */
-    private final UtenteAutenticato utente;
+    private final UtenteAutenticato    utente;
     private final DistributoreController controller;
 
-    /*  cache locale di selezioni utente (solo UI)  */
-    private final List<File> certificatiSel = new ArrayList<>();
-    private final List<File> fotoSel        = new ArrayList<>();
-    private final List<Prodotto> prodottiSel = new ArrayList<>();
+    /* cache di selezione (vive solo nella UI) */
+    private final List<File>      certSel     = new ArrayList<>();
+    private final List<File>      fotoSel     = new ArrayList<>();
+    private final List<Prodotto>  prodottiSel = new ArrayList<>();
 
     /* ------------------------------------------------------------------ */
     /*  C O M P O N E N T I                                                */
     /* ------------------------------------------------------------------ */
     private final JTextField nomeField        = new JTextField();
-    private final JTextField descrizioneField = new JTextField();
+    private final JTextField descrField       = new JTextField();
     private final JTextField indirizzoField   = new JTextField();
     private final JTextField prezzoField      = new JTextField();
 
@@ -43,45 +46,45 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
     private final JLabel labelFoto = new JLabel("Nessun file selezionato");
 
     private final JButton btnToggleForm     = new JButton("Chiudi form");
-    private final JButton btnSelezionaProd  = new JButton("Seleziona Prodotti");
-    private final JButton btnCertificati    = new JButton("Seleziona Certificati");
+    private final JButton btnSelProd        = new JButton("Seleziona Prodotti");
+    private final JButton btnCert           = new JButton("Seleziona Certificati");
     private final JButton btnFoto           = new JButton("Seleziona Foto");
-    private final JButton btnInviaPacchetto = new JButton("Invia Pacchetto");
+    private final JButton btnInvia          = new JButton("Invia Pacchetto");
 
     private final DefaultTableModel modelProdotti;
     private final JTable            tabellaProdotti;
     private final DefaultTableModel modelPacchetti;
     private final JTable            tabellaPacchetti;
 
-    private final JPanel formPanel = new JPanel(new GridLayout(8, 2, 10, 10));
-    private boolean formVisibile  = true;
+    private final JPanel  formPanel  = new JPanel(new GridLayout(8,2,10,10));
+    private       boolean formVisibile = true;
 
     /* ------------------------------------------------------------------ */
     /*  C O S T R U T T O R E                                              */
     /* ------------------------------------------------------------------ */
     public PannelloDistributore(UtenteAutenticato utente) {
         super(new BorderLayout());
-        this.utente = utente;
-        this.controller = new DistributoreController(utente.getUsername());
+        this.utente      = utente;
+        this.controller  = new DistributoreController(utente.getUsername());
 
-        /* ---------- header ---------- */
+        /* --------- header --------- */
         JLabel benv = new JLabel(
                 "Benvenuto " + utente.getNome() + ", " + utente.getRuolo(),
                 SwingConstants.CENTER);
         benv.setFont(new Font("Arial", Font.BOLD, 18));
         add(benv, BorderLayout.NORTH);
 
-        /* ---------- form creazione pacchetto ---------- */
+        /* --------- form --------- */
         buildForm();
 
-        /* ---------- tabelle ---------- */
+        /* --------- tabelle --------- */
         String[] colProd = {"Nome","Descrizione","Quantità","Prezzo","Indirizzo"};
-        modelProdotti    = new DefaultTableModel(colProd, 0);
+        modelProdotti    = new DefaultTableModel(colProd,0);
         tabellaProdotti  = new JTable(modelProdotti);
 
         String[] colPack = {"Nome","Descrizione","Indirizzo","Prezzo",
                 "Prodotti","Certificati","Foto","Stato","Commento"};
-        modelPacchetti   = new DefaultTableModel(colPack, 0);
+        modelPacchetti   = new DefaultTableModel(colPack,0);
         tabellaPacchetti = new JTable(modelPacchetti);
 
         JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
@@ -92,36 +95,35 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
         JPanel right = new JPanel(new BorderLayout());
         right.add(new JLabel("Prodotti e Pacchetti:", SwingConstants.CENTER), BorderLayout.NORTH);
         right.add(split, BorderLayout.CENTER);
-        right.add(btnSelezionaProd, BorderLayout.SOUTH);
+        right.add(btnSelProd, BorderLayout.SOUTH);
         add(right, BorderLayout.EAST);
 
-        /* ---------- event wiring ---------- */
+        /* --------- eventi --------- */
         wireEvents();
 
-        /* ---------- dati iniziali ---------- */
+        /* --------- dati iniziali --------- */
         refreshProdotti();
         refreshPacchetti();
 
-        /* ---------- observer ---------- */
+        /* --------- observer --------- */
         PacchettoNotifier.getInstance().registraOsservatore(this);
     }
 
-    /* ======================================================================
-       COSTRUZIONE UI
-       ====================================================================== */
+    /* ======================= Costruzione UI ========================= */
     private void buildForm() {
-        formPanel.add(new JLabel("Nome Pacchetto:"));        formPanel.add(nomeField);
-        formPanel.add(new JLabel("Descrizione:"));           formPanel.add(descrizioneField);
+        formPanel.add(new JLabel("Nome Pacchetto:"));         formPanel.add(nomeField);
+        formPanel.add(new JLabel("Descrizione:"));            formPanel.add(descrField);
         formPanel.add(new JLabel("Indirizzo luogo vendita:"));formPanel.add(indirizzoField);
-        formPanel.add(new JLabel("Prezzo Totale:"));         formPanel.add(prezzoField);
-        formPanel.add(btnCertificati);       formPanel.add(labelCert);
-        formPanel.add(btnFoto);              formPanel.add(labelFoto);
-        formPanel.add(btnToggleForm);        formPanel.add(btnInviaPacchetto);
+        formPanel.add(new JLabel("Prezzo Totale:"));          formPanel.add(prezzoField);
+        formPanel.add(btnCert);  formPanel.add(labelCert);
+        formPanel.add(btnFoto);  formPanel.add(labelFoto);
+        formPanel.add(btnToggleForm); formPanel.add(btnInvia);
         add(formPanel, BorderLayout.CENTER);
     }
 
     private void wireEvents() {
 
+        /* toggle visibilità form */
         btnToggleForm.addActionListener(e -> {
             formVisibile = !formVisibile;
             formPanel.setVisible(formVisibile);
@@ -129,38 +131,40 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
             revalidate(); repaint();
         });
 
-        btnSelezionaProd.addActionListener(e -> {
+        /* selezione prodotti */
+        btnSelProd.addActionListener(e -> {
             int[] rows = tabellaProdotti.getSelectedRows();
             prodottiSel.clear();
-            for (int r : rows) prodottiSel.add(
-                    controller.getProdottiMarketplace().get(r));
+            for (int r : rows)
+                prodottiSel.add(controller.getProdottiMarketplace().get(r));
+
             JOptionPane.showMessageDialog(this,
                     rows.length + " prodotto/i selezionato/i.",
                     "Selezione Prodotti", JOptionPane.INFORMATION_MESSAGE);
         });
 
-        btnCertificati.addActionListener(e -> pickFiles(true));
+        /* file picker */
+        btnCert.addActionListener(e -> pickFiles(true));
         btnFoto.addActionListener(e -> pickFiles(false));
 
-        btnInviaPacchetto.addActionListener(e -> {
-            int choice = JOptionPane.showConfirmDialog(
+        /* invio */
+        btnInvia.addActionListener(e -> {
+            int res = JOptionPane.showConfirmDialog(
                     this,
                     "Inviare il pacchetto al curatore per approvazione?",
                     "Conferma invio",
                     JOptionPane.YES_NO_OPTION);
-            if (choice == JOptionPane.YES_OPTION) sendToController();
+            if (res == JOptionPane.YES_OPTION) sendToController();
         });
     }
 
-    /* ======================================================================
-       OPERAZIONI DELLA VIEW
-       ====================================================================== */
+    /* ======================= Operazioni UI ========================= */
     private void pickFiles(boolean certificati) {
         JFileChooser ch = new JFileChooser();
         ch.setMultiSelectionEnabled(true);
         if (ch.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return;
 
-        List<File> target = certificati ? certificatiSel : fotoSel;
+        List<File> target = certificati ? certSel : fotoSel;
         target.clear();
         target.addAll(List.of(ch.getSelectedFiles()));
         (certificati ? labelCert : labelFoto)
@@ -170,13 +174,13 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
     private void sendToController() {
         controller.inviaPacchetto(
                 nomeField.getText().trim(),
-                descrizioneField.getText().trim(),
+                descrField.getText().trim(),
                 indirizzoField.getText().trim(),
-                prezzoField.getText().trim(),     // verrà convertito/validato dal controller
-                prodottiSel, certificatiSel, fotoSel,
+                prezzoField.getText().trim(),
+                prodottiSel, certSel, fotoSel,
                 /* callback UI-safe */
-                (ok, message) -> SwingUtilities.invokeLater(() -> {
-                    JOptionPane.showMessageDialog(this, message,
+                (ok, msg) -> SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(this, msg,
                             ok ? "Successo" : "Errore",
                             ok ? JOptionPane.INFORMATION_MESSAGE
                                     : JOptionPane.ERROR_MESSAGE);
@@ -184,9 +188,7 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
                 }));
     }
 
-    /* ======================================================================
-       RENDER DATI
-       ====================================================================== */
+    /* ======================= Refresh dati ========================= */
     private void refreshProdotti() {
         modelProdotti.setRowCount(0);
         for (Prodotto p : controller.getProdottiMarketplace()) {
@@ -209,13 +211,25 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
         }
     }
 
-    /* ======================================================================
-       OBSERVER
-       ====================================================================== */
+    /* ======================= OBSERVER ========================= */
     @Override
-    public void notifica(Pacchetto pacchetto, String evento) {
-        if (!pacchetto.getCreatoDa().equalsIgnoreCase(utente.getUsername())) return;
-        SwingUtilities.invokeLater(this::refreshPacchetti);
+    public void notifica(Pacchetto p, String evento) {
+        if (!p.getCreatoDa().equalsIgnoreCase(utente.getUsername())) return;
+
+        SwingUtilities.invokeLater(() -> {
+            if ("APPROVATO".equals(evento)) {
+                JOptionPane.showMessageDialog(this,
+                        "✔ Il tuo pacchetto \"" + p.getNome() + "\" è stato APPROVATO!",
+                        "Pacchetto approvato", JOptionPane.INFORMATION_MESSAGE);
+            } else if ("RIFIUTATO".equals(evento)) {
+                String msg = "❌ Il tuo pacchetto \"" + p.getNome() + "\" è stato RIFIUTATO.";
+                if (p.getCommento() != null && !p.getCommento().isBlank())
+                    msg += "\nCommento del curatore: " + p.getCommento();
+                JOptionPane.showMessageDialog(this, msg,
+                        "Pacchetto rifiutato", JOptionPane.WARNING_MESSAGE);
+            }
+            refreshPacchetti();
+        });
     }
 
     @Override
@@ -224,15 +238,13 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
         PacchettoNotifier.getInstance().rimuoviOsservatore(this);
     }
 
-    /* ======================================================================
-       UTILITY
-       ====================================================================== */
+    /* ======================= Utility ========================= */
     private void resetForm() {
         nomeField.setText("");
-        descrizioneField.setText("");
+        descrField.setText("");
         indirizzoField.setText("");
         prezzoField.setText("");
-        certificatiSel.clear(); fotoSel.clear(); prodottiSel.clear();
+        certSel.clear(); fotoSel.clear(); prodottiSel.clear();
         labelCert.setText("Nessun file selezionato");
         labelFoto.setText("Nessun file selezionato");
     }

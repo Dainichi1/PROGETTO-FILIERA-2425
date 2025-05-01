@@ -17,7 +17,7 @@ public class ProduttoreController {
     private final ProdottoService service;
     private final String username;
 
-    /** Iniezione del service (utile per i test) */
+    /** Iniezione del service*/
     public ProduttoreController(ProdottoService service, String username) {
         this.service = service;
         this.username = username;

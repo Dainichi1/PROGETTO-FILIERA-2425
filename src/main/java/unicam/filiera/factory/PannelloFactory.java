@@ -3,12 +3,7 @@ package unicam.filiera.factory;
 import unicam.filiera.controller.AutenticazioneController;
 import unicam.filiera.controller.MarketplaceController;
 import unicam.filiera.model.UtenteAutenticato;
-import unicam.filiera.view.LoginPanel;
-import unicam.filiera.view.MarketplacePanel;
-import unicam.filiera.view.PannelloCuratore;
-import unicam.filiera.view.PannelloDistributore;
-import unicam.filiera.view.PannelloProduttore;
-import unicam.filiera.view.RegisterPanel;
+import unicam.filiera.view.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -53,6 +48,7 @@ public final class PannelloFactory {
             case PRODUTTORE -> creaProduttorePanel(frame, utente);
             case CURATORE -> creaCuratorePanel(frame, utente);
             case DISTRIBUTORE_TIPICITA -> creaDistributorePanel(frame, utente);
+            case ANIMATORE -> creaAnimatorePanel(frame, utente);
             default -> null;
         };
     }
@@ -67,5 +63,9 @@ public final class PannelloFactory {
 
     public static JPanel creaDistributorePanel(JFrame frame, UtenteAutenticato utente) {
         return new PannelloDistributore(utente);
+    }
+
+    public static JPanel creaAnimatorePanel(JFrame frame, UtenteAutenticato utente) {
+        return new PannelloAnimatore(utente);
     }
 }

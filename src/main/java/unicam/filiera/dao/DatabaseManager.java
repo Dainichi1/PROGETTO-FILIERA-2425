@@ -10,36 +10,46 @@ public class DatabaseManager {
 
     private static final String DB_URL = "jdbc:h2:./data/filiera;DB_CLOSE_DELAY=-1";
 
-    /**
-     * Restituisce una nuova Connection ad ogni chiamata,
-     * evitando di condividere una connessione statica.
-     */
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(DB_URL, "sa", "");
     }
 
     /**
-     * Verifica e aggiunge la colonna 'indirizzo' se mancante.
+     * Controlla e aggiunge colonne mancanti nelle varie tabelle.
      */
     public static void checkAndUpdateDatabase() {
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
 
-            ResultSet rs = conn.getMetaData()
+            // esempio: controlla "indirizzo" in prodotti
+            ResultSet rs1 = conn.getMetaData()
                     .getColumns(null, null, "PRODOTTI", "INDIRIZZO");
-            if (!rs.next()) {
-                System.out.println("[DB] Aggiungo colonna 'indirizzo' alla tabella prodotti");
+            if (!rs1.next()) {
+                System.out.println("[DB] Aggiungo colonna 'indirizzo' a prodotti");
                 stmt.executeUpdate(
                         "ALTER TABLE prodotti ADD COLUMN indirizzo VARCHAR(255) DEFAULT NULL"
                 );
             }
+
+            // controlla "organizzatore" in fiere
+            ResultSet rs2 = conn.getMetaData()
+                    .getColumns(null, null, "FIERE", "ORGANIZZATORE");
+            if (!rs2.next()) {
+                System.out.println("[DB] Aggiungo colonna 'organizzatore' a fiere");
+                stmt.executeUpdate(
+                        "ALTER TABLE fiere ADD COLUMN organizzatore VARCHAR(50) DEFAULT NULL"
+                );
+            }
+
+            // ... eventuali altri alter ...
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
     /**
-     * Inizializza le tabelle del database se non esistono.
+     * Crea le tabelle se non esistono: utenti, prodotti, pacchetti, fiere.
      */
     public static void initDatabase() {
         try (Connection conn = getConnection();
@@ -87,9 +97,24 @@ public class DatabaseManager {
                 );
             """;
 
+            String fiereSql = """
+                CREATE TABLE IF NOT EXISTS fiere (
+                    id IDENTITY PRIMARY KEY,
+                    data_inizio TIMESTAMP,
+                    data_fine   TIMESTAMP,
+                    prezzo      DOUBLE,
+                    descrizione VARCHAR(500),
+                    indirizzo   VARCHAR(255),
+                    numero_min_partecipanti INT,
+                    organizzatore VARCHAR(50),
+                    stato VARCHAR(20) DEFAULT 'IN_PREPARAZIONE'
+                );
+            """;
+
             stmt.executeUpdate(utentiSql);
             stmt.executeUpdate(prodottiSql);
             stmt.executeUpdate(pacchettiSql);
+            stmt.executeUpdate(fiereSql);
 
         } catch (SQLException e) {
             e.printStackTrace();

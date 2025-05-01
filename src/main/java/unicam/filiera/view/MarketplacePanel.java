@@ -1,28 +1,29 @@
-/* ==================================================================== */
-/*  MarketplacePanel.java                                               */
-/* ==================================================================== */
 package unicam.filiera.view;
 
 import unicam.filiera.controller.MarketplaceController;
 import unicam.filiera.controller.ObserverManager;
+import unicam.filiera.controller.ObserverManagerPacchetto;
+import unicam.filiera.controller.ObserverManagerFiera;
+import unicam.filiera.model.Fiera;
 import unicam.filiera.model.Pacchetto;
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.observer.OsservatorePacchetto;
 import unicam.filiera.model.observer.OsservatoreProdotto;
+import unicam.filiera.model.observer.OsservatoreFiera;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
-/** View del marketplace: mostra Prodotti APPROVATI e Pacchetti APPROVATI */
+/** View del marketplace: mostra Prodotti APPROVATI, Pacchetti APPROVATI e Fiere PUBBLICATE */
 public class MarketplacePanel extends JPanel
-        implements OsservatoreProdotto, OsservatorePacchetto {
+        implements OsservatoreProdotto, OsservatorePacchetto, OsservatoreFiera {
 
     /* ---------------- UI ---------------- */
-    private final DefaultListModel<String> modello = new DefaultListModel<>();
-    private final JList<String>            lista   = new JList<>(modello);
-    private final JTextArea                dettagli= new JTextArea();
-    private final JButton                  btnBack = new JButton("Torna alla Home");
+    private final DefaultListModel<String> modello  = new DefaultListModel<>();
+    private final JList<String>            lista    = new JList<>(modello);
+    private final JTextArea                dettagli = new JTextArea();
+    private final JButton                  btnBack  = new JButton("Torna alla Home");
 
     /* ---------------- MVC ---------------- */
     private final MarketplaceController ctrl;
@@ -33,7 +34,7 @@ public class MarketplacePanel extends JPanel
         this.mainFrame = parent;
         this.ctrl      = ctrl;
 
-        /* ---- layout ---- */
+        // Layout
         lista.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         add(new JScrollPane(lista), BorderLayout.WEST);
 
@@ -45,34 +46,34 @@ public class MarketplacePanel extends JPanel
             if (mainFrame instanceof MainWindow w) w.tornaAllaHome();
         });
 
-        /* ---- listener lista ---- */
+        // Quando cambio selezione, mostro dettagli
         lista.addListSelectionListener(e -> {
             if (e.getValueIsAdjusting()) return;
             String sel = lista.getSelectedValue();
             if (sel == null) return;
-
             Object elem = ctrl.trovaElemento(sel);
             mostraDettagli(elem);
         });
 
-        /* ---- Observer pattern ---- */
+        // Observer pattern: mi registro per tutti e tre i tipi
         ctrl.registraOsservatore(this::popolaLista);
-        ObserverManager.registraOsservatore(this);         // prodotti
-        unicam.filiera.model.observer.PacchettoNotifier
-                .getInstance().registraOsservatore(this);  // pacchetti
+        ObserverManager.registraOsservatore(this);               // prodotti
+        ObserverManagerPacchetto.registraOsservatore(this);      // pacchetti
+        ObserverManagerFiera.registraOsservatore(this);          // fiere
 
-        /* ---- bootstrap ---- */
+        // Carica iniziale
         popolaLista(ctrl.ottieniElementiMarketplace());
     }
 
-    /* ================================================================= */
-    /*  RENDERING LISTA + DETTAGLI                                       */
-    /* ================================================================= */
+    // Ricarica la JList
     private void popolaLista(List<Object> elementi) {
         modello.clear();
-        for (Object o : elementi) modello.addElement(MarketplaceController.labelDi(o));
+        for (Object o : elementi) {
+            modello.addElement(MarketplaceController.labelDi(o));
+        }
     }
 
+    // Mostra i dettagli a seconda del tipo
     private void mostraDettagli(Object obj) {
         if (obj instanceof Prodotto p) {
             dettagli.setText("""
@@ -88,7 +89,8 @@ public class MarketplacePanel extends JPanel
                     p.getNome(), p.getDescrizione(), p.getPrezzo(),
                     p.getIndirizzo(), p.getQuantita(),
                     String.join(", ", p.getCertificati()),
-                    String.join(", ", p.getFoto())));
+                    String.join(", ", p.getFoto())
+            ));
         } else if (obj instanceof Pacchetto k) {
             dettagli.setText("""
                     [PACCHETTO]
@@ -103,34 +105,67 @@ public class MarketplacePanel extends JPanel
                     k.getNome(), k.getDescrizione(), k.getPrezzoTotale(),
                     k.getIndirizzo(), k.getProdotti().size(),
                     String.join(", ", k.getCertificati()),
-                    String.join(", ", k.getFoto())));
+                    String.join(", ", k.getFoto())
+            ));
+        } else if (obj instanceof Fiera f) {
+            dettagli.setText("""
+                    [FIERA]
+                    Descrizione: %s
+                    Date: %s → %s
+                    Prezzo: %.2f €
+                    Indirizzo: %s
+                    Min. partecipanti: %d
+                    Stato: %s
+                    """.formatted(
+                    f.getDescrizione(),
+                    f.getDataInizio(), f.getDataFine(),
+                    f.getPrezzo(),
+                    f.getIndirizzo(),
+                    f.getNumeroMinPartecipanti(),
+                    f.getStato()
+            ));
         } else {
             dettagli.setText("Selezione non riconosciuta.");
         }
     }
 
-    /* ================================================================= */
-    /*  CALLBACK OBSERVER (Prodotti & Pacchetti)                         */
-    /* ================================================================= */
+    // Callback Observer per Prodotto
     @Override
     public void notifica(Prodotto p, String evento) {
-        if ("APPROVATO".equals(evento)) SwingUtilities.invokeLater(() ->
-                popolaLista(ctrl.ottieniElementiMarketplace()));
+        if ("APPROVATO".equals(evento)) {
+            SwingUtilities.invokeLater(() ->
+                    popolaLista(ctrl.ottieniElementiMarketplace()));
+        }
     }
 
+    // Callback Observer per Pacchetto
     @Override
-    public void notifica(unicam.filiera.model.Pacchetto k, String ev) {
-        if ("APPROVATO".equals(ev)) SwingUtilities.invokeLater(() ->
-                popolaLista(ctrl.ottieniElementiMarketplace()));
+    public void notifica(Pacchetto k, String ev) {
+        if ("APPROVATO".equals(ev)) {
+            SwingUtilities.invokeLater(() ->
+                    popolaLista(ctrl.ottieniElementiMarketplace()));
+        }
+    }
+
+    // Callback Observer per Fiera
+    @Override
+    public void notifica(Fiera f, String evento) {
+        // scegli l’evento che corrisponde a “pubblicata”
+        if ("FIERA_PUBBLICATA".equals(evento) || "NUOVA_FIERA".equals(evento)) {
+            SwingUtilities.invokeLater(() ->
+                    popolaLista(ctrl.ottieniElementiMarketplace()));
+        }
     }
 
     @Override
     public void removeNotify() {
         super.removeNotify();
         ObserverManager.rimuoviOsservatore(this);
-        unicam.filiera.model.observer.PacchettoNotifier
-                .getInstance().rimuoviOsservatore(this);
+        ObserverManagerPacchetto.rimuoviOsservatore(this);
+        ObserverManagerFiera.rimuoviOsservatore(this);
     }
 
-    public JButton getBtnIndietro() { return btnBack; }
+    public JButton getBtnIndietro() {
+        return btnBack;
+    }
 }

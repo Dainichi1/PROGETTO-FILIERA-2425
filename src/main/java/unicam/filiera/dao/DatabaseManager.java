@@ -1,10 +1,6 @@
 package unicam.filiera.dao;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.ResultSet;
+import java.sql.*;
 
 public class DatabaseManager {
 
@@ -15,13 +11,15 @@ public class DatabaseManager {
     }
 
     /**
-     * Controlla e aggiunge colonne mancanti nelle varie tabelle.
+     * Controlla e aggiorna il database:
+     *  - Aggiunge colonne mancanti in prodotti e fiere
+     *  - Crea la tabella visite_invito se non esiste
      */
     public static void checkAndUpdateDatabase() {
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
 
-            // esempio: controlla "indirizzo" in prodotti
+            // ** prodotti.indirizzo **
             ResultSet rs1 = conn.getMetaData()
                     .getColumns(null, null, "PRODOTTI", "INDIRIZZO");
             if (!rs1.next()) {
@@ -31,7 +29,7 @@ public class DatabaseManager {
                 );
             }
 
-            // controlla "organizzatore" in fiere
+            // ** fiere.organizzatore **
             ResultSet rs2 = conn.getMetaData()
                     .getColumns(null, null, "FIERE", "ORGANIZZATORE");
             if (!rs2.next()) {
@@ -41,7 +39,28 @@ public class DatabaseManager {
                 );
             }
 
-            // ... eventuali altri alter ...
+            // ** crea la tabella visite_invito se non esiste **
+            ResultSet rs3 = conn.getMetaData()
+                    .getTables(null, null, "VISITE_INVITO", new String[]{"TABLE"});
+            if (!rs3.next()) {
+                System.out.println("[DB] Creo tabella 'visite_invito'");
+                stmt.executeUpdate(
+                        """
+                        CREATE TABLE visite_invito (
+                          id IDENTITY PRIMARY KEY,
+                          data_inizio TIMESTAMP,
+                          data_fine   TIMESTAMP,
+                          prezzo      DOUBLE,
+                          descrizione VARCHAR(500),
+                          indirizzo   VARCHAR(255),
+                          numero_min_partecipanti INT,
+                          organizzatore VARCHAR(50),
+                          destinatari TEXT,
+                          stato VARCHAR(20) DEFAULT 'IN_PREPARAZIONE'
+                        );
+                        """
+                );
+            }
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -49,7 +68,8 @@ public class DatabaseManager {
     }
 
     /**
-     * Crea le tabelle se non esistono: utenti, prodotti, pacchetti, fiere.
+     * Inizializza le tabelle del database se non esistono:
+     *  utenti, prodotti, pacchetti, fiere, visite_invito.
      */
     public static void initDatabase() {
         try (Connection conn = getConnection();
@@ -111,10 +131,26 @@ public class DatabaseManager {
                 );
             """;
 
+            String visiteSql = """
+                CREATE TABLE IF NOT EXISTS visite_invito (
+                    id IDENTITY PRIMARY KEY,
+                    data_inizio TIMESTAMP,
+                    data_fine   TIMESTAMP,
+                    prezzo      DOUBLE,
+                    descrizione VARCHAR(500),
+                    indirizzo   VARCHAR(255),
+                    numero_min_partecipanti INT,
+                    organizzatore VARCHAR(50),
+                    destinatari TEXT,
+                    stato VARCHAR(20) DEFAULT 'IN_PREPARAZIONE'
+                );
+            """;
+
             stmt.executeUpdate(utentiSql);
             stmt.executeUpdate(prodottiSql);
             stmt.executeUpdate(pacchettiSql);
             stmt.executeUpdate(fiereSql);
+            stmt.executeUpdate(visiteSql);
 
         } catch (SQLException e) {
             e.printStackTrace();

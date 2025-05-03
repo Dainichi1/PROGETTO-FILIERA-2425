@@ -13,7 +13,7 @@ public abstract class Evento {
     private final double prezzo;
     private final String descrizione;
     private final String indirizzo;
-    private StatoEvento stato;                       // <<< aggiunto
+    private StatoEvento stato;
 
     protected Evento(long id,
                      LocalDateTime dataInizio,
@@ -21,14 +21,14 @@ public abstract class Evento {
                      double prezzo,
                      String descrizione,
                      String indirizzo,
-                     StatoEvento stato) {               // <<< firma aggiornata
+                     StatoEvento stato) {
         this.id           = id;
         this.dataInizio   = dataInizio;
         this.dataFine     = dataFine;
         this.prezzo       = prezzo;
         this.descrizione  = descrizione;
         this.indirizzo    = indirizzo;
-        this.stato        = stato;                  // <<< memorizzato
+        this.stato        = stato;
     }
 
     public long getId() { return id; }

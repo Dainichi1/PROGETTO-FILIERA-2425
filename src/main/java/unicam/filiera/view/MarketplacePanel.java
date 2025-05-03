@@ -7,17 +7,20 @@ import unicam.filiera.controller.ObserverManagerFiera;
 import unicam.filiera.model.Fiera;
 import unicam.filiera.model.Pacchetto;
 import unicam.filiera.model.Prodotto;
+import unicam.filiera.model.VisitaInvito;
 import unicam.filiera.model.observer.OsservatorePacchetto;
 import unicam.filiera.model.observer.OsservatoreProdotto;
 import unicam.filiera.model.observer.OsservatoreFiera;
+import unicam.filiera.model.observer.OsservatoreVisitaInvito;
+import unicam.filiera.model.observer.VisitaInvitoNotifier;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
-/** View del marketplace: mostra Prodotti APPROVATI, Pacchetti APPROVATI e Fiere PUBBLICATE */
+/** View del marketplace: mostra Prodotti APPROVATI, Pacchetti APPROVATI, Fiere PUBBLICATE e VisiteInvito PUBBLICATE */
 public class MarketplacePanel extends JPanel
-        implements OsservatoreProdotto, OsservatorePacchetto, OsservatoreFiera {
+        implements OsservatoreProdotto, OsservatorePacchetto, OsservatoreFiera, OsservatoreVisitaInvito {
 
     /* ---------------- UI ---------------- */
     private final DefaultListModel<String> modello  = new DefaultListModel<>();
@@ -55,11 +58,12 @@ public class MarketplacePanel extends JPanel
             mostraDettagli(elem);
         });
 
-        // Observer pattern: mi registro per tutti e tre i tipi
-        ctrl.registraOsservatore(this::popolaLista);
-        ObserverManager.registraOsservatore(this);               // prodotti
-        ObserverManagerPacchetto.registraOsservatore(this);      // pacchetti
-        ObserverManagerFiera.registraOsservatore(this);          // fiere
+        // Observer pattern: mi registro per tutti e quattro i tipi
+        ctrl.registraOsservatore(this::popolaLista);                     // marketplace controller (aggiorna lista)
+        ObserverManager.registraOsservatore(this);                       // prodotti
+        ObserverManagerPacchetto.registraOsservatore(this);              // pacchetti
+        ObserverManagerFiera.registraOsservatore(this);                  // fiere
+        VisitaInvitoNotifier.getInstance().registraOsservatore(this);    // visite su invito
 
         // Carica iniziale
         popolaLista(ctrl.ottieniElementiMarketplace());
@@ -91,7 +95,8 @@ public class MarketplacePanel extends JPanel
                     String.join(", ", p.getCertificati()),
                     String.join(", ", p.getFoto())
             ));
-        } else if (obj instanceof Pacchetto k) {
+        }
+        else if (obj instanceof Pacchetto k) {
             dettagli.setText("""
                     [PACCHETTO]
                     Nome: %s
@@ -107,7 +112,8 @@ public class MarketplacePanel extends JPanel
                     String.join(", ", k.getCertificati()),
                     String.join(", ", k.getFoto())
             ));
-        } else if (obj instanceof Fiera f) {
+        }
+        else if (obj instanceof Fiera f) {
             dettagli.setText("""
                     [FIERA]
                     Descrizione: %s
@@ -124,7 +130,28 @@ public class MarketplacePanel extends JPanel
                     f.getNumeroMinPartecipanti(),
                     f.getStato()
             ));
-        } else {
+        }
+        else if (obj instanceof VisitaInvito vi) {
+            dettagli.setText("""
+                    [VISITA INVITO]
+                    Descrizione: %s
+                    Date: %s → %s
+                    Prezzo: %.2f €
+                    Indirizzo: %s
+                    Min. partecipanti: %d
+                    Destinatari: %s
+                    Stato: %s
+                    """.formatted(
+                    vi.getDescrizione(),
+                    vi.getDataInizio(), vi.getDataFine(),
+                    vi.getPrezzo(),
+                    vi.getIndirizzo(),
+                    vi.getNumeroMinPartecipanti(),
+                    String.join(", ", vi.getDestinatari()),
+                    vi.getStato()
+            ));
+        }
+        else {
             dettagli.setText("Selezione non riconosciuta.");
         }
     }
@@ -133,8 +160,7 @@ public class MarketplacePanel extends JPanel
     @Override
     public void notifica(Prodotto p, String evento) {
         if ("APPROVATO".equals(evento)) {
-            SwingUtilities.invokeLater(() ->
-                    popolaLista(ctrl.ottieniElementiMarketplace()));
+            SwingUtilities.invokeLater(() -> popolaLista(ctrl.ottieniElementiMarketplace()));
         }
     }
 
@@ -142,18 +168,23 @@ public class MarketplacePanel extends JPanel
     @Override
     public void notifica(Pacchetto k, String ev) {
         if ("APPROVATO".equals(ev)) {
-            SwingUtilities.invokeLater(() ->
-                    popolaLista(ctrl.ottieniElementiMarketplace()));
+            SwingUtilities.invokeLater(() -> popolaLista(ctrl.ottieniElementiMarketplace()));
         }
     }
 
     // Callback Observer per Fiera
     @Override
     public void notifica(Fiera f, String evento) {
-        // scegli l’evento che corrisponde a “pubblicata”
         if ("FIERA_PUBBLICATA".equals(evento) || "NUOVA_FIERA".equals(evento)) {
-            SwingUtilities.invokeLater(() ->
-                    popolaLista(ctrl.ottieniElementiMarketplace()));
+            SwingUtilities.invokeLater(() -> popolaLista(ctrl.ottieniElementiMarketplace()));
+        }
+    }
+
+    // Callback Observer per VisitaInvito
+    @Override
+    public void notifica(VisitaInvito vi, String evento) {
+        if ("VISITA_INVITO_PUBBLICATA".equals(evento)) {
+            SwingUtilities.invokeLater(() -> popolaLista(ctrl.ottieniElementiMarketplace()));
         }
     }
 
@@ -163,6 +194,7 @@ public class MarketplacePanel extends JPanel
         ObserverManager.rimuoviOsservatore(this);
         ObserverManagerPacchetto.rimuoviOsservatore(this);
         ObserverManagerFiera.rimuoviOsservatore(this);
+        VisitaInvitoNotifier.getInstance().rimuoviOsservatore(this);
     }
 
     public JButton getBtnIndietro() {

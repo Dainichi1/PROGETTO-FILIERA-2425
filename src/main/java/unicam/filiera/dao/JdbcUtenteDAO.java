@@ -126,4 +126,33 @@ public class JdbcUtenteDAO implements UtenteDAO {
             return false;
         }
     }
+    @Override
+    public List<UtenteAutenticato> findByRuoli(List<Ruolo> ruoli) {
+        if (ruoli.isEmpty()) return List.of();
+        // costruisco in modo dinamico la clausola IN (?,?,...)
+        String placeholders = String.join(",", ruoli.stream().map(r -> "?").toList());
+        String sql = "SELECT * FROM utenti WHERE ruolo IN (" + placeholders + ")";
+        List<UtenteAutenticato> list = new ArrayList<>();
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (int i = 0; i < ruoli.size(); i++) {
+                ps.setString(i+1, ruoli.get(i).name());
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    UtenteAutenticato u = new UtenteAutenticato(
+                            rs.getString("username"),
+                            rs.getString("password"),
+                            rs.getString("nome"),
+                            rs.getString("cognome"),
+                            Ruolo.valueOf(rs.getString("ruolo"))
+                    );
+                    list.add(u);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }

@@ -73,8 +73,18 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
         btnCert.addActionListener(e -> chooseFiles(true));
         btnFoto.addActionListener(e -> chooseFiles(false));
 
-        // Submit
-        btnInvia.addActionListener(e -> submit());
+        // Submit con conferma
+        btnInvia.addActionListener(e -> {
+            int scelta = JOptionPane.showConfirmDialog(
+                    this,
+                    "Inviare il prodotto al curatore per approvazione?",
+                    "Conferma invio",
+                    JOptionPane.YES_NO_OPTION
+            );
+            if (scelta == JOptionPane.YES_OPTION) {
+                submit();
+            }
+        });
 
         // Initial load
         refreshTable();
@@ -161,7 +171,6 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
 
     @Override
     public void notifica(Prodotto prod, String evento) {
-        // ignora gli eventi "NUOVO_PRODOTTO" o qualunque altro
         if (!"APPROVATO".equals(evento) && !"RIFIUTATO".equals(evento)) {
             return;
         }
@@ -188,7 +197,6 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
             refreshTable();
         });
     }
-
 
     @Override
     public void removeNotify() {

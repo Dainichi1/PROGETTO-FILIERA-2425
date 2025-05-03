@@ -9,7 +9,7 @@ public class ValidatoreProdotto {
      */
     public static void valida(String nome,
                               String descrizione,
-                              String indirizzo,      // <-- nuovo
+                              String indirizzo,
                               int    quantita,
                               double prezzo) {
 

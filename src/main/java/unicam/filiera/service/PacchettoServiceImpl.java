@@ -24,21 +24,35 @@ public class PacchettoServiceImpl implements PacchettoService {
         this.prodottoDao  = prodottoDao;
         this.notifier     = PacchettoNotifier.getInstance();
     }
+
     public PacchettoServiceImpl() {
         this(JdbcPacchettoDAO.getInstance(), JdbcProdottoDAO.getInstance());
     }
 
     @Override
     public void creaPacchetto(PacchettoDto dto, String creatore) {
-        // 1) validazione
-        double prezzoTotale = Double.parseDouble(dto.getPrezzoTxt());
+        // parsing controllato del prezzo totale
+        double prezzoTotale;
+        try {
+            prezzoTotale = Double.parseDouble(dto.getPrezzoTxt());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("⚠ Prezzo totale non valido (deve essere un numero)");
+        }
+
+        // risoluzione e raccolta prodotti esistenti
+        List<unicam.filiera.model.Prodotto> prodotti = dto.getNomiProdotti().stream()
+                .map(String::trim)
+                .map(prodottoDao::findByNome)
+                .filter(p -> p != null)
+                .collect(Collectors.toList());
+
+        // 1) validazione di dominio
         ValidatorePacchetto.valida(
-                dto.getNome(), dto.getDescrizione(), dto.getIndirizzo(),
+                dto.getNome(),
+                dto.getDescrizione(),
+                dto.getIndirizzo(),
                 prezzoTotale,
-                dto.getNomiProdotti().stream()
-                        .map(prodottoDao::findByNome)
-                        .filter(p -> p != null)
-                        .collect(Collectors.toList())
+                prodotti
         );
         ValidatorePacchetto.validaFileCaricati(
                 dto.getCertificati().size(),
@@ -51,23 +65,22 @@ public class PacchettoServiceImpl implements PacchettoService {
                 .descrizione(dto.getDescrizione())
                 .indirizzo(dto.getIndirizzo())
                 .prezzoTotale(prezzoTotale)
-                .prodotti(dto.getNomiProdotti().stream()
-                        .map(String::trim)
-                        .map(prodottoDao::findByNome)
-                        .collect(Collectors.toList()))
+                .prodotti(prodotti)
                 .certificati(dto.getCertificati().stream()
-                        .map(File::getName).collect(Collectors.toList()))
+                        .map(File::getName)
+                        .collect(Collectors.toList()))
                 .foto(dto.getFoto().stream()
-                        .map(File::getName).collect(Collectors.toList()))
+                        .map(File::getName)
+                        .collect(Collectors.toList()))
                 .creatoDa(creatore)
                 .stato(StatoProdotto.IN_ATTESA)
                 .build();
 
-        // 3a) salva i soli dettagli
+        // 3a) salva dettagli pacchetto
         if (!pacchettoDao.saveDetails(p)) {
             throw new RuntimeException("Errore salvataggio dettagli pacchetto");
         }
-        // 3b) salva certificati e foto
+        // 3b) salva file pacchetto
         if (!pacchettoDao.saveFiles(p, dto.getCertificati(), dto.getFoto())) {
             throw new RuntimeException("Errore upload file pacchetto");
         }

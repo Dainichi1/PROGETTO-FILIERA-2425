@@ -153,12 +153,15 @@ public class JdbcPacchettoDAO implements PacchettoDAO {
 
     // Crea un Pacchetto da ResultSet
     private Pacchetto buildFromRs(ResultSet rs) throws SQLException {
-        List<String> cert = rs.getString("certificati")==null
+        String certCsv = rs.getString("certificati");
+        List<String> cert = (certCsv == null || certCsv.isBlank())
                 ? List.of()
-                : Arrays.asList(rs.getString("certificati").split(","));
-        List<String> foto = rs.getString("foto")==null
+                : Arrays.asList(certCsv.split(","));
+
+        String fotoCsv = rs.getString("foto");
+        List<String> foto = (fotoCsv == null || fotoCsv.isBlank())
                 ? List.of()
-                : Arrays.asList(rs.getString("foto").split(","));
+                : Arrays.asList(fotoCsv.split(","));
 
         return new Pacchetto.Builder()
                 .nome(rs.getString("nome"))
@@ -173,6 +176,7 @@ public class JdbcPacchettoDAO implements PacchettoDAO {
                 .commento(rs.getString("commento"))
                 .build();
     }
+
 
     // Estrae la lista di Prodotto a partire dalla stringa "nome1,nome2,…"
 

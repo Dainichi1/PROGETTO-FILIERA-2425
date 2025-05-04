@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -174,8 +175,16 @@ public class JdbcProdottoDAO implements ProdottoDAO {
     }
 
     private Prodotto buildProdottoFromRs(ResultSet rs) throws SQLException {
-        List<String> cert = List.of(rs.getString("certificati").split(","));
-        List<String> foto = List.of(rs.getString("foto").split(","));
+        String certCsv = rs.getString("certificati");
+        List<String> cert = (certCsv == null || certCsv.isBlank())
+                ? List.of()
+                : Arrays.asList(certCsv.split(","));
+
+        String fotoCsv = rs.getString("foto");
+        List<String> foto = (fotoCsv == null || fotoCsv.isBlank())
+                ? List.of()
+                : Arrays.asList(fotoCsv.split(","));
+
         return new Prodotto.Builder()
                 .nome(rs.getString("nome"))
                 .descrizione(rs.getString("descrizione"))
@@ -189,4 +198,5 @@ public class JdbcProdottoDAO implements ProdottoDAO {
                 .commento(rs.getString("commento"))
                 .build();
     }
+
 }

@@ -12,56 +12,76 @@ import unicam.filiera.model.observer.PacchettoNotifier;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
 import java.util.List;
+import java.util.stream.Collectors;
 
+/**
+ * Pannello per il ruolo Curatore: mostra prodotti e pacchetti da approvare.
+ * Contiene solo la parte grafica (preview di foto e certificati).
+ */
 public class PannelloCuratore extends JPanel
         implements OsservatoreProdotto, OsservatorePacchetto {
 
-    /* ------------------------------------------------------------------ */
-    /*  CAMPI                                                             */
-    /* ------------------------------------------------------------------ */
-    private final JTable            tabella;
+    private final JTable tabella;
     private final DefaultTableModel model;
-    private final JScrollPane       scrollPane;
-    private final JButton           toggleButton;
+    private final JScrollPane scrollPane;
+    private final JButton toggleButton;
     private final CuratoreController controller = new CuratoreController();
 
-    /* ------------------------------------------------------------------ */
-    /*  COSTRUTTORE                                                       */
-    /* ------------------------------------------------------------------ */
     public PannelloCuratore(UtenteAutenticato utente) {
         super(new BorderLayout());
 
-        /* Header */
+        // Header
         JLabel benvenuto = new JLabel(
                 "Benvenuto " + utente.getNome() + ", " + utente.getRuolo(),
                 SwingConstants.CENTER);
         benvenuto.setFont(new Font("Arial", Font.BOLD, 18));
         add(benvenuto, BorderLayout.NORTH);
 
-        /* Tabella */
+        // Colonne della tabella
         String[] col = {"Nome","Descrizione","Quantità","Prezzo","Indirizzo",
                 "Creato da","Certificati","Foto",
                 "Accetta","Rifiuta","Commento"};
-        model   = new DefaultTableModel(col,0){
-            @Override public boolean isCellEditable(int r,int c){
-                return c==8||c==9||c==10;
+        model = new DefaultTableModel(col, 0) {
+            @Override public boolean isCellEditable(int row, int col) {
+                // Solo le colonne di preview (6,7) e approvazione (8,9,10)
+                return col >= 6;
+            }
+            @Override public Class<?> getColumnClass(int c) {
+                if (c == 6 || c == 7) return List.class;       // lista di File
+                if (c == 8 || c == 9) return JButton.class;     // accetta/rifiuta
+                return super.getColumnClass(c);
             }
         };
+
         tabella = new JTable(model);
         tabella.setRowHeight(40);
-        tabella.getColumn("Accetta").setCellRenderer(new ComponentCellRenderer());
-        tabella.getColumn("Accetta").setCellEditor  (new ComponentCellEditor());
-        tabella.getColumn("Rifiuta").setCellRenderer(new ComponentCellRenderer());
-        tabella.getColumn("Rifiuta").setCellEditor  (new ComponentCellEditor());
-        tabella.getColumn("Commento").setCellRenderer(new ComponentCellRenderer());
 
+        // Preview certificati e foto
+        PreviewCell preview = new PreviewCell();
+        tabella.getColumn("Certificati").setCellRenderer(preview);
+        tabella.getColumn("Certificati").setCellEditor(preview);
+        tabella.getColumn("Foto").setCellRenderer(preview);
+        tabella.getColumn("Foto").setCellEditor(preview);
+
+        // Colonne di approvazione e commento
+        tabella.getColumn("Accetta").setCellRenderer(new ComponentCellRenderer());
+        tabella.getColumn("Accetta").setCellEditor(new ComponentCellEditor());
+        tabella.getColumn("Rifiuta").setCellRenderer(new ComponentCellRenderer());
+        tabella.getColumn("Rifiuta").setCellEditor(new ComponentCellEditor());
+        // Commento usa default renderer (stringhe)
+
+        // Scroll pane
         scrollPane = new JScrollPane(tabella);
         scrollPane.setVisible(false);
         add(scrollPane, BorderLayout.CENTER);
 
-        /* Toggle */
+        // Bottone toggle
         toggleButton = new JButton("Visualizza elementi da approvare");
         toggleButton.addActionListener(e -> {
             if (!scrollPane.isVisible()) caricaElementiInAttesa();
@@ -70,148 +90,144 @@ public class PannelloCuratore extends JPanel
                     ? "Nascondi lista elementi"
                     : "Visualizza elementi da approvare");
             Window w = SwingUtilities.getWindowAncestor(this);
-            if (w instanceof JFrame f) f.pack();
+            if (w instanceof JFrame) ((JFrame)w).pack();
             revalidate(); repaint();
         });
         add(toggleButton, BorderLayout.SOUTH);
 
-        /* Observer */
-        ObserverManager.registraOsservatore(this);          // prodotti
-        PacchettoNotifier.getInstance().registraOsservatore(this); // pacchetti
+        // Registrazione come osservatore
+        ObserverManager.registraOsservatore(this);
+        PacchettoNotifier.getInstance().registraOsservatore(this);
 
+        // Carica iniziale
         caricaElementiInAttesa();
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  CALLBACK – PRODOTTI                                               */
-    /* ------------------------------------------------------------------ */
-    @Override
-    public void notifica(Prodotto prodotto, String evento) {
+    @Override public void notifica(Prodotto prodotto, String evento) {
         if ("NUOVO_PRODOTTO".equals(evento)) {
             SwingUtilities.invokeLater(this::caricaElementiInAttesa);
         }
     }
-
-    /* ------------------------------------------------------------------ */
-    /*  CALLBACK – PACCHETTI                                              */
-    /* ------------------------------------------------------------------ */
-    @Override
-    public void notifica(Pacchetto pacchetto, String evento) {
+    @Override public void notifica(Pacchetto pacchetto, String evento) {
         if ("NUOVO_PACCHETTO".equals(evento)) {
             SwingUtilities.invokeLater(this::caricaElementiInAttesa);
         }
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  CARICAMENTO DATI                                                  */
-    /* ------------------------------------------------------------------ */
     private void caricaElementiInAttesa() {
         model.setRowCount(0);
-
-        for (Prodotto p : controller.getProdottiDaApprovare())
-            aggiungiRigaGenerica(p);
-
-        for (Pacchetto k : controller.getPacchettiDaApprovare())
-            aggiungiRigaGenerica(k);
+        controller.getProdottiDaApprovare().forEach(p -> aggiungiRiga(p, false));
+        controller.getPacchettiDaApprovare().forEach(k -> aggiungiRiga(k, true));
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  AGGIUNTA RIGA GENERICA                                            */
-    /* ------------------------------------------------------------------ */
-    private void aggiungiRigaGenerica(Object elemento) {
-        JButton btnAccetta = new JButton("✔");
-        JButton btnRifiuta = new JButton("✖");
+    private void aggiungiRiga(Object elem, boolean isPacchetto) {
+        Prodotto p = isPacchetto ? null : (Prodotto)elem;
+        Pacchetto k = isPacchetto ? (Pacchetto)elem : null;
 
-        String nomeVisualizzato, descrizione, indirizzo, creatoDa;
-        double prezzo;
-        List<String> certificati, foto;
-        int quantita;
-        boolean isPacchetto;
+        String nome = isPacchetto ? "[PAC] " + k.getNome() : p.getNome();
+        String desc = isPacchetto ? k.getDescrizione() : p.getDescrizione();
+        int qt      = isPacchetto ? k.getProdotti().size() : p.getQuantita();
+        double pr   = isPacchetto ? k.getPrezzoTotale()  : p.getPrezzo();
+        String ind  = isPacchetto ? k.getIndirizzo()     : p.getIndirizzo();
+        String cd   = isPacchetto ? k.getCreatoDa()      : p.getCreatoDa();
 
-        if (elemento instanceof Prodotto p) {
-            isPacchetto = false;
-            nomeVisualizzato = p.getNome();
-            descrizione      = p.getDescrizione();
-            quantita         = p.getQuantita();
-            prezzo           = p.getPrezzo();
-            indirizzo        = p.getIndirizzo();
-            creatoDa         = p.getCreatoDa();
-            certificati      = p.getCertificati();
-            foto             = p.getFoto();
-        } else if (elemento instanceof Pacchetto k) {
-            isPacchetto      = true;
-            nomeVisualizzato = "[PACCHETTO] " + k.getNome();
-            descrizione      = k.getDescrizione();
-            quantita         = k.getProdotti().size();
-            prezzo           = k.getPrezzoTotale();
-            indirizzo        = k.getIndirizzo();
-            creatoDa         = k.getCreatoDa();
-            certificati      = k.getCertificati();
-            foto             = k.getFoto();
-        } else return;
+        // Costruisco liste di File con percorso corretto
+        String certDir = isPacchetto ? "uploads/certificati_pacchetti/" : "uploads/certificati/";
+        String fotoDir = isPacchetto ? "uploads/foto_pacchetti/" : "uploads/foto/";
 
-        model.addRow(new Object[]{
-                nomeVisualizzato, descrizione, quantita, prezzo,
-                indirizzo, creatoDa,
-                String.join(", ", certificati),
-                String.join(", ", foto),
-                btnAccetta, btnRifiuta, ""
-        });
-        int row = model.getRowCount()-1;
+        List<File> certFiles = (isPacchetto ? k.getCertificati() : p.getCertificati()).stream()
+                .map(name -> new File(certDir + name))
+                .collect(Collectors.toList());
+        List<File> fotoFiles = (isPacchetto ? k.getFoto() : p.getFoto()).stream()
+                .map(name -> new File(fotoDir + name))
+                .collect(Collectors.toList());
 
-        /* Accetta */
-        btnAccetta.addActionListener(e -> {
-            if (tabella.isEditing()) tabella.getCellEditor().stopCellEditing();
-            boolean ok = isPacchetto
-                    ? controller.approvaPacchetto((Pacchetto) elemento)
-                    : controller.approvaProdotto((Prodotto) elemento);
-            if (ok) {
-                JOptionPane.showMessageDialog(this,
-                        (isPacchetto? "Pacchetto":"Prodotto") + " approvato!");
-                model.removeRow(row);
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "Errore durante l'approvazione!",
-                        "Errore", JOptionPane.ERROR_MESSAGE);
-            }
-        });
-
-        /* Rifiuta */
-        btnRifiuta.addActionListener(e -> {
-            if (tabella.isEditing()) tabella.getCellEditor().stopCellEditing();
-            String commento = (String) model.getValueAt(row, 10);
-            boolean ok = isPacchetto
-                    ? controller.rifiutaPacchetto((Pacchetto) elemento, commento)
-                    : controller.rifiutaProdotto((Prodotto)  elemento, commento);
-            if (ok) {
-                JOptionPane.showMessageDialog(this,
-                        (isPacchetto? "Pacchetto":"Prodotto") + " rifiutato!");
-                caricaElementiInAttesa();
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "Errore durante il rifiuto!",
-                        "Errore", JOptionPane.ERROR_MESSAGE);
-            }
-        });
+        JButton btnA = new JButton("✔");
+        JButton btnR = new JButton("✖");
+        model.addRow(new Object[]{nome, desc, qt, pr, ind, cd, certFiles, fotoFiles, btnA, btnR, ""});
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  CELL EDITOR DUMMY                                                 */
-    /* ------------------------------------------------------------------ */
-    private static class ComponentCellEditor extends AbstractCellEditor
-            implements TableCellEditor {
+    // Renderer/Editor per preview di file
+    private class PreviewCell extends AbstractCellEditor
+            implements TableCellRenderer, TableCellEditor, ActionListener {
+        private final JButton button = new JButton("🔍");
+        private List<File> files;
+        private String column;
+
+        public PreviewCell() {
+            button.addActionListener(this);
+        }
+        @Override public Component getTableCellRendererComponent(
+                JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
+            return button;
+        }
+        @Override public Component getTableCellEditorComponent(
+                JTable table, Object value, boolean isSelected, int row, int col) {
+            files = (List<File>) value;
+            column = table.getColumnName(col);
+            return button;
+        }
+        @Override public Object getCellEditorValue() {
+            return files;
+        }
+        @Override public void actionPerformed(ActionEvent e) {
+            stopCellEditing();
+            showPreviewDialog(files, column);
+        }
+    }
+
+    private void showPreviewDialog(List<File> files, String type) {
+        JDialog dlg = new JDialog(
+                SwingUtilities.getWindowAncestor(this),
+                type,
+                Dialog.ModalityType.APPLICATION_MODAL
+        );
+        JPanel pnl = new JPanel(new GridLayout(0,1,5,5));
+        for (File f : files) {
+            if (!f.exists()) {
+                pnl.add(new JLabel("⚠ File non trovato: " + f.getName()));
+                continue;
+            }
+            if ("Foto".equals(type)) {
+                ImageIcon icon = new ImageIcon(f.getAbsolutePath());
+                JLabel lbl = new JLabel(icon);
+                lbl.setPreferredSize(new Dimension(icon.getIconWidth(), icon.getIconHeight()));
+                pnl.add(lbl);
+            } else {
+                JButton bf = new JButton(f.getName());
+                bf.addActionListener(ae -> {
+                    try { Desktop.getDesktop().open(f); }
+                    catch (Exception ex) { ex.printStackTrace(); }
+                });
+                pnl.add(bf);
+            }
+        }
+        dlg.add(new JScrollPane(pnl));
+        dlg.pack();
+        dlg.setLocationRelativeTo(this);
+        dlg.setVisible(true);
+    }
+
+    // Dummy renderer/editor per Accetta/Rifiuta
+    private static class ComponentCellEditor extends AbstractCellEditor implements TableCellEditor {
         @Override public Component getTableCellEditorComponent(
                 JTable t, Object v, boolean s, int r, int c) { return (Component) v; }
         @Override public Object getCellEditorValue() { return null; }
     }
+    private static class ComponentCellRenderer implements TableCellRenderer {
+        @Override public Component getTableCellRendererComponent(
+                JTable t, Object v, boolean sel, boolean foc, int r, int c) {
+            if (v instanceof Component) {
+                return (Component) v;
+            } else {
+                return new JLabel(v != null ? v.toString() : "");
+            }
+        }
+    }
 
-    /* ------------------------------------------------------------------ */
-    /*  UN-REGISTER                                                       */
-    /* ------------------------------------------------------------------ */
-    @Override
-    public void removeNotify() {
+    @Override public void removeNotify() {
         super.removeNotify();
-        ObserverManager.rimuoviOsservatore(this); // prodotti
-        PacchettoNotifier.getInstance().rimuoviOsservatore(this); // pacchetti
+        ObserverManager.rimuoviOsservatore(this);
+        PacchettoNotifier.getInstance().rimuoviOsservatore(this);
     }
 }

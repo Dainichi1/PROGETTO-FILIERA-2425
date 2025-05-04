@@ -95,6 +95,8 @@ public class LoginPanel extends JPanel {
                             PannelloFactory.creaDistributorePanel(dashboard, authUser));
                     case ANIMATORE -> dashboard.setContentPane(
                             PannelloFactory.creaAnimatorePanel(dashboard, authUser));
+                    case ACQUIRENTE -> dashboard.setContentPane(
+                            PannelloFactory.creaAcquirentePanel(dashboard, authUser));
                     default -> {
                         JOptionPane.showMessageDialog(this,
                                 "Nessun pannello associato a questo ruolo.",

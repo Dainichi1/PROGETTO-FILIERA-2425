@@ -49,6 +49,8 @@ public final class PannelloFactory {
             case CURATORE -> creaCuratorePanel(frame, utente);
             case DISTRIBUTORE_TIPICITA -> creaDistributorePanel(frame, utente);
             case ANIMATORE -> creaAnimatorePanel(frame, utente);
+            case ACQUIRENTE -> creaAcquirentePanel(frame, utente);
+
             default -> null;
         };
     }
@@ -67,5 +69,9 @@ public final class PannelloFactory {
 
     public static JPanel creaAnimatorePanel(JFrame frame, UtenteAutenticato utente) {
         return new PannelloAnimatore(utente);
+    }
+
+    public static JPanel creaAcquirentePanel(JFrame frame, UtenteAutenticato utente) {
+        return new PannelloAcquirente(utente);
     }
 }

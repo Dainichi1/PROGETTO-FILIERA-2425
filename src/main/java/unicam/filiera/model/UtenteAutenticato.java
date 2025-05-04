@@ -24,7 +24,6 @@ public class UtenteAutenticato implements Utente {
         return username;
     }
 
-    // il getter della password lo puoi lasciare privato o package‐private se non serve nell'interfaccia
     public String getPassword() {
         return password;
     }

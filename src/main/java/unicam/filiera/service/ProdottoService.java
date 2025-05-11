@@ -15,6 +15,8 @@ import java.util.List;
  */
 public interface ProdottoService {
     void creaProdotto(ProdottoDto dto, String creatore);
+
     List<Prodotto> getProdottiCreatiDa(String creatore);
+
     List<Prodotto> getProdottiByStato(StatoProdotto stato);
 }

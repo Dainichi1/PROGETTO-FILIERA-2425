@@ -33,12 +33,32 @@ public class ProdottoDto {
         this.foto = foto;
     }
 
-    public String getNome() { return nome; }
-    public String getDescrizione() { return descrizione; }
-    public String getQuantitaTxt() { return quantitaTxt; }
-    public String getPrezzoTxt() { return prezzoTxt; }
-    public String getIndirizzo() { return indirizzo; }
-    public List<File> getCertificati() { return certificati; }
-    public List<File> getFoto() { return foto; }
+    public String getNome() {
+        return nome;
+    }
+
+    public String getDescrizione() {
+        return descrizione;
+    }
+
+    public String getQuantitaTxt() {
+        return quantitaTxt;
+    }
+
+    public String getPrezzoTxt() {
+        return prezzoTxt;
+    }
+
+    public String getIndirizzo() {
+        return indirizzo;
+    }
+
+    public List<File> getCertificati() {
+        return certificati;
+    }
+
+    public List<File> getFoto() {
+        return foto;
+    }
 }
 

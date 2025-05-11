@@ -1,6 +1,7 @@
 package unicam.filiera.util;
 
 import java.util.List;
+
 import unicam.filiera.model.Prodotto;
 
 public class ValidatorePacchetto {

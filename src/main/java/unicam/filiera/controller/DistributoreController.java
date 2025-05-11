@@ -16,20 +16,24 @@ import java.util.function.BiConsumer;
 
 public class DistributoreController {
 
-    private final String          username;
+    private final String username;
     private final PacchettoService pacchettoService;
-    private final ProdottoService  prodottoService;
+    private final ProdottoService prodottoService;
 
-    /** iniezione di dipendenza per i test */
+    /**
+     * iniezione di dipendenza per i test
+     */
     public DistributoreController(String username,
                                   PacchettoService pacchettoService,
                                   ProdottoService prodottoService) {
-        this.username         = username;
+        this.username = username;
         this.pacchettoService = pacchettoService;
-        this.prodottoService  = prodottoService;
+        this.prodottoService = prodottoService;
     }
 
-    /** costruttore di convenienza per l’app reale */
+    /**
+     * costruttore di convenienza per l’app reale
+     */
     public DistributoreController(String username) {
         this(username,
                 new PacchettoServiceImpl(),
@@ -39,12 +43,17 @@ public class DistributoreController {
     /* ======================================================================
        SERVIZI DI SOLA-LETTURA (usati dalla view)
        ====================================================================== */
-    /** Prodotti approvati e quindi visibili nel Marketplace. */
+
+    /**
+     * Prodotti approvati e quindi visibili nel Marketplace.
+     */
     public List<Prodotto> getProdottiMarketplace() {
         return prodottoService.getProdottiByStato(StatoProdotto.APPROVATO);
     }
 
-    /** Pacchetti creati dallo stesso distributore. */
+    /**
+     * Pacchetti creati dallo stesso distributore.
+     */
     public List<Pacchetto> getPacchettiCreatiDaMe() {
         return pacchettoService.getPacchettiCreatiDa(username);
     }
@@ -52,6 +61,7 @@ public class DistributoreController {
     /* ======================================================================
        CASO D’USO “CREA & INVIA PACCHETTO”
        ====================================================================== */
+
     /**
      * Flusso completo: validazione, persistenza, upload file,
      * passaggio in stato IN_ATTESA e notifica al Curatore.
@@ -59,7 +69,7 @@ public class DistributoreController {
      * la view dalla logica.
      */
     public void inviaPacchetto(PacchettoDto dto,
-                               BiConsumer<Boolean,String> callback) {
+                               BiConsumer<Boolean, String> callback) {
         try {
             // delego tutto al service
             pacchettoService.creaPacchetto(dto, username);

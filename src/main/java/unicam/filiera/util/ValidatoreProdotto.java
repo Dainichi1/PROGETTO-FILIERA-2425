@@ -10,7 +10,7 @@ public class ValidatoreProdotto {
     public static void valida(String nome,
                               String descrizione,
                               String indirizzo,
-                              int    quantita,
+                              int quantita,
                               double prezzo) {
 
         if (nome == null || nome.isBlank())
@@ -31,7 +31,9 @@ public class ValidatoreProdotto {
 
     /* ------------------------------------------------------------------ */
 
-    /** Valida la presenza di almeno un certificato e di almeno una foto. */
+    /**
+     * Valida la presenza di almeno un certificato e di almeno una foto.
+     */
     public static void validaFileCaricati(int numCertificati, int numFoto) {
         if (numCertificati < 1)
             throw new IllegalArgumentException("⚠ Devi selezionare almeno un certificato!");

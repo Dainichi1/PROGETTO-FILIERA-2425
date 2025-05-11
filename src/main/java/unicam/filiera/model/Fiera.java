@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
  */
 public class Fiera extends Evento {
     private final String organizzatore;
-    private final int    numeroMinPartecipanti;
+    private final int numeroMinPartecipanti;
 
     private Fiera(Builder b) {
         super(
@@ -21,7 +21,7 @@ public class Fiera extends Evento {
                 b.indirizzo,
                 b.stato
         );
-        this.organizzatore         = b.organizzatore;
+        this.organizzatore = b.organizzatore;
         this.numeroMinPartecipanti = b.numeroMinPartecipanti;
     }
 
@@ -33,7 +33,9 @@ public class Fiera extends Evento {
         return numeroMinPartecipanti;
     }
 
-    /** eredita getStato() da Evento */
+    /**
+     * eredita getStato() da Evento
+     */
 
     public boolean raggiungeMinimo(int partecipantiAttuali) {
         return partecipantiAttuali >= this.numeroMinPartecipanti;
@@ -55,30 +57,65 @@ public class Fiera extends Evento {
 
     // --- Builder interno ---
     public static class Builder {
-        private long            id;
-        private LocalDateTime   dataInizio;
-        private LocalDateTime   dataFine;
-        private double          prezzo;
-        private String          descrizione;
-        private String          indirizzo;
-        private String          organizzatore;
-        private int             numeroMinPartecipanti;
-        private StatoEvento     stato = StatoEvento.IN_PREPARAZIONE;
+        private long id;
+        private LocalDateTime dataInizio;
+        private LocalDateTime dataFine;
+        private double prezzo;
+        private String descrizione;
+        private String indirizzo;
+        private String organizzatore;
+        private int numeroMinPartecipanti;
+        private StatoEvento stato = StatoEvento.IN_PREPARAZIONE;
 
-        public Builder id(long id)                             { this.id = id; return this; }
-        public Builder dataInizio(LocalDateTime dt)           { this.dataInizio = dt; return this; }
-        public Builder dataFine(LocalDateTime dt)             { this.dataFine   = dt; return this; }
-        public Builder prezzo(double p)                       { this.prezzo    = p; return this; }
-        public Builder descrizione(String d)                  { this.descrizione = d; return this; }
-        public Builder indirizzo(String i)                    { this.indirizzo   = i; return this; }
-        public Builder organizzatore(String o)                { this.organizzatore = o; return this; }
-        public Builder numeroMinPartecipanti(int n)           { this.numeroMinPartecipanti = n; return this; }
-        public Builder stato(StatoEvento s)                   { this.stato     = s; return this; }
+        public Builder id(long id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder dataInizio(LocalDateTime dt) {
+            this.dataInizio = dt;
+            return this;
+        }
+
+        public Builder dataFine(LocalDateTime dt) {
+            this.dataFine = dt;
+            return this;
+        }
+
+        public Builder prezzo(double p) {
+            this.prezzo = p;
+            return this;
+        }
+
+        public Builder descrizione(String d) {
+            this.descrizione = d;
+            return this;
+        }
+
+        public Builder indirizzo(String i) {
+            this.indirizzo = i;
+            return this;
+        }
+
+        public Builder organizzatore(String o) {
+            this.organizzatore = o;
+            return this;
+        }
+
+        public Builder numeroMinPartecipanti(int n) {
+            this.numeroMinPartecipanti = n;
+            return this;
+        }
+
+        public Builder stato(StatoEvento s) {
+            this.stato = s;
+            return this;
+        }
 
         public Fiera build() {
-            if (dataInizio==null || dataFine==null
-                    || descrizione==null || indirizzo==null
-                    || organizzatore==null)
+            if (dataInizio == null || dataFine == null
+                    || descrizione == null || indirizzo == null
+                    || organizzatore == null)
                 throw new IllegalStateException("Campi obbligatori mancanti per Fiera");
             return new Fiera(this);
         }

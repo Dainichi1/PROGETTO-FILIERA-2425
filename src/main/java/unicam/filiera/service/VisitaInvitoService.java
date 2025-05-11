@@ -21,6 +21,8 @@ public interface VisitaInvitoService {
      */
     void creaVisitaInvito(VisitaInvitoDto dto, String organizzatore);
 
-    /** Recupera le visite create da un dato organizzatore. */
+    /**
+     * Recupera le visite create da un dato organizzatore.
+     */
     List<VisitaInvito> getVisiteCreateDa(String organizzatore);
 }

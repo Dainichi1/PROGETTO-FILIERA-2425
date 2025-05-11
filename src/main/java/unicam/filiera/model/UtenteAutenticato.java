@@ -14,9 +14,9 @@ public class UtenteAutenticato implements Utente {
     public UtenteAutenticato(String username, String password, String nome, String cognome, Ruolo ruolo) {
         this.username = username;
         this.password = password;
-        this.nome     = nome;
-        this.cognome  = cognome;
-        this.ruolo    = ruolo;
+        this.nome = nome;
+        this.cognome = cognome;
+        this.ruolo = ruolo;
     }
 
     @Override

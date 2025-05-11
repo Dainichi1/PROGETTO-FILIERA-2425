@@ -13,7 +13,8 @@ import java.awt.*;
  */
 public final class PannelloFactory {
 
-    private PannelloFactory() {}
+    private PannelloFactory() {
+    }
 
     /**
      * Crea il pannello del marketplace.

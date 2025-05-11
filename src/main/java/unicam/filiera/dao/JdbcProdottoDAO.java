@@ -37,10 +37,10 @@ public class JdbcProdottoDAO implements ProdottoDAO {
         try (Connection conn = DatabaseManager.getConnection()) {
             // 1) inserimento dettagli iniziali
             String insert = """
-                INSERT INTO prodotti
-                 (nome, descrizione, quantita, prezzo, indirizzo, certificati, foto, creato_da, stato, commento)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """;
+                        INSERT INTO prodotti
+                         (nome, descrizione, quantita, prezzo, indirizzo, certificati, foto, creato_da, stato, commento)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """;
             try (PreparedStatement st = conn.prepareStatement(insert)) {
                 st.setString(1, p.getNome());
                 st.setString(2, p.getDescrizione());

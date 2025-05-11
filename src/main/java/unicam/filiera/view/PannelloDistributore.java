@@ -24,35 +24,35 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
     private final UtenteAutenticato utente;
     private final DistributoreController controller;
 
-    private final List<File> certSel     = new ArrayList<>();
-    private final List<File> fotoSel     = new ArrayList<>();
+    private final List<File> certSel = new ArrayList<>();
+    private final List<File> fotoSel = new ArrayList<>();
     private final List<Prodotto> prodottiSel = new ArrayList<>();
 
-    private final JTextField nomeField      = new JTextField();
-    private final JTextField descrField     = new JTextField();
+    private final JTextField nomeField = new JTextField();
+    private final JTextField descrField = new JTextField();
     private final JTextField indirizzoField = new JTextField();
-    private final JTextField prezzoField    = new JTextField();
+    private final JTextField prezzoField = new JTextField();
 
     private final JLabel labelCert = new JLabel("Nessun file selezionato");
     private final JLabel labelFoto = new JLabel("Nessun file selezionato");
 
     private final JButton btnToggleForm = new JButton("Chiudi form");
-    private final JButton btnSelProd    = new JButton("Seleziona Prodotti");
-    private final JButton btnCert       = new JButton("Seleziona Certificati");
-    private final JButton btnFoto       = new JButton("Seleziona Foto");
-    private final JButton btnInvia      = new JButton("Invia Pacchetto");
+    private final JButton btnSelProd = new JButton("Seleziona Prodotti");
+    private final JButton btnCert = new JButton("Seleziona Certificati");
+    private final JButton btnFoto = new JButton("Seleziona Foto");
+    private final JButton btnInvia = new JButton("Invia Pacchetto");
 
     private final DefaultTableModel modelProdotti;
-    private final JTable            tabellaProdotti;
+    private final JTable tabellaProdotti;
     private final DefaultTableModel modelPacchetti;
-    private final JTable            tabellaPacchetti;
+    private final JTable tabellaPacchetti;
 
     private final JPanel formPanel = new JPanel(new GridLayout(8, 2, 10, 10));
     private boolean formVisibile = true;
 
     public PannelloDistributore(UtenteAutenticato utente) {
         super(new BorderLayout());
-        this.utente     = utente;
+        this.utente = utente;
         this.controller = new DistributoreController(utente.getUsername());
 
         // Header
@@ -67,16 +67,16 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
         buildForm();
 
         // Prodotti table
-        String[] colProd = {"Nome","Descrizione","Quantità","Prezzo","Indirizzo"};
-        modelProdotti    = new DefaultTableModel(colProd, 0);
-        tabellaProdotti  = new JTable(modelProdotti);
+        String[] colProd = {"Nome", "Descrizione", "Quantità", "Prezzo", "Indirizzo"};
+        modelProdotti = new DefaultTableModel(colProd, 0);
+        tabellaProdotti = new JTable(modelProdotti);
 
         // Pacchetti table
         String[] colPack = {
-                "Nome","Descrizione","Indirizzo","Prezzo Totale",
-                "Prodotti","Certificati","Foto","Stato","Commento"
+                "Nome", "Descrizione", "Indirizzo", "Prezzo Totale",
+                "Prodotti", "Certificati", "Foto", "Stato", "Commento"
         };
-        modelPacchetti   = new DefaultTableModel(colPack, 0);
+        modelPacchetti = new DefaultTableModel(colPack, 0);
         tabellaPacchetti = new JTable(modelPacchetti);
 
         // Split pane
@@ -106,13 +106,20 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
     }
 
     private void buildForm() {
-        formPanel.add(new JLabel("Nome Pacchetto:"));          formPanel.add(nomeField);
-        formPanel.add(new JLabel("Descrizione:"));             formPanel.add(descrField);
-        formPanel.add(new JLabel("Indirizzo luogo vendita:")); formPanel.add(indirizzoField);
-        formPanel.add(new JLabel("Prezzo Totale:"));           formPanel.add(prezzoField);
-        formPanel.add(btnCert);        formPanel.add(labelCert);
-        formPanel.add(btnFoto);        formPanel.add(labelFoto);
-        formPanel.add(btnToggleForm);  formPanel.add(btnInvia);
+        formPanel.add(new JLabel("Nome Pacchetto:"));
+        formPanel.add(nomeField);
+        formPanel.add(new JLabel("Descrizione:"));
+        formPanel.add(descrField);
+        formPanel.add(new JLabel("Indirizzo luogo vendita:"));
+        formPanel.add(indirizzoField);
+        formPanel.add(new JLabel("Prezzo Totale:"));
+        formPanel.add(prezzoField);
+        formPanel.add(btnCert);
+        formPanel.add(labelCert);
+        formPanel.add(btnFoto);
+        formPanel.add(labelFoto);
+        formPanel.add(btnToggleForm);
+        formPanel.add(btnInvia);
         add(formPanel, BorderLayout.CENTER);
     }
 
@@ -122,7 +129,8 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
             formVisibile = !formVisibile;
             formPanel.setVisible(formVisibile);
             btnToggleForm.setText(formVisibile ? "Chiudi form" : "Crea Pacchetto");
-            revalidate(); repaint();
+            revalidate();
+            repaint();
         });
 
         // Selezione prodotti
@@ -181,7 +189,7 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
                 fotoSel
         );
 
-        BiConsumer<Boolean,String> callback = (ok, msg) -> SwingUtilities.invokeLater(() -> {
+        BiConsumer<Boolean, String> callback = (ok, msg) -> SwingUtilities.invokeLater(() -> {
             JOptionPane.showMessageDialog(
                     this, msg,
                     ok ? "Successo" : "Errore",
@@ -238,8 +246,7 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
                         "Pacchetto approvato",
                         JOptionPane.INFORMATION_MESSAGE
                 );
-            }
-            else if ("RIFIUTATO".equals(evento)) {
+            } else if ("RIFIUTATO".equals(evento)) {
                 String msg = "❌ Il tuo pacchetto \"" + p.getNome() + "\" è stato RIFIUTATO.";
                 if (p.getCommento() != null && !p.getCommento().isBlank()) {
                     msg += "\nCommento: " + p.getCommento();

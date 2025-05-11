@@ -12,7 +12,8 @@ import java.util.List;
 public class JdbcVisitaInvitoDAO implements VisitaInvitoDAO {
     private static JdbcVisitaInvitoDAO instance;
 
-    private JdbcVisitaInvitoDAO() {}
+    private JdbcVisitaInvitoDAO() {
+    }
 
     public static JdbcVisitaInvitoDAO getInstance() {
         if (instance == null) instance = new JdbcVisitaInvitoDAO();
@@ -22,11 +23,11 @@ public class JdbcVisitaInvitoDAO implements VisitaInvitoDAO {
     @Override
     public boolean save(VisitaInvito v) {
         String sql = """
-            INSERT INTO visite_invito
-             (data_inizio, data_fine, prezzo, descrizione, indirizzo,
-              organizzatore, numero_min_partecipanti, destinatari, stato)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """;
+                INSERT INTO visite_invito
+                 (data_inizio, data_fine, prezzo, descrizione, indirizzo,
+                  organizzatore, numero_min_partecipanti, destinatari, stato)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -56,11 +57,11 @@ public class JdbcVisitaInvitoDAO implements VisitaInvitoDAO {
     @Override
     public boolean update(VisitaInvito v) {
         String sql = """
-            UPDATE visite_invito
-               SET data_inizio = ?, data_fine = ?, prezzo = ?, descrizione = ?,
-                   indirizzo = ?, numero_min_partecipanti = ?, destinatari = ?, stato = ?
-             WHERE id = ?
-            """;
+                UPDATE visite_invito
+                   SET data_inizio = ?, data_fine = ?, prezzo = ?, descrizione = ?,
+                       indirizzo = ?, numero_min_partecipanti = ?, destinatari = ?, stato = ?
+                 WHERE id = ?
+                """;
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 

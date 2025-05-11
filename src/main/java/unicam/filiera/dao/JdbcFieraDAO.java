@@ -28,10 +28,10 @@ public class JdbcFieraDAO implements FieraDAO {
     @Override
     public boolean save(Fiera fiera) {
         String sql = """
-            INSERT INTO fiere
-              (data_inizio, data_fine, prezzo, descrizione, indirizzo, organizzatore, numero_min_partecipanti, stato)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """;
+                INSERT INTO fiere
+                  (data_inizio, data_fine, prezzo, descrizione, indirizzo, organizzatore, numero_min_partecipanti, stato)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """;
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -62,16 +62,16 @@ public class JdbcFieraDAO implements FieraDAO {
     @Override
     public boolean update(Fiera fiera) {
         String sql = """
-            UPDATE fiere
-               SET data_inizio = ?,
-                   data_fine = ?,
-                   prezzo = ?,
-                   descrizione = ?,
-                   indirizzo = ?,
-                   numero_min_partecipanti = ?,
-                   stato = ?
-             WHERE id = ?
-            """;
+                UPDATE fiere
+                   SET data_inizio = ?,
+                       data_fine = ?,
+                       prezzo = ?,
+                       descrizione = ?,
+                       indirizzo = ?,
+                       numero_min_partecipanti = ?,
+                       stato = ?
+                 WHERE id = ?
+                """;
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -94,10 +94,10 @@ public class JdbcFieraDAO implements FieraDAO {
     @Override
     public List<Fiera> findByOrganizzatore(String organizzatore) {
         String sql = """
-            SELECT * 
-              FROM fiere 
-             WHERE organizzatore = ?
-            """;
+                SELECT * 
+                  FROM fiere 
+                 WHERE organizzatore = ?
+                """;
         return findBy(sql, organizzatore);
     }
 
@@ -114,19 +114,19 @@ public class JdbcFieraDAO implements FieraDAO {
     @Override
     public List<Fiera> findAll() {
         String sql = """
-            SELECT * 
-              FROM fiere
-            """;
+                SELECT * 
+                  FROM fiere
+                """;
         return findBy(sql, null);
     }
 
     @Override
     public Fiera findById(long id) {
         String sql = """
-            SELECT * 
-              FROM fiere 
-             WHERE id = ?
-            """;
+                SELECT * 
+                  FROM fiere 
+                 WHERE id = ?
+                """;
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 

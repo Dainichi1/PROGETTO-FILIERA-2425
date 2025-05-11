@@ -1,6 +1,7 @@
 package unicam.filiera.model.observer;
 
 import unicam.filiera.model.Fiera;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,9 +15,12 @@ public class FieraNotifier {
 
     private final List<OsservatoreFiera> osservatori = new ArrayList<>();
 
-    private FieraNotifier() { }
+    private FieraNotifier() {
+    }
 
-    /** Ritorna l’istanza singleton di FieraNotifier */
+    /**
+     * Ritorna l’istanza singleton di FieraNotifier
+     */
     public static synchronized FieraNotifier getInstance() {
         if (instance == null) {
             instance = new FieraNotifier();
@@ -26,6 +30,7 @@ public class FieraNotifier {
 
     /**
      * Registra un nuovo osservatore.
+     *
      * @param osservatore l’oggetto che implementa OsservatoreFiera
      */
     public void registraOsservatore(OsservatoreFiera osservatore) {
@@ -36,6 +41,7 @@ public class FieraNotifier {
 
     /**
      * Rimuove un osservatore precedentemente registrato.
+     *
      * @param osservatore l’osservatore da rimuovere
      */
     public void rimuoviOsservatore(OsservatoreFiera osservatore) {
@@ -44,8 +50,9 @@ public class FieraNotifier {
 
     /**
      * Notifica tutti gli osservatori registrati di un evento relativo a una fiera.
-     * @param fiera   la fiera che ha generato l’evento
-     * @param evento  una stringa che identifica l’azione (es. "NUOVA_FIERA", "FIERA_PUBBLICATA")
+     *
+     * @param fiera  la fiera che ha generato l’evento
+     * @param evento una stringa che identifica l’azione (es. "NUOVA_FIERA", "FIERA_PUBBLICATA")
      */
     public void notificaTutti(Fiera fiera, String evento) {
         for (OsservatoreFiera o : osservatori) {

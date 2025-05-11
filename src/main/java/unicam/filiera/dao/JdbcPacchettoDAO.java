@@ -30,15 +30,17 @@ public class JdbcPacchettoDAO implements PacchettoDAO {
         return instance;
     }
 
-    /** 1) salva solo i campi testuali, senza certificati/foto */
+    /**
+     * 1) salva solo i campi testuali, senza certificati/foto
+     */
     @Override
     public boolean saveDetails(Pacchetto p) {
         String insertSql = """
-            INSERT INTO pacchetti
-              (nome, descrizione, indirizzo, prezzo_totale, prodotti,
-               certificati, foto, creato_da, stato, commento)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """;
+                    INSERT INTO pacchetti
+                      (nome, descrizione, indirizzo, prezzo_totale, prodotti,
+                       certificati, foto, creato_da, stato, commento)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(insertSql)) {
 
@@ -63,7 +65,9 @@ public class JdbcPacchettoDAO implements PacchettoDAO {
         }
     }
 
-    /** 2) copia fisicamente i file e aggiorna le colonne */
+    /**
+     * 2) copia fisicamente i file e aggiorna le colonne
+     */
     @Override
     public boolean saveFiles(Pacchetto p, List<File> certFiles, List<File> fotoFiles) {
         String updateFiles =
@@ -93,14 +97,14 @@ public class JdbcPacchettoDAO implements PacchettoDAO {
     @Override
     public boolean update(Pacchetto p) {
         String sql = """
-            UPDATE pacchetti
-               SET descrizione   = ?,
-                   prezzo_totale = ?,
-                   indirizzo     = ?,
-                   stato         = ?,
-                   commento      = ?
-             WHERE nome = ? AND creato_da = ?
-        """;
+                    UPDATE pacchetti
+                       SET descrizione   = ?,
+                           prezzo_totale = ?,
+                           indirizzo     = ?,
+                           stato         = ?,
+                           commento      = ?
+                     WHERE nome = ? AND creato_da = ?
+                """;
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 

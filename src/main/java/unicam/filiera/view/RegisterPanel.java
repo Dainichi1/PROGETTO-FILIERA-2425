@@ -77,8 +77,10 @@ public class RegisterPanel extends JPanel {
                         parentFrame.setContentPane(new MainWindow().getContentPane());
                         parentFrame.revalidate();
                     }
-                    case USERNAME_GIA_ESISTENTE -> JOptionPane.showMessageDialog(this, "Username già registrato. Scegli un altro.", "Errore", JOptionPane.ERROR_MESSAGE);
-                    case PERSONA_GIA_REGISTRATA -> JOptionPane.showMessageDialog(this, "Questa persona è già registrata con un altro ruolo!", "Errore", JOptionPane.ERROR_MESSAGE);
+                    case USERNAME_GIA_ESISTENTE ->
+                            JOptionPane.showMessageDialog(this, "Username già registrato. Scegli un altro.", "Errore", JOptionPane.ERROR_MESSAGE);
+                    case PERSONA_GIA_REGISTRATA ->
+                            JOptionPane.showMessageDialog(this, "Questa persona è già registrata con un altro ruolo!", "Errore", JOptionPane.ERROR_MESSAGE);
                 }
 
             } catch (IllegalArgumentException ex) {

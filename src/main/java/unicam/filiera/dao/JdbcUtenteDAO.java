@@ -126,6 +126,7 @@ public class JdbcUtenteDAO implements UtenteDAO {
             return false;
         }
     }
+
     @Override
     public List<UtenteAutenticato> findByRuoli(List<Ruolo> ruoli) {
         if (ruoli.isEmpty()) return List.of();
@@ -136,7 +137,7 @@ public class JdbcUtenteDAO implements UtenteDAO {
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             for (int i = 0; i < ruoli.size(); i++) {
-                ps.setString(i+1, ruoli.get(i).name());
+                ps.setString(i + 1, ruoli.get(i).name());
             }
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {

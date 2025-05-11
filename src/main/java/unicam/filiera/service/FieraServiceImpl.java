@@ -17,13 +17,17 @@ public class FieraServiceImpl implements FieraService {
     private final FieraDAO dao;
     private final FieraNotifier notifier;
 
-    /** Iniezione di dipendenza (utile per i test) */
+    /**
+     * Iniezione di dipendenza (utile per i test)
+     */
     public FieraServiceImpl(FieraDAO dao) {
-        this.dao      = dao;
+        this.dao = dao;
         this.notifier = FieraNotifier.getInstance();
     }
 
-    /** Costruttore di convenienza per l’app reale */
+    /**
+     * Costruttore di convenienza per l’app reale
+     */
     public FieraServiceImpl() {
         this(JdbcFieraDAO.getInstance());
     }

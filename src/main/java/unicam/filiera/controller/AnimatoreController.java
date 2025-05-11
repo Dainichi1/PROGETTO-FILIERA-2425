@@ -23,23 +23,27 @@ public class AnimatoreController {
         void completato(boolean ok, String msg);
     }
 
-    private final FieraService           fieraService;
-    private final VisitaInvitoService    visitaService;
-    private final String                 organizzatore;
-    private final UtenteDAO              utenteDAO;
+    private final FieraService fieraService;
+    private final VisitaInvitoService visitaService;
+    private final String organizzatore;
+    private final UtenteDAO utenteDAO;
 
-    /** Iniezione del service (utile per i test) */
+    /**
+     * Iniezione del service (utile per i test)
+     */
     public AnimatoreController(FieraService fieraService,
                                VisitaInvitoService visitaService,
                                UtenteDAO utenteDAO,
                                String organizzatore) {
-        this.fieraService  = fieraService;
+        this.fieraService = fieraService;
         this.visitaService = visitaService;
-        this.utenteDAO     = utenteDAO;
+        this.utenteDAO = utenteDAO;
         this.organizzatore = organizzatore;
     }
 
-    /** Costruttore di convenienza per l’app reale */
+    /**
+     * Costruttore di convenienza per l’app reale
+     */
     public AnimatoreController(String organizzatore) {
         this(
                 new FieraServiceImpl(JdbcFieraDAO.getInstance()),
@@ -51,7 +55,9 @@ public class AnimatoreController {
 
     //––– Metodi “fiera” –––//
 
-    /** Invia al service una nuova fiera da pubblicare */
+    /**
+     * Invia al service una nuova fiera da pubblicare
+     */
     public void inviaFiera(FieraDto dto, EsitoListener callback) {
         try {
             fieraService.creaFiera(dto, organizzatore);
@@ -63,7 +69,9 @@ public class AnimatoreController {
         }
     }
 
-    /** Restituisce le fiere create da questo animatore */
+    /**
+     * Restituisce le fiere create da questo animatore
+     */
     public List<Fiera> getFiereCreateDaMe() {
         return fieraService.getFiereCreateDa(organizzatore);
     }
@@ -71,7 +79,9 @@ public class AnimatoreController {
 
     //––– Metodi “visita su invito” –––//
 
-    /** Invia al service una nuova visita su invito da pubblicare */
+    /**
+     * Invia al service una nuova visita su invito da pubblicare
+     */
     public void inviaVisitaInvito(VisitaInvitoDto dto, EsitoListener callback) {
         try {
             visitaService.creaVisitaInvito(dto, organizzatore);
@@ -83,7 +93,9 @@ public class AnimatoreController {
         }
     }
 
-    /** Restituisce le visite su invito create da questo animatore */
+    /**
+     * Restituisce le visite su invito create da questo animatore
+     */
     public List<VisitaInvito> getVisiteInvitoCreateDaMe() {
         return visitaService.getVisiteCreateDa(organizzatore);
     }

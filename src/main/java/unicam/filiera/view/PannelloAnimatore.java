@@ -20,20 +20,20 @@ public class PannelloAnimatore extends JPanel {
             new JComboBox<>(new String[]{"Fiera", "Visita su invito"});
 
     // — campi per il form “Fiera” —
-    private final JTextField txtF_DataInizio      = new JTextField(15);
-    private final JTextField txtF_DataFine        = new JTextField(15);
-    private final JTextField txtF_Prezzo          = new JTextField(10);
+    private final JTextField txtF_DataInizio = new JTextField(15);
+    private final JTextField txtF_DataFine = new JTextField(15);
+    private final JTextField txtF_Prezzo = new JTextField(10);
     private final JTextField txtF_MinPartecipanti = new JTextField(5);
-    private final JTextArea  txtF_Descrizione     = new JTextArea(3, 20);
-    private final JTextField txtF_Indirizzo       = new JTextField(20);
+    private final JTextArea txtF_Descrizione = new JTextArea(3, 20);
+    private final JTextField txtF_Indirizzo = new JTextField(20);
 
     // — campi per il form “Visita su invito” —
-    private final JTextField txtV_DataInizio      = new JTextField(15);
-    private final JTextField txtV_DataFine        = new JTextField(15);
-    private final JTextField txtV_Prezzo          = new JTextField(10);
+    private final JTextField txtV_DataInizio = new JTextField(15);
+    private final JTextField txtV_DataFine = new JTextField(15);
+    private final JTextField txtV_Prezzo = new JTextField(10);
     private final JTextField txtV_MinPartecipanti = new JTextField(5);
-    private final JTextArea  txtV_Descrizione     = new JTextArea(3, 20);
-    private final JTextField txtV_Indirizzo       = new JTextField(20);
+    private final JTextArea txtV_Descrizione = new JTextArea(3, 20);
+    private final JTextField txtV_Indirizzo = new JTextField(20);
 
     // Mappa CheckBox → UtenteAutenticato per i destinatari
     private final Map<JCheckBox, UtenteAutenticato> destinatariMap = new LinkedHashMap<>();
@@ -60,7 +60,7 @@ public class PannelloAnimatore extends JPanel {
         add(top, BorderLayout.SOUTH);
 
         // i due form
-        formContainer.add(buildFormFiera(),  "Fiera");
+        formContainer.add(buildFormFiera(), "Fiera");
         formContainer.add(buildFormVisita(), "Visita su invito");
         add(formContainer, BorderLayout.CENTER);
 
@@ -79,40 +79,50 @@ public class PannelloAnimatore extends JPanel {
         // righe Fiera
         aggiungiRiga(p, gbc, 0, "Data Inizio (YYYY-MM-DD):", txtF_DataInizio);
         aggiungiRiga(p, gbc, 1, "Data Fine   (YYYY-MM-DD):", txtF_DataFine);
-        aggiungiRiga(p, gbc, 2, "Prezzo:",                  txtF_Prezzo);
-        aggiungiRiga(p, gbc, 3, "Min. Partecipanti:",        txtF_MinPartecipanti);
+        aggiungiRiga(p, gbc, 2, "Prezzo:", txtF_Prezzo);
+        aggiungiRiga(p, gbc, 3, "Min. Partecipanti:", txtF_MinPartecipanti);
 
         // Descrizione
-        gbc.gridy = 4; gbc.gridx = 0; gbc.fill = GridBagConstraints.BOTH;
+        gbc.gridy = 4;
+        gbc.gridx = 0;
+        gbc.fill = GridBagConstraints.BOTH;
         p.add(new JLabel("Descrizione:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1.0;
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
         p.add(new JScrollPane(txtF_Descrizione), gbc);
-        gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 0;
 
         // Indirizzo
-        gbc.gridy = 5; gbc.gridx = 0;
+        gbc.gridy = 5;
+        gbc.gridx = 0;
         p.add(new JLabel("Indirizzo:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1.0;
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
         p.add(txtF_Indirizzo, gbc);
 
         // Pulsanti
-        gbc.gridy = 6; gbc.gridx = 0; gbc.gridwidth = 2; gbc.weightx = 0;
+        gbc.gridy = 6;
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        gbc.weightx = 0;
         JPanel btnsF = new JPanel();
         JButton bPubF = new JButton("Pubblica Fiera");
         JButton bAnnF = new JButton("Annulla");
-        btnsF.add(bPubF); btnsF.add(bAnnF);
+        btnsF.add(bPubF);
+        btnsF.add(bAnnF);
         p.add(btnsF, gbc);
 
         bPubF.addActionListener(e -> {
             var dto = new FieraDto(
                     txtF_DataInizio.getText().trim(),
-                    txtF_DataFine  .getText().trim(),
-                    txtF_Prezzo    .getText().trim(),
+                    txtF_DataFine.getText().trim(),
+                    txtF_Prezzo.getText().trim(),
                     txtF_Descrizione.getText().trim(),
-                    txtF_Indirizzo .getText().trim(),
+                    txtF_Indirizzo.getText().trim(),
                     txtF_MinPartecipanti.getText().trim()
             );
-            controller.inviaFiera(dto, (ok,msg) -> SwingUtilities.invokeLater(() -> {
+            controller.inviaFiera(dto, (ok, msg) -> SwingUtilities.invokeLater(() -> {
                 JOptionPane.showMessageDialog(
                         this, msg,
                         ok ? "Successo" : "Errore",
@@ -134,24 +144,33 @@ public class PannelloAnimatore extends JPanel {
         // righe Visita
         aggiungiRiga(p, gbc, 0, "Data Inizio (YYYY-MM-DD):", txtV_DataInizio);
         aggiungiRiga(p, gbc, 1, "Data Fine   (YYYY-MM-DD):", txtV_DataFine);
-        aggiungiRiga(p, gbc, 2, "Prezzo:",                  txtV_Prezzo);
-        aggiungiRiga(p, gbc, 3, "Min. Partecipanti:",        txtV_MinPartecipanti);
+        aggiungiRiga(p, gbc, 2, "Prezzo:", txtV_Prezzo);
+        aggiungiRiga(p, gbc, 3, "Min. Partecipanti:", txtV_MinPartecipanti);
 
         // Descrizione
-        gbc.gridy = 4; gbc.gridx = 0; gbc.fill = GridBagConstraints.BOTH;
+        gbc.gridy = 4;
+        gbc.gridx = 0;
+        gbc.fill = GridBagConstraints.BOTH;
         p.add(new JLabel("Descrizione:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1.0;
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
         p.add(new JScrollPane(txtV_Descrizione), gbc);
-        gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 0;
 
         // Indirizzo
-        gbc.gridy = 5; gbc.gridx = 0;
+        gbc.gridy = 5;
+        gbc.gridx = 0;
         p.add(new JLabel("Indirizzo:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1.0;
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
         p.add(txtV_Indirizzo, gbc);
 
         // Checkbox destinatari
-        gbc.gridy = 6; gbc.gridx = 0; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.NONE;
+        gbc.gridy = 6;
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.NONE;
         p.add(new JLabel("Seleziona destinatari:"), gbc);
 
         // carico utenti filtrati
@@ -167,16 +186,22 @@ public class PannelloAnimatore extends JPanel {
             destinatariMap.put(cb, u);
             chkPanel.add(cb);
         }
-        gbc.gridy = 7; gbc.fill = GridBagConstraints.BOTH;
+        gbc.gridy = 7;
+        gbc.fill = GridBagConstraints.BOTH;
         p.add(new JScrollPane(chkPanel), gbc);
-        gbc.fill = GridBagConstraints.HORIZONTAL; gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridwidth = 1;
 
         // Pulsanti
-        gbc.gridy = 8; gbc.gridx = 0; gbc.gridwidth = 2; gbc.weightx = 0;
+        gbc.gridy = 8;
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        gbc.weightx = 0;
         JPanel btnsV = new JPanel();
         JButton bPubV = new JButton("Pubblica Visita");
         JButton bAnnV = new JButton("Annulla");
-        btnsV.add(bPubV); btnsV.add(bAnnV);
+        btnsV.add(bPubV);
+        btnsV.add(bAnnV);
         p.add(btnsV, gbc);
 
         bPubV.addActionListener(e -> {
@@ -186,14 +211,14 @@ public class PannelloAnimatore extends JPanel {
                     .toList();
             var dto = new VisitaInvitoDto(
                     txtV_DataInizio.getText().trim(),
-                    txtV_DataFine  .getText().trim(),
-                    txtV_Prezzo    .getText().trim(),
+                    txtV_DataFine.getText().trim(),
+                    txtV_Prezzo.getText().trim(),
                     txtV_Descrizione.getText().trim(),
-                    txtV_Indirizzo .getText().trim(),
+                    txtV_Indirizzo.getText().trim(),
                     txtV_MinPartecipanti.getText().trim(),
                     dest
             );
-            controller.inviaVisitaInvito(dto, (ok,msg) -> SwingUtilities.invokeLater(() -> {
+            controller.inviaVisitaInvito(dto, (ok, msg) -> SwingUtilities.invokeLater(() -> {
                 JOptionPane.showMessageDialog(
                         this, msg,
                         ok ? "Successo" : "Errore",
@@ -222,32 +247,32 @@ public class PannelloAnimatore extends JPanel {
 
     private GridBagConstraints creaGbc() {
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets    = new Insets(5,5,5,5);
-        gbc.fill      = GridBagConstraints.HORIZONTAL;
-        gbc.weightx   = 0;
-        gbc.gridx     = 0;
-        gbc.gridy     = 0;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
         gbc.gridwidth = 1;
         return gbc;
     }
 
     private void resetAll() {
         // reset campi Fiera
-        txtF_DataInizio.    setText("");
-        txtF_DataFine.      setText("");
-        txtF_Prezzo.        setText("");
+        txtF_DataInizio.setText("");
+        txtF_DataFine.setText("");
+        txtF_Prezzo.setText("");
         txtF_MinPartecipanti.setText("");
-        txtF_Descrizione.   setText("");
-        txtF_Indirizzo.     setText("");
+        txtF_Descrizione.setText("");
+        txtF_Indirizzo.setText("");
         // reset campi Visita
-        txtV_DataInizio.    setText("");
-        txtV_DataFine.      setText("");
-        txtV_Prezzo.        setText("");
+        txtV_DataInizio.setText("");
+        txtV_DataFine.setText("");
+        txtV_Prezzo.setText("");
         txtV_MinPartecipanti.setText("");
-        txtV_Descrizione.   setText("");
-        txtV_Indirizzo.     setText("");
+        txtV_Descrizione.setText("");
+        txtV_Indirizzo.setText("");
         destinatariMap.keySet().forEach(cb -> cb.setSelected(false));
         // torno alla scheda “Fiera”
-        ((CardLayout)formContainer.getLayout()).show(formContainer, "Fiera");
+        ((CardLayout) formContainer.getLayout()).show(formContainer, "Fiera");
     }
 }

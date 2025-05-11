@@ -20,13 +20,17 @@ public class VisitaInvitoServiceImpl implements VisitaInvitoService {
     private final VisitaInvitoDAO dao;
     private final VisitaInvitoNotifier notifier;
 
-    /** Iniezione di dipendenza (utile per i test) */
+    /**
+     * Iniezione di dipendenza (utile per i test)
+     */
     public VisitaInvitoServiceImpl(VisitaInvitoDAO dao) {
-        this.dao      = dao;
+        this.dao = dao;
         this.notifier = VisitaInvitoNotifier.getInstance();
     }
 
-    /** Costruttore di convenienza per l’app reale */
+    /**
+     * Costruttore di convenienza per l’app reale
+     */
     public VisitaInvitoServiceImpl() {
         this(JdbcVisitaInvitoDAO.getInstance());
     }

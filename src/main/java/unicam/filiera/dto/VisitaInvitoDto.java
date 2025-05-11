@@ -23,20 +23,40 @@ public class VisitaInvitoDto {
             String minPartecipantiTxt,
             List<String> destinatari
     ) {
-        this.dataInizioTxt       = dataInizioTxt;
-        this.dataFineTxt         = dataFineTxt;
-        this.prezzoTxt           = prezzoTxt;
-        this.descrizione         = descrizione;
-        this.indirizzo           = indirizzo;
-        this.minPartecipantiTxt  = minPartecipantiTxt;
-        this.destinatari         = List.copyOf(destinatari);
+        this.dataInizioTxt = dataInizioTxt;
+        this.dataFineTxt = dataFineTxt;
+        this.prezzoTxt = prezzoTxt;
+        this.descrizione = descrizione;
+        this.indirizzo = indirizzo;
+        this.minPartecipantiTxt = minPartecipantiTxt;
+        this.destinatari = List.copyOf(destinatari);
     }
 
-    public String getDataInizioTxt()      { return dataInizioTxt; }
-    public String getDataFineTxt()        { return dataFineTxt; }
-    public String getPrezzoTxt()          { return prezzoTxt; }
-    public String getDescrizione()        { return descrizione; }
-    public String getIndirizzo()          { return indirizzo; }
-    public String getMinPartecipantiTxt() { return minPartecipantiTxt; }
-    public List<String> getDestinatari()  { return destinatari; }
+    public String getDataInizioTxt() {
+        return dataInizioTxt;
+    }
+
+    public String getDataFineTxt() {
+        return dataFineTxt;
+    }
+
+    public String getPrezzoTxt() {
+        return prezzoTxt;
+    }
+
+    public String getDescrizione() {
+        return descrizione;
+    }
+
+    public String getIndirizzo() {
+        return indirizzo;
+    }
+
+    public String getMinPartecipantiTxt() {
+        return minPartecipantiTxt;
+    }
+
+    public List<String> getDestinatari() {
+        return destinatari;
+    }
 }

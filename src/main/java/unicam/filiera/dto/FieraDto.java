@@ -15,19 +15,36 @@ public class FieraDto {
                     String descrizione,
                     String indirizzo,
                     String minPartecipantiTxt) {
-        this.dataInizioTxt       = dataInizioTxt;
-        this.dataFineTxt         = dataFineTxt;
-        this.prezzoTxt           = prezzoTxt;
-        this.descrizione         = descrizione;
-        this.indirizzo           = indirizzo;
-        this.minPartecipantiTxt  = minPartecipantiTxt;
+        this.dataInizioTxt = dataInizioTxt;
+        this.dataFineTxt = dataFineTxt;
+        this.prezzoTxt = prezzoTxt;
+        this.descrizione = descrizione;
+        this.indirizzo = indirizzo;
+        this.minPartecipantiTxt = minPartecipantiTxt;
     }
 
-    public String getDataInizioTxt()      { return dataInizioTxt; }
-    public String getDataFineTxt()        { return dataFineTxt; }
-    public String getPrezzoTxt()          { return prezzoTxt; }
-    public String getDescrizione()        { return descrizione; }
-    public String getIndirizzo()          { return indirizzo; }
-    public String getMinPartecipantiTxt() { return minPartecipantiTxt; }
+    public String getDataInizioTxt() {
+        return dataInizioTxt;
+    }
+
+    public String getDataFineTxt() {
+        return dataFineTxt;
+    }
+
+    public String getPrezzoTxt() {
+        return prezzoTxt;
+    }
+
+    public String getDescrizione() {
+        return descrizione;
+    }
+
+    public String getIndirizzo() {
+        return indirizzo;
+    }
+
+    public String getMinPartecipantiTxt() {
+        return minPartecipantiTxt;
+    }
 
 }

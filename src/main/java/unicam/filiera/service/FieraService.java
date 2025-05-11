@@ -19,9 +19,13 @@ public interface FieraService {
      */
     void creaFiera(FieraDto dto, String organizzatore);
 
-    /** Recupera le fiere create da un dato organizzatore. */
+    /**
+     * Recupera le fiere create da un dato organizzatore.
+     */
     List<Fiera> getFiereCreateDa(String organizzatore);
 
-    /** Recupera le fiere filtrate per stato. */
+    /**
+     * Recupera le fiere filtrate per stato.
+     */
     List<Fiera> getFiereByStato(StatoEvento stato);
 }

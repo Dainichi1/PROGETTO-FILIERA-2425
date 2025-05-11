@@ -2,43 +2,33 @@ package unicam.filiera.model;
 
 import java.util.List;
 
-public class Prodotto {
-    private String nome;
-    private String descrizione;
-    private int quantita;
-    private double prezzo;
-    private List<String> certificati;
-    private List<String> foto;
-    private String creatoDa;
-    private StatoProdotto stato;
-    private String commento;
-    private String indirizzo;
+/**
+ * Un singolo prodotto messo in vendita.
+ * <p>Estende {@link Item} ereditandone campi e logica comuni.</p>
+ */
+public class Prodotto extends Item {
 
+    /* --- campi specifici --- */
+    private final int quantita;
+    private final double prezzo;
 
-    // Costruttore privato usato solo dal Builder
-    private Prodotto(Builder builder) {
-        this.nome = builder.nome;
-        this.descrizione = builder.descrizione;
-        this.quantita = builder.quantita;
-        this.prezzo = builder.prezzo;
-        this.certificati = builder.certificati;
-        this.foto = builder.foto;
-        this.creatoDa = builder.creatoDa;
-        this.stato = builder.stato;
-        this.commento = builder.commento;
-        this.indirizzo = builder.indirizzo;
-
+    /* --- costruttore privato, invocato dal Builder --- */
+    private Prodotto(Builder b) {
+        super(
+                b.nome,
+                b.descrizione,
+                b.indirizzo,
+                b.certificati,
+                b.foto,
+                b.creatoDa,
+                b.stato,
+                b.commento
+        );
+        this.quantita = b.quantita;
+        this.prezzo = b.prezzo;
     }
 
-    // Getter e Setter
-    public String getNome() {
-        return nome;
-    }
-
-    public String getDescrizione() {
-        return descrizione;
-    }
-
+    /* --- getter specifici --- */
     public int getQuantita() {
         return quantita;
     }
@@ -47,138 +37,111 @@ public class Prodotto {
         return prezzo;
     }
 
-    public List<String> getCertificati() {
-        return certificati;
-    }
+    /* ------------------------------------------------------------------ */
 
-    public List<String> getFoto() {
-        return foto;
-    }
-
-    public String getCreatoDa() {
-        return creatoDa;
-    }
-
-    public StatoProdotto getStato() {
-        return stato;
-    }
-
-    public String getCommento() {
-        return commento;
-    }
-
-    public String getIndirizzo() {
-        return indirizzo;
-    }
-
-
-    public void setCommento(String commento) {
-        this.commento = commento;
-    }
-
-    // Builder interno statico
+    /**
+     * Builder interno
+     */
     public static class Builder {
+        /* campi comuni (Item) */
         private String nome;
         private String descrizione;
-        private int quantita;
-        private double prezzo;
+        private String indirizzo;
         private List<String> certificati;
         private List<String> foto;
         private String creatoDa;
         private StatoProdotto stato;
         private String commento;
-        private String indirizzo;
 
-        public Builder indirizzo(String indirizzo) {
-            this.indirizzo = indirizzo;
+        /* campi specifici (Prodotto) */
+        private int quantita;
+        private double prezzo;
+
+        /* ------- metodi ‘with’ ------- */
+        public Builder nome(String n) {
+            this.nome = n;
             return this;
         }
 
-        public Builder nome(String nome) {
-            this.nome = nome;
+        public Builder descrizione(String d) {
+            this.descrizione = d;
             return this;
         }
 
-        public Builder descrizione(String descrizione) {
-            this.descrizione = descrizione;
+        public Builder indirizzo(String i) {
+            this.indirizzo = i;
             return this;
         }
 
-        public Builder quantita(int quantita) {
-            this.quantita = quantita;
+        public Builder certificati(List<String> c) {
+            this.certificati = c;
             return this;
         }
 
-        public Builder prezzo(double prezzo) {
-            this.prezzo = prezzo;
+        public Builder foto(List<String> f) {
+            this.foto = f;
             return this;
         }
 
-        public Builder certificati(List<String> certificati) {
-            this.certificati = certificati;
+        public Builder creatoDa(String u) {
+            this.creatoDa = u;
             return this;
         }
 
-        public Builder foto(List<String> foto) {
-            this.foto = foto;
+        public Builder stato(StatoProdotto s) {
+            this.stato = s;
             return this;
         }
 
-        public Builder creatoDa(String creatoDa) {
-            this.creatoDa = creatoDa;
+        public Builder commento(String c) {
+            this.commento = c;
             return this;
         }
 
-        public Builder stato(StatoProdotto stato) {
-            this.stato = stato;
+        public Builder quantita(int q) {
+            this.quantita = q;
             return this;
         }
 
-        public Builder commento(String commento) {
-            this.commento = commento;
+        public Builder prezzo(double p) {
+            this.prezzo = p;
             return this;
         }
 
+        /* ------- build() ------- */
         public Prodotto build() {
-            // (Facoltativo) Validazioni
             if (nome == null || descrizione == null || creatoDa == null || stato == null)
                 throw new IllegalStateException("Campi obbligatori mancanti");
             return new Prodotto(this);
         }
     }
 
-    /** Permette al Curatore di aggiornare lo stato */
-    public void setStato(StatoProdotto stato) {
-        this.stato = stato;
-    }
-
-
-
+    /* ------------------------------------------------------------------ */
     @Override
     public String toString() {
         return """
-                Prodotto:
-                  - Nome: %s
-                  - Descrizione: %s
-                  - Quantità: %d
-                  - Prezzo: %.2f €
-                  - Certificati: %s
-                  - Foto: %s
-                  - Creato da: %s
-                  - Stato: %s
-                  - Commento: %s
-                  - Indirizzo: %s
-                """.formatted(
-                nome,
-                descrizione,
+                 Prodotto:                 \s
+                     - Nome: %s                 \s
+                     - Descrizione: %s               \s
+                     - Quantità: %d                \s
+                     - Prezzo: %.2f €                \s
+                     - Certificati: %s                 \s
+                     - Foto: %s                \s
+                     - Creato da: %s                \s
+                     - Stato: %s                 \s
+                     - Commento: %s                \s
+                     - Indirizzo: %s              \s
+                \s""".formatted(
+                getNome(),
+                getDescrizione(),
                 quantita,
                 prezzo,
-                certificati != null ? String.join(", ", certificati) : "Nessuno",
-                foto != null ? String.join(", ", foto) : "Nessuna",
-                creatoDa,
-                stato != null ? stato.name() : "N/D",
-                commento != null ? commento : "N/D",
-                indirizzo != null ? indirizzo : "N/D"
+                getCertificati() != null ? String.join(", ", getCertificati()) : "Nessuno",
+                getFoto() != null ? String.join(", ", getFoto()) : "Nessuna",
+                getCreatoDa(),
+                getStato() != null ? getStato().name() : "N/D",
+                getCommento() != null ? getCommento() : "N/D",
+                getIndirizzo() != null ? getIndirizzo() : "N/D"
         );
     }
 }

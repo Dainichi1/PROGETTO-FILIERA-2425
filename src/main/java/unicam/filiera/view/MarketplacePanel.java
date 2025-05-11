@@ -1,9 +1,6 @@
 package unicam.filiera.view;
 
-import unicam.filiera.controller.MarketplaceController;
-import unicam.filiera.controller.ObserverManager;
-import unicam.filiera.controller.ObserverManagerPacchetto;
-import unicam.filiera.controller.ObserverManagerFiera;
+import unicam.filiera.controller.*;
 import unicam.filiera.model.Fiera;
 import unicam.filiera.model.Pacchetto;
 import unicam.filiera.model.Prodotto;
@@ -12,21 +9,23 @@ import unicam.filiera.model.observer.OsservatorePacchetto;
 import unicam.filiera.model.observer.OsservatoreProdotto;
 import unicam.filiera.model.observer.OsservatoreFiera;
 import unicam.filiera.model.observer.OsservatoreVisitaInvito;
-import unicam.filiera.model.observer.VisitaInvitoNotifier;
+
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
-/** View del marketplace: mostra Prodotti APPROVATI, Pacchetti APPROVATI, Fiere PUBBLICATE e VisiteInvito PUBBLICATE */
+/**
+ * View del marketplace: mostra Prodotti APPROVATI, Pacchetti APPROVATI, Fiere PUBBLICATE e VisiteInvito PUBBLICATE
+ */
 public class MarketplacePanel extends JPanel
         implements OsservatoreProdotto, OsservatorePacchetto, OsservatoreFiera, OsservatoreVisitaInvito {
 
     /* ---------------- UI ---------------- */
-    private final DefaultListModel<String> modello  = new DefaultListModel<>();
-    private final JList<String>            lista    = new JList<>(modello);
-    private final JTextArea                dettagli = new JTextArea();
-    private final JButton                  btnBack  = new JButton("Torna alla Home");
+    private final DefaultListModel<String> modello = new DefaultListModel<>();
+    private final JList<String> lista = new JList<>(modello);
+    private final JTextArea dettagli = new JTextArea();
+    private final JButton btnBack = new JButton("Torna alla Home");
 
     /* ---------------- MVC ---------------- */
     private final MarketplaceController ctrl;
@@ -35,7 +34,7 @@ public class MarketplacePanel extends JPanel
     public MarketplacePanel(JFrame parent, MarketplaceController ctrl) {
         super(new BorderLayout());
         this.mainFrame = parent;
-        this.ctrl      = ctrl;
+        this.ctrl = ctrl;
 
         // Layout
         lista.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -60,10 +59,10 @@ public class MarketplacePanel extends JPanel
 
         // Observer pattern: mi registro per tutti e quattro i tipi
         ctrl.registraOsservatore(this::popolaLista);                     // marketplace controller (aggiorna lista)
-        ObserverManager.registraOsservatore(this);                       // prodotti
+        ObserverManagerProdotto.registraOsservatore(this);                    // prodotti
         ObserverManagerPacchetto.registraOsservatore(this);              // pacchetti
         ObserverManagerFiera.registraOsservatore(this);                  // fiere
-        VisitaInvitoNotifier.getInstance().registraOsservatore(this);    // visite su invito
+        ObserverManagerVisitaInvito.registraOsservatore(this);   // visite su invito
 
         // Carica iniziale
         popolaLista(ctrl.ottieniElementiMarketplace());
@@ -95,8 +94,7 @@ public class MarketplacePanel extends JPanel
                     String.join(", ", p.getCertificati()),
                     String.join(", ", p.getFoto())
             ));
-        }
-        else if (obj instanceof Pacchetto k) {
+        } else if (obj instanceof Pacchetto k) {
             dettagli.setText("""
                     [PACCHETTO]
                     Nome: %s
@@ -112,8 +110,7 @@ public class MarketplacePanel extends JPanel
                     String.join(", ", k.getCertificati()),
                     String.join(", ", k.getFoto())
             ));
-        }
-        else if (obj instanceof Fiera f) {
+        } else if (obj instanceof Fiera f) {
             dettagli.setText("""
                     [FIERA]
                     Descrizione: %s
@@ -130,8 +127,7 @@ public class MarketplacePanel extends JPanel
                     f.getNumeroMinPartecipanti(),
                     f.getStato()
             ));
-        }
-        else if (obj instanceof VisitaInvito vi) {
+        } else if (obj instanceof VisitaInvito vi) {
             dettagli.setText("""
                     [VISITA INVITO]
                     Descrizione: %s
@@ -150,8 +146,7 @@ public class MarketplacePanel extends JPanel
                     String.join(", ", vi.getDestinatari()),
                     vi.getStato()
             ));
-        }
-        else {
+        } else {
             dettagli.setText("Selezione non riconosciuta.");
         }
     }
@@ -191,10 +186,10 @@ public class MarketplacePanel extends JPanel
     @Override
     public void removeNotify() {
         super.removeNotify();
-        ObserverManager.rimuoviOsservatore(this);
+        ObserverManagerProdotto.rimuoviOsservatore(this);
         ObserverManagerPacchetto.rimuoviOsservatore(this);
         ObserverManagerFiera.rimuoviOsservatore(this);
-        VisitaInvitoNotifier.getInstance().rimuoviOsservatore(this);
+        ObserverManagerVisitaInvito.rimuoviOsservatore(this);
     }
 
     public JButton getBtnIndietro() {

@@ -1,14 +1,13 @@
 package unicam.filiera.view;
 
 import unicam.filiera.controller.CuratoreController;
-import unicam.filiera.controller.ObserverManager;
+import unicam.filiera.controller.ObserverManagerProdotto;
 import unicam.filiera.model.Pacchetto;
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.UtenteAutenticato;
 import unicam.filiera.model.observer.OsservatorePacchetto;
 import unicam.filiera.model.observer.OsservatoreProdotto;
-import unicam.filiera.model.observer.PacchettoNotifier;
-
+import unicam.filiera.controller.ObserverManagerPacchetto;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
@@ -44,15 +43,18 @@ public class PannelloCuratore extends JPanel
         add(benvenuto, BorderLayout.NORTH);
 
         // Colonne della tabella
-        String[] col = {"Nome","Descrizione","Quantità","Prezzo","Indirizzo",
-                "Creato da","Certificati","Foto",
-                "Accetta","Rifiuta","Commento"};
+        String[] col = {"Nome", "Descrizione", "Quantità", "Prezzo", "Indirizzo",
+                "Creato da", "Certificati", "Foto",
+                "Accetta", "Rifiuta", "Commento"};
         model = new DefaultTableModel(col, 0) {
-            @Override public boolean isCellEditable(int row, int col) {
+            @Override
+            public boolean isCellEditable(int row, int col) {
                 // Solo le colonne di preview (6,7) e approvazione (8,9,10)
                 return col >= 6;
             }
-            @Override public Class<?> getColumnClass(int c) {
+
+            @Override
+            public Class<?> getColumnClass(int c) {
                 if (c == 6 || c == 7) return List.class;       // lista di File
                 if (c == 8 || c == 9) return JButton.class;     // accetta/rifiuta
                 return super.getColumnClass(c);
@@ -90,25 +92,29 @@ public class PannelloCuratore extends JPanel
                     ? "Nascondi lista elementi"
                     : "Visualizza elementi da approvare");
             Window w = SwingUtilities.getWindowAncestor(this);
-            if (w instanceof JFrame) ((JFrame)w).pack();
-            revalidate(); repaint();
+            if (w instanceof JFrame) ((JFrame) w).pack();
+            revalidate();
+            repaint();
         });
         add(toggleButton, BorderLayout.SOUTH);
 
         // Registrazione come osservatore
-        ObserverManager.registraOsservatore(this);
-        PacchettoNotifier.getInstance().registraOsservatore(this);
+        ObserverManagerProdotto.registraOsservatore(this);
+        ObserverManagerPacchetto.registraOsservatore(this);
 
         // Carica iniziale
         caricaElementiInAttesa();
     }
 
-    @Override public void notifica(Prodotto prodotto, String evento) {
+    @Override
+    public void notifica(Prodotto prodotto, String evento) {
         if ("NUOVO_PRODOTTO".equals(evento)) {
             SwingUtilities.invokeLater(this::caricaElementiInAttesa);
         }
     }
-    @Override public void notifica(Pacchetto pacchetto, String evento) {
+
+    @Override
+    public void notifica(Pacchetto pacchetto, String evento) {
         if ("NUOVO_PACCHETTO".equals(evento)) {
             SwingUtilities.invokeLater(this::caricaElementiInAttesa);
         }
@@ -121,15 +127,15 @@ public class PannelloCuratore extends JPanel
     }
 
     private void aggiungiRiga(Object elem, boolean isPacchetto) {
-        Prodotto p = isPacchetto ? null : (Prodotto)elem;
-        Pacchetto k = isPacchetto ? (Pacchetto)elem : null;
+        Prodotto p = isPacchetto ? null : (Prodotto) elem;
+        Pacchetto k = isPacchetto ? (Pacchetto) elem : null;
 
         String nome = isPacchetto ? "[PAC] " + k.getNome() : p.getNome();
         String desc = isPacchetto ? k.getDescrizione() : p.getDescrizione();
-        int qt      = isPacchetto ? k.getProdotti().size() : p.getQuantita();
-        double pr   = isPacchetto ? k.getPrezzoTotale()  : p.getPrezzo();
-        String ind  = isPacchetto ? k.getIndirizzo()     : p.getIndirizzo();
-        String cd   = isPacchetto ? k.getCreatoDa()      : p.getCreatoDa();
+        int qt = isPacchetto ? k.getProdotti().size() : p.getQuantita();
+        double pr = isPacchetto ? k.getPrezzoTotale() : p.getPrezzo();
+        String ind = isPacchetto ? k.getIndirizzo() : p.getIndirizzo();
+        String cd = isPacchetto ? k.getCreatoDa() : p.getCreatoDa();
 
         // Costruisco liste di File con percorso corretto
         String certDir = isPacchetto ? "uploads/certificati_pacchetti/" : "uploads/certificati/";
@@ -144,6 +150,54 @@ public class PannelloCuratore extends JPanel
 
         JButton btnA = new JButton("✔");
         JButton btnR = new JButton("✖");
+        btnA.addActionListener(e -> {
+            int row = tabella.getEditingRow();
+            if (tabella.isEditing()) {
+                tabella.getCellEditor().stopCellEditing();
+            }
+
+            boolean success;
+            if (isPacchetto) {
+                success = controller.approvaPacchetto(k);
+            } else {
+                success = controller.approvaProdotto(p);
+            }
+
+            if (success) {
+                if (row >= 0 && row < model.getRowCount()) {
+                    model.removeRow(row);
+                }
+                JOptionPane.showMessageDialog(this, nome + " approvato.");
+            } else {
+                JOptionPane.showMessageDialog(this, "Errore durante l'approvazione.");
+            }
+        });
+
+        btnR.addActionListener(e -> {
+            int row = tabella.getEditingRow();
+            if (tabella.isEditing()) {
+                tabella.getCellEditor().stopCellEditing();
+            }
+
+            String commento = (String) model.getValueAt(row, 10);
+            boolean success;
+            if (isPacchetto) {
+                success = controller.rifiutaPacchetto(k, commento);
+            } else {
+                success = controller.rifiutaProdotto(p, commento);
+            }
+
+            if (success) {
+                if (row >= 0 && row < model.getRowCount()) {
+                    model.removeRow(row);
+                }
+                JOptionPane.showMessageDialog(this, nome + " rifiutato.");
+            } else {
+                JOptionPane.showMessageDialog(this, "Errore durante il rifiuto.");
+            }
+        });
+
+
         model.addRow(new Object[]{nome, desc, qt, pr, ind, cd, certFiles, fotoFiles, btnA, btnR, ""});
     }
 
@@ -157,20 +211,28 @@ public class PannelloCuratore extends JPanel
         public PreviewCell() {
             button.addActionListener(this);
         }
-        @Override public Component getTableCellRendererComponent(
+
+        @Override
+        public Component getTableCellRendererComponent(
                 JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
             return button;
         }
-        @Override public Component getTableCellEditorComponent(
+
+        @Override
+        public Component getTableCellEditorComponent(
                 JTable table, Object value, boolean isSelected, int row, int col) {
             files = (List<File>) value;
             column = table.getColumnName(col);
             return button;
         }
-        @Override public Object getCellEditorValue() {
+
+        @Override
+        public Object getCellEditorValue() {
             return files;
         }
-        @Override public void actionPerformed(ActionEvent e) {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
             stopCellEditing();
             showPreviewDialog(files, column);
         }
@@ -182,7 +244,7 @@ public class PannelloCuratore extends JPanel
                 type,
                 Dialog.ModalityType.APPLICATION_MODAL
         );
-        JPanel pnl = new JPanel(new GridLayout(0,1,5,5));
+        JPanel pnl = new JPanel(new GridLayout(0, 1, 5, 5));
         for (File f : files) {
             if (!f.exists()) {
                 pnl.add(new JLabel("⚠ File non trovato: " + f.getName()));
@@ -196,8 +258,11 @@ public class PannelloCuratore extends JPanel
             } else {
                 JButton bf = new JButton(f.getName());
                 bf.addActionListener(ae -> {
-                    try { Desktop.getDesktop().open(f); }
-                    catch (Exception ex) { ex.printStackTrace(); }
+                    try {
+                        Desktop.getDesktop().open(f);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
                 });
                 pnl.add(bf);
             }
@@ -210,12 +275,21 @@ public class PannelloCuratore extends JPanel
 
     // Dummy renderer/editor per Accetta/Rifiuta
     private static class ComponentCellEditor extends AbstractCellEditor implements TableCellEditor {
-        @Override public Component getTableCellEditorComponent(
-                JTable t, Object v, boolean s, int r, int c) { return (Component) v; }
-        @Override public Object getCellEditorValue() { return null; }
+        @Override
+        public Component getTableCellEditorComponent(
+                JTable t, Object v, boolean s, int r, int c) {
+            return (Component) v;
+        }
+
+        @Override
+        public Object getCellEditorValue() {
+            return null;
+        }
     }
+
     private static class ComponentCellRenderer implements TableCellRenderer {
-        @Override public Component getTableCellRendererComponent(
+        @Override
+        public Component getTableCellRendererComponent(
                 JTable t, Object v, boolean sel, boolean foc, int r, int c) {
             if (v instanceof Component) {
                 return (Component) v;
@@ -225,9 +299,10 @@ public class PannelloCuratore extends JPanel
         }
     }
 
-    @Override public void removeNotify() {
+    @Override
+    public void removeNotify() {
         super.removeNotify();
-        ObserverManager.rimuoviOsservatore(this);
-        PacchettoNotifier.getInstance().rimuoviOsservatore(this);
+        ObserverManagerProdotto.rimuoviOsservatore(this);
+        ObserverManagerPacchetto.rimuoviOsservatore(this);
     }
 }

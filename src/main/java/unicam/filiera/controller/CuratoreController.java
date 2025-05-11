@@ -23,30 +23,40 @@ public class CuratoreController {
     private final ProdottoNotifier prodottoNotifier;
     private final PacchettoNotifier pacchettoNotifier;
 
-    /** Iniezione delle dipendenze (utile per test) */
+    /**
+     * Iniezione delle dipendenze (utile per test)
+     */
     public CuratoreController(ProdottoDAO prodottoDAO, PacchettoDAO pacchettoDAO) {
-        this.prodottoDAO      = prodottoDAO;
-        this.pacchettoDAO     = pacchettoDAO;
+        this.prodottoDAO = prodottoDAO;
+        this.pacchettoDAO = pacchettoDAO;
         this.prodottoNotifier = ProdottoNotifier.getInstance();
-        this.pacchettoNotifier= PacchettoNotifier.getInstance();
+        this.pacchettoNotifier = PacchettoNotifier.getInstance();
     }
 
-    /** Costruttore di convenienza per l'app reale */
+    /**
+     * Costruttore di convenienza per l'app reale
+     */
     public CuratoreController() {
         this(JdbcProdottoDAO.getInstance(), JdbcPacchettoDAO.getInstance());
     }
 
-    /** Prodotti in attesa di approvazione */
+    /**
+     * Prodotti in attesa di approvazione
+     */
     public List<Prodotto> getProdottiDaApprovare() {
         return prodottoDAO.findByStato(StatoProdotto.IN_ATTESA);
     }
 
-    /** Pacchetti in attesa di approvazione */
+    /**
+     * Pacchetti in attesa di approvazione
+     */
     public List<Pacchetto> getPacchettiDaApprovare() {
         return pacchettoDAO.findByStato(StatoProdotto.IN_ATTESA);
     }
 
-    /** Approva un prodotto e notifica gli osservatori */
+    /**
+     * Approva un prodotto e notifica gli osservatori
+     */
     public boolean approvaProdotto(Prodotto prodotto) {
         prodotto.setStato(StatoProdotto.APPROVATO);
         prodotto.setCommento(null);
@@ -57,7 +67,9 @@ public class CuratoreController {
         return success;
     }
 
-    /** Rifiuta un prodotto con commento e notifica */
+    /**
+     * Rifiuta un prodotto con commento e notifica
+     */
     public boolean rifiutaProdotto(Prodotto prodotto, String commento) {
         prodotto.setStato(StatoProdotto.RIFIUTATO);
         prodotto.setCommento(commento != null ? commento : "");
@@ -68,7 +80,9 @@ public class CuratoreController {
         return success;
     }
 
-    /** Approva un pacchetto e notifica gli osservatori */
+    /**
+     * Approva un pacchetto e notifica gli osservatori
+     */
     public boolean approvaPacchetto(Pacchetto pacchetto) {
         pacchetto.setStato(StatoProdotto.APPROVATO);
         pacchetto.setCommento(null);
@@ -79,7 +93,9 @@ public class CuratoreController {
         return success;
     }
 
-    /** Rifiuta un pacchetto con commento e notifica */
+    /**
+     * Rifiuta un pacchetto con commento e notifica
+     */
     public boolean rifiutaPacchetto(Pacchetto pacchetto, String commento) {
         pacchetto.setStato(StatoProdotto.RIFIUTATO);
         pacchetto.setCommento(commento != null ? commento : "");

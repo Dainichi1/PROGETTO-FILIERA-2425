@@ -2,22 +2,23 @@ package unicam.filiera.controller;
 
 import unicam.filiera.dao.*;
 import unicam.filiera.model.*;
+
 import java.util.*;
 import java.util.function.Consumer;
 
 public class MarketplaceController {
 
-    private final ProdottoDAO      prodottoDAO;
-    private final PacchettoDAO     pacchettoDAO;
-    private final FieraDAO         fieraDAO;
-    private final VisitaInvitoDAO  visitaDAO;
+    private final ProdottoDAO prodottoDAO;
+    private final PacchettoDAO pacchettoDAO;
+    private final FieraDAO fieraDAO;
+    private final VisitaInvitoDAO visitaDAO;
     private final List<Consumer<List<Object>>> osservatori = new ArrayList<>();
 
     public MarketplaceController() {
-        this.prodottoDAO  = JdbcProdottoDAO.getInstance();
+        this.prodottoDAO = JdbcProdottoDAO.getInstance();
         this.pacchettoDAO = JdbcPacchettoDAO.getInstance();
-        this.fieraDAO     = JdbcFieraDAO.getInstance();
-        this.visitaDAO    = JdbcVisitaInvitoDAO.getInstance();
+        this.fieraDAO = JdbcFieraDAO.getInstance();
+        this.visitaDAO = JdbcVisitaInvitoDAO.getInstance();
     }
 
     /**
@@ -50,9 +51,9 @@ public class MarketplaceController {
     }
 
     public static String labelDi(Object obj) {
-        if (obj instanceof Prodotto p)    return "[PR] " + p.getNome();
-        if (obj instanceof Pacchetto k)   return "[PK] " + k.getNome();
-        if (obj instanceof Fiera fe)      return "[FE] " + fe.getDescrizione()
+        if (obj instanceof Prodotto p) return "[PR] " + p.getNome();
+        if (obj instanceof Pacchetto k) return "[PK] " + k.getNome();
+        if (obj instanceof Fiera fe) return "[FE] " + fe.getDescrizione()
                 + " (" + fe.getDataInizio()
                 + "→" + fe.getDataFine() + ")";
         if (obj instanceof VisitaInvito v) return "[VI] " + v.getDescrizione()
@@ -60,8 +61,6 @@ public class MarketplaceController {
                 + "→" + v.getDataFine() + ")";
         return obj.toString();
     }
-
-
 
 
 }

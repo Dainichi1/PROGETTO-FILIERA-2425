@@ -17,13 +17,17 @@ public class ProduttoreController {
     private final ProdottoService service;
     private final String username;
 
-    /** Iniezione del service*/
+    /**
+     * Iniezione del service
+     */
     public ProduttoreController(ProdottoService service, String username) {
         this.service = service;
         this.username = username;
     }
 
-    /** Costruttore di convenienza per l’app reale */
+    /**
+     * Costruttore di convenienza per l’app reale
+     */
     public ProduttoreController(String username) {
         this(new ProdottoServiceImpl(JdbcProdottoDAO.getInstance()), username);
     }
@@ -44,7 +48,9 @@ public class ProduttoreController {
         }
     }
 
-    /** Restituisce i prodotti creati da questo utente */
+    /**
+     * Restituisce i prodotti creati da questo utente
+     */
     public List<Prodotto> getProdottiCreatiDaMe() {
         return service.getProdottiCreatiDa(username);
     }

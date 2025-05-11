@@ -63,8 +63,8 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
         btnToggleForm.addActionListener(e -> toggleForm());
 
         // Table panel
-        String[] cols = {"Nome","Descrizione","Qtà","Prezzo","Indirizzo",
-                "Certificati","Foto","Stato","Commento"};
+        String[] cols = {"Nome", "Descrizione", "Qtà", "Prezzo", "Indirizzo",
+                "Certificati", "Foto", "Stato", "Commento"};
         model = new DefaultTableModel(cols, 0);
         tabella = new JTable(model);
         add(new JScrollPane(tabella), BorderLayout.EAST);
@@ -94,14 +94,22 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
     }
 
     private void buildForm() {
-        formPanel.add(new JLabel("Nome prodotto:"));      formPanel.add(nomeField);
-        formPanel.add(new JLabel("Descrizione:"));        formPanel.add(descrField);
-        formPanel.add(new JLabel("Quantità:"));           formPanel.add(quantField);
-        formPanel.add(new JLabel("Prezzo:"));             formPanel.add(prezzoField);
-        formPanel.add(new JLabel("Indirizzo:"));          formPanel.add(indirizzoField);
-        formPanel.add(btnCert);                            formPanel.add(labelCert);
-        formPanel.add(btnFoto);                            formPanel.add(labelFoto);
-        formPanel.add(new JLabel());                       formPanel.add(btnInvia);
+        formPanel.add(new JLabel("Nome prodotto:"));
+        formPanel.add(nomeField);
+        formPanel.add(new JLabel("Descrizione:"));
+        formPanel.add(descrField);
+        formPanel.add(new JLabel("Quantità:"));
+        formPanel.add(quantField);
+        formPanel.add(new JLabel("Prezzo:"));
+        formPanel.add(prezzoField);
+        formPanel.add(new JLabel("Indirizzo:"));
+        formPanel.add(indirizzoField);
+        formPanel.add(btnCert);
+        formPanel.add(labelCert);
+        formPanel.add(btnFoto);
+        formPanel.add(labelFoto);
+        formPanel.add(new JLabel());
+        formPanel.add(btnInvia);
         formPanel.setVisible(false);
         add(formPanel, BorderLayout.CENTER);
     }
@@ -110,7 +118,8 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
         formVisibile = !formVisibile;
         formPanel.setVisible(formVisibile);
         btnToggleForm.setText(formVisibile ? "Chiudi form" : "Crea Prodotto");
-        revalidate(); repaint();
+        revalidate();
+        repaint();
     }
 
     private void chooseFiles(boolean cert) {
@@ -118,10 +127,12 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
         chooser.setMultiSelectionEnabled(true);
         if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return;
         if (cert) {
-            certSel.clear(); certSel.addAll(List.of(chooser.getSelectedFiles()));
+            certSel.clear();
+            certSel.addAll(List.of(chooser.getSelectedFiles()));
             labelCert.setText(certSel.size() + " file selezionati");
         } else {
-            fotoSel.clear(); fotoSel.addAll(List.of(chooser.getSelectedFiles()));
+            fotoSel.clear();
+            fotoSel.addAll(List.of(chooser.getSelectedFiles()));
             labelFoto.setText(fotoSel.size() + " file selezionati");
         }
     }
@@ -162,9 +173,13 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
     }
 
     private void resetForm() {
-        nomeField.setText(""); descrField.setText("");
-        quantField.setText(""); prezzoField.setText("");
-        indirizzoField.setText(""); certSel.clear(); fotoSel.clear();
+        nomeField.setText("");
+        descrField.setText("");
+        quantField.setText("");
+        prezzoField.setText("");
+        indirizzoField.setText("");
+        certSel.clear();
+        fotoSel.clear();
         labelCert.setText("Nessun file selezionato");
         labelFoto.setText("Nessun file selezionato");
     }

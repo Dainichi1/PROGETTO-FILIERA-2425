@@ -1,6 +1,7 @@
 package unicam.filiera.factory;
 
 import unicam.filiera.model.*;
+
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -10,21 +11,24 @@ import java.util.function.Function;
  * tramite uno schema di strategie aperto all'estensione.
  */
 public final class UtenteFactory {
-    private UtenteFactory() {}
+    private UtenteFactory() {
+    }
 
     // DTO interno per incapsulare parametri di creazione
-    private static record Data(String username, String password, String nome, String cognome, Ruolo ruolo) {}
+    private static record Data(String username, String password, String nome, String cognome, Ruolo ruolo) {
+    }
 
     // Registry di strategie per ciascun Ruolo
     private static final Map<Ruolo, Function<Data, Utente>> registry = new EnumMap<>(Ruolo.class);
+
     static {
-        registry.put(Ruolo.PRODUTTORE,       d -> new Produttore(d.username, d.password, d.nome, d.cognome));
-        registry.put(Ruolo.TRASFORMATORE,    d -> new Trasformatore(d.username, d.password, d.nome, d.cognome));
+        registry.put(Ruolo.PRODUTTORE, d -> new Produttore(d.username, d.password, d.nome, d.cognome));
+        registry.put(Ruolo.TRASFORMATORE, d -> new Trasformatore(d.username, d.password, d.nome, d.cognome));
         registry.put(Ruolo.DISTRIBUTORE_TIPICITA,
                 d -> new DistributoreTipicita(d.username, d.password, d.nome, d.cognome));
-        registry.put(Ruolo.CURATORE,         d -> new Curatore(d.username, d.password, d.nome, d.cognome));
-        registry.put(Ruolo.ANIMATORE,        d -> new Animatore(d.username, d.password, d.nome, d.cognome));
-        registry.put(Ruolo.ACQUIRENTE,       d -> new Acquirente(d.username, d.password, d.nome, d.cognome));
+        registry.put(Ruolo.CURATORE, d -> new Curatore(d.username, d.password, d.nome, d.cognome));
+        registry.put(Ruolo.ANIMATORE, d -> new Animatore(d.username, d.password, d.nome, d.cognome));
+        registry.put(Ruolo.ACQUIRENTE, d -> new Acquirente(d.username, d.password, d.nome, d.cognome));
         registry.put(Ruolo.GESTORE_PIATTAFORMA,
                 d -> new GestorePiattaforma(d.username, d.password, d.nome, d.cognome));
     }

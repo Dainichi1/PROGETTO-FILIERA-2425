@@ -227,7 +227,6 @@ public class PannelloAcquirente extends JPanel {
     }
 
 
-
     public void showCarrello(List<Object[]> carrello) {
         modelCarrello.setRowCount(0); // Pulisci il carrello
 

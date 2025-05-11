@@ -10,7 +10,6 @@ import javax.swing.*;
 import java.awt.*;
 
 
-
 import unicam.filiera.controller.AutenticazioneController;
 import unicam.filiera.factory.UtenteFactory;
 import unicam.filiera.model.Utente;

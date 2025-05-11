@@ -15,14 +15,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class PacchettoServiceImpl implements PacchettoService {
-    private final PacchettoDAO     pacchettoDao;
-    private final ProdottoDAO      prodottoDao;
+    private final PacchettoDAO pacchettoDao;
+    private final ProdottoDAO prodottoDao;
     private final PacchettoNotifier notifier;
 
     public PacchettoServiceImpl(PacchettoDAO pacchettoDao, ProdottoDAO prodottoDao) {
         this.pacchettoDao = pacchettoDao;
-        this.prodottoDao  = prodottoDao;
-        this.notifier     = PacchettoNotifier.getInstance();
+        this.prodottoDao = prodottoDao;
+        this.notifier = PacchettoNotifier.getInstance();
     }
 
     public PacchettoServiceImpl() {

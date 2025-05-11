@@ -11,16 +11,21 @@ import java.util.List;
  */
 public interface ProdottoDAO {
     /**
-     * Salva il prodotto (dettagli + upload file). 
-     * @param p dominio senza certificati/foto
+     * Salva il prodotto (dettagli + upload file).
+     *
+     * @param p           dominio senza certificati/foto
      * @param certificati file da copiare in uploads/certificati
      * @param foto        file da copiare in uploads/foto
      */
     boolean save(Prodotto p, List<File> certificati, List<File> foto);
 
     boolean update(Prodotto prodotto);
+
     List<Prodotto> findByCreatore(String creatore);
+
     List<Prodotto> findByStato(StatoProdotto stato);
+
     List<Prodotto> findAll();
+
     Prodotto findByNome(String nome);
 }

@@ -2,148 +2,132 @@ package unicam.filiera.model;
 
 import java.util.List;
 
-public class Pacchetto {
-    private String nome;
-    private String descrizione;
-    private String indirizzo;
-    private double prezzoTotale;
-    private List<Prodotto> prodotti;
-    private List<String> certificati;
-    private List<String> foto;
-    private StatoProdotto stato;
-    private String commento;
-    private String creatoDa;
+/**
+ * Un insieme di almeno due prodotti offerto come pacchetto.
+ * Condivide con {@link Prodotto} i campi definiti in {@link Item}.
+ */
+public class Pacchetto extends Item {
 
-    private Pacchetto(Builder builder) {
-        this.nome = builder.nome;
-        this.descrizione = builder.descrizione;
-        this.indirizzo = builder.indirizzo;
-        this.prezzoTotale = builder.prezzoTotale;
-        this.prodotti = builder.prodotti;
-        this.certificati = builder.certificati;
-        this.foto = builder.foto;
-        this.stato = builder.stato;
-        this.commento = builder.commento;
-        this.creatoDa = builder.creatoDa;
+    /* ---- campi specifici ---- */
+    private final double prezzoTotale;
+    private final List<Prodotto> prodotti;
+
+    /* ---- costruttore privato (invocato dal Builder) ---- */
+    private Pacchetto(Builder b) {
+        super(
+                b.nome,
+                b.descrizione,
+                b.indirizzo,
+                b.certificati,
+                b.foto,
+                b.creatoDa,
+                b.stato,
+                b.commento
+        );
+        this.prezzoTotale = b.prezzoTotale;
+        this.prodotti = List.copyOf(b.prodotti);
     }
 
-    // Getters
+    /* ---- getter specifici ---- */
+    public double getPrezzoTotale() {
+        return prezzoTotale;
+    }
 
-    public String getNome() { return nome; }
-    public String getDescrizione() { return descrizione; }
-    public String getIndirizzo() { return indirizzo; }
-    public double getPrezzoTotale() { return prezzoTotale; }
-    public List<Prodotto> getProdotti() { return prodotti; }
-    public List<String> getCertificati() { return certificati; }
-    public List<String> getFoto() { return foto; }
-    public StatoProdotto getStato() { return stato; }
-    public String getCommento() { return commento; }
-    public String getCreatoDa() { return creatoDa; }
+    public List<Prodotto> getProdotti() {
+        return prodotti;
+    }
 
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * Builder interno
+     */
     public static class Builder {
+        /* ---- campi comuni (Item) ---- */
         private String nome;
         private String descrizione;
         private String indirizzo;
-        private double prezzoTotale;
-        private List<Prodotto> prodotti;
         private List<String> certificati;
         private List<String> foto;
+        private String creatoDa;
         private StatoProdotto stato;
         private String commento;
-        private String creatoDa;
 
-        public Builder nome(String nome) {
-            this.nome = nome;
+        /* ---- campi specifici (Pacchetto) ---- */
+        private double prezzoTotale;
+        private List<Prodotto> prodotti;
+
+        /* ---------- metodi ‘with’ ---------- */
+        public Builder nome(String n) {
+            this.nome = n;
             return this;
         }
 
-        public Builder descrizione(String descrizione) {
-            this.descrizione = descrizione;
+        public Builder descrizione(String d) {
+            this.descrizione = d;
             return this;
         }
 
-        public Builder indirizzo(String indirizzo) {
-            this.indirizzo = indirizzo;
+        public Builder indirizzo(String i) {
+            this.indirizzo = i;
             return this;
         }
 
-        public Builder prezzoTotale(double prezzoTotale) {
-            this.prezzoTotale = prezzoTotale;
+        public Builder certificati(List<String> c) {
+            this.certificati = c;
             return this;
         }
 
-        public Builder prodotti(List<Prodotto> prodotti) {
-            this.prodotti = prodotti;
+        public Builder foto(List<String> f) {
+            this.foto = f;
             return this;
         }
 
-        public Builder certificati(List<String> certificati) {
-            this.certificati = certificati;
+        public Builder creatoDa(String u) {
+            this.creatoDa = u;
             return this;
         }
 
-        public Builder foto(List<String> foto) {
-            this.foto = foto;
+        public Builder stato(StatoProdotto s) {
+            this.stato = s;
             return this;
         }
 
-        public Builder stato(StatoProdotto stato) {
-            this.stato = stato;
+        public Builder commento(String c) {
+            this.commento = c;
             return this;
         }
 
-        public Builder commento(String commento) {
-            this.commento = commento;
+        public Builder prezzoTotale(double p) {
+            this.prezzoTotale = p;
             return this;
         }
 
-        public Builder creatoDa(String creatoDa) {
-            this.creatoDa = creatoDa;
+        public Builder prodotti(List<Prodotto> p) {
+            this.prodotti = p;
             return this;
         }
 
+        /* ---------- build() ---------- */
         public Pacchetto build() {
-            if (nome == null || descrizione == null || prodotti == null || prodotti.size() < 2)
-                throw new IllegalStateException("Pacchetto non valido: nome, descrizione e almeno 2 prodotti sono obbligatori");
+            if (nome == null || descrizione == null || indirizzo == null
+                    || prodotti == null || prodotti.size() < 2)
+                throw new IllegalStateException(
+                        "Pacchetto non valido: nome, descrizione, indirizzo e almeno 2 prodotti sono obbligatori"
+                );
             return new Pacchetto(this);
         }
     }
-
-    /** Permette al Curatore di aggiornare lo stato */
-    public void setStato(StatoProdotto stato) {
-        this.stato = stato;
-    }
-
-    /** Permette al Curatore di lasciare un commento di rifiuto */
-    public void setCommento(String commento) {
-        this.commento = commento;
-    }
+    /* ------------------------------------------------------------------ */
 
     @Override
     public String toString() {
-        return """
-                Pacchetto:
-                  - Nome: %s
-                  - Descrizione: %s
-                  - Prezzo Totale: %.2f €
-                  - Indirizzo: %s
-                  - Prodotti: %s
-                  - Certificati: %s
-                  - Foto: %s
-                  - Stato: %s
-                  - Commento: %s
-                  - Creato da: %s
-                """.formatted(
-                nome,
-                descrizione,
+        return String.format(
+                "Pacchetto[nome=%s, prodotti=%d, prezzoTot=%.2f €, stato=%s]",
+                getNome(),
+                prodotti != null ? prodotti.size() : 0,
                 prezzoTotale,
-                indirizzo,
-                prodotti != null ? prodotti.size() + " prodotti" : "Nessuno",
-                certificati != null ? String.join(", ", certificati) : "Nessuno",
-                foto != null ? String.join(", ", foto) : "Nessuna",
-                stato != null ? stato.name() : "N/D",
-                commento != null ? commento : "N/D",
-                creatoDa
+                getStato() != null ? getStato().name() : "N/D"
         );
     }
 }

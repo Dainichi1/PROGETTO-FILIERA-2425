@@ -22,27 +22,47 @@ public abstract class Evento {
                      String descrizione,
                      String indirizzo,
                      StatoEvento stato) {
-        this.id           = id;
-        this.dataInizio   = dataInizio;
-        this.dataFine     = dataFine;
-        this.prezzo       = prezzo;
-        this.descrizione  = descrizione;
-        this.indirizzo    = indirizzo;
-        this.stato        = stato;
+        this.id = id;
+        this.dataInizio = dataInizio;
+        this.dataFine = dataFine;
+        this.prezzo = prezzo;
+        this.descrizione = descrizione;
+        this.indirizzo = indirizzo;
+        this.stato = stato;
     }
 
-    public long getId() { return id; }
-    public void setId(long id) { this.id = id; }
+    public long getId() {
+        return id;
+    }
 
-    public LocalDateTime getDataInizio() { return dataInizio; }
-    public LocalDateTime getDataFine()   { return dataFine;   }
-    public double getPrezzo()            { return prezzo;     }
-    public String getDescrizione()       { return descrizione;}
-    public String getIndirizzo()         { return indirizzo;  }
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public LocalDateTime getDataInizio() {
+        return dataInizio;
+    }
+
+    public LocalDateTime getDataFine() {
+        return dataFine;
+    }
+
+    public double getPrezzo() {
+        return prezzo;
+    }
+
+    public String getDescrizione() {
+        return descrizione;
+    }
+
+    public String getIndirizzo() {
+        return indirizzo;
+    }
 
     public StatoEvento getStato() {
         return stato;
     }
+
     public void setStato(StatoEvento s) {
         this.stato = s;
     }

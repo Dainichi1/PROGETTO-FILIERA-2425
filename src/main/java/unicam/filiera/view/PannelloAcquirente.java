@@ -13,6 +13,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class PannelloAcquirente extends JPanel {
 
     private final AcquirenteController ctrl;
@@ -22,6 +23,7 @@ public class PannelloAcquirente extends JPanel {
     private final DefaultTableModel modelMarketplace;
     private final DefaultTableModel modelCarrello;
     private final JLabel lblFondi = new JLabel();
+    private final JLabel lblTotali = new JLabel("Totale: 0 articoli - €0.00");
     private final List<Item> itemList = new ArrayList<>();
 
     private final JButton btnShowMarket;
@@ -42,6 +44,7 @@ public class PannelloAcquirente extends JPanel {
             public boolean isCellEditable(int row, int column) {
                 return column == 0 || column == 6;
             }
+
             @Override
             public Class<?> getColumnClass(int columnIndex) {
                 return switch (columnIndex) {
@@ -55,14 +58,23 @@ public class PannelloAcquirente extends JPanel {
         tabMarketplace = new JTable(modelMarketplace);
 
         modelCarrello = new DefaultTableModel(
-                new Object[]{"Tipo", "Nome", "Quantità", "Prezzo"}, 0);
+                new Object[]{"Tipo","Nome","Quantità","Prezzo","Conferma","Elimina"},
+                0
+        ) {
+            @Override public boolean isCellEditable(int row, int col) {
+                return col == 2; // solo la Qta è editabile
+            }
+            @Override public Class<?> getColumnClass(int col) {
+                return (col == 2) ? Integer.class : String.class;
+            }
+        };
         tabCarrello = new JTable(modelCarrello);
 
         btnShowMarket = new JButton("Visualizza Marketplace");
         btnShowMarket.addActionListener(e -> ctrl.visualizzaMarketplace());
 
         btnShowCart = new JButton("Visualizza Carrello");
-        btnShowCart.addActionListener(e -> aggiornaCarrello());
+        btnShowCart.addActionListener(e -> ctrl.visualizzaCarrello());
 
         btnAggiornaFondi.addActionListener(e -> {
             try {
@@ -77,6 +89,7 @@ public class PannelloAcquirente extends JPanel {
         initUI();
         aggiungiValidatoreQuantita();
         aggiungiListenerCheckboxEAzione();
+        aggiungiListenerQuantitaCarrello();
     }
 
     private void initUI() {
@@ -86,6 +99,8 @@ public class PannelloAcquirente extends JPanel {
         topPanel.add(new JLabel("Fondi disponibili:"));
         topPanel.add(txtFondi);
         topPanel.add(btnAggiornaFondi);
+        topPanel.add(new JLabel("   "));      // un po' di spazio
+        topPanel.add(lblTotali);
         add(topPanel, BorderLayout.NORTH);
 
         JSplitPane splitPane = new JSplitPane(
@@ -120,27 +135,12 @@ public class PannelloAcquirente extends JPanel {
         }
     }
 
-    private void aggiornaCarrello() {
-        modelCarrello.setRowCount(0);
-        for (int i = 0; i < modelMarketplace.getRowCount(); i++) {
-            Boolean selezionato = (Boolean) modelMarketplace.getValueAt(i, 0);
-            if (Boolean.TRUE.equals(selezionato)) {
-                String tipo = (String) modelMarketplace.getValueAt(i, 1);
-                String nome = (String) modelMarketplace.getValueAt(i, 2);
-                Object prezzoObj = modelMarketplace.getValueAt(i, 4);
-                Integer quantita = (Integer) modelMarketplace.getValueAt(i, 6);
-                if (quantita != null && quantita > 0) {
-                    double prezzoUnitario = (prezzoObj instanceof Number) ? ((Number) prezzoObj).doubleValue() : 0.0;
-                    double prezzoTotale = prezzoUnitario * quantita;
-                    modelCarrello.addRow(new Object[]{tipo, nome, quantita, prezzoTotale});
-                }
-            }
-        }
-    }
+
 
     private void aggiungiValidatoreQuantita() {
         modelMarketplace.addTableModelListener(new TableModelListener() {
             private boolean aggiornamentoInterno = false;
+
             @Override
             public void tableChanged(TableModelEvent e) {
                 if (aggiornamentoInterno) return;
@@ -155,7 +155,8 @@ public class PannelloAcquirente extends JPanel {
                             int disponibile = disponibileObj instanceof Integer ? (Integer) disponibileObj : 0;
                             ValidatoreAcquisto.validaQuantita(richiesta, disponibile);
                         } else if (tipo.equals("Pacchetto")) {
-                            if (richiesta <= 0) throw new IllegalArgumentException("⚠ La quantità deve essere almeno 1.");
+                            if (richiesta <= 0)
+                                throw new IllegalArgumentException("⚠ La quantità deve essere almeno 1.");
                         }
                     } catch (IllegalArgumentException ex) {
                         avvisaErrore(ex.getMessage());
@@ -197,7 +198,7 @@ public class PannelloAcquirente extends JPanel {
                             }
                             ctrl.aggiungiAlCarrello(item, quantita);
                             avvisaSuccesso(item.getNome() + " aggiunto al carrello.");
-                            aggiornaCarrello();
+
                         } catch (IllegalArgumentException ex) {
                             avvisaErrore(ex.getMessage());
                         }
@@ -215,10 +216,86 @@ public class PannelloAcquirente extends JPanel {
         JOptionPane.showMessageDialog(this, msg, "Errore", JOptionPane.ERROR_MESSAGE);
     }
 
-    public void showCarrello(List<Object[]> carrello) {
+    /**
+     * Mostra il totale degli item e il costo complessivo del carrello.
+     */
+    public void showTotali(TotaleCarrello tot) {
+        lblTotali.setText(
+                String.format("Totale: %d articoli - €%.2f",
+                        tot.totaleQuantita(),
+                        tot.totaleCosto())
+        );
+
+    }
+
+
+    public void showCarrello(List<Object[]> carrelloRows) {
         modelCarrello.setRowCount(0);
-        for (Object[] riga : carrello) {
-            modelCarrello.addRow(riga);
+        for (Object[] riga : carrelloRows) {
+            // riga ha 5 elementi: [tipo, nome, qta, prezzo, "Conferma"]
+            Object[] r = new Object[6];
+            System.arraycopy(riga, 0, r, 0, 5);
+            r[5] = "Elimina";
+            modelCarrello.addRow(r);
         }
     }
+
+    public void clickConfermaQuantità(Item item, int nuovaQuantità) {
+        try {
+            if (nuovaQuantità == 0) {
+                ctrl.rimuoviItemDalCarrello(item);
+                avvisaSuccesso("Item rimosso dal carrello.");
+                return;
+            }
+
+            // Validazione centralizzata
+            ValidatoreAcquisto.validaQuantitaItem(item, nuovaQuantità);
+
+            // Se tutto è valido, aggiorna il carrello
+            ctrl.aggiornaQuantitaItemNelCarrello(item, nuovaQuantità);
+            avvisaSuccesso("Quantità aggiornata con successo.");
+
+        } catch (IllegalArgumentException ex) {
+            avvisaErrore(ex.getMessage());
+        }
+    }
+
+
+    private void aggiungiListenerQuantitaCarrello() {
+        tabCarrello.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                int row = tabCarrello.rowAtPoint(evt.getPoint());
+                int col = tabCarrello.columnAtPoint(evt.getPoint());
+                if (row<0) return;
+
+                String nome = (String)modelCarrello.getValueAt(row, 1);
+                Item item = ctrl.getItemNelCarrelloByNome(nome);
+                if (item==null) return;
+
+                if (col == 4) {          // “Conferma” quantità
+                    Integer nuovaQta = (Integer)modelCarrello.getValueAt(row, 2);
+                    clickConfermaQuantità(item, nuovaQta);
+                }
+                else if (col == 5) {     // “Elimina”
+                    ctrl.requestDeleteItem(item);
+                }
+            }
+        });
+    }
+
+    public void askDeleteConfirmation(Item item) {
+        int choice = JOptionPane.showConfirmDialog(
+                this,
+                "Sei sicuro di voler eliminare \"" + item.getNome() + "\" dal carrello?",
+                "Conferma eliminazione",
+                JOptionPane.YES_NO_OPTION
+        );
+        if (choice == JOptionPane.YES_OPTION) {
+            ctrl.deleteItem(item);
+        } else {
+            ctrl.cancelDelete();
+        }
+    }
+
+
 }

@@ -1,9 +1,7 @@
 package unicam.filiera.view;
 
 import unicam.filiera.controller.AcquirenteController;
-import unicam.filiera.model.Pacchetto;
-import unicam.filiera.model.Prodotto;
-import unicam.filiera.model.UtenteAutenticato;
+import unicam.filiera.model.*;
 import unicam.filiera.util.ValidatoreAcquisto;
 import unicam.filiera.util.ValidatoreMarketplace;
 
@@ -12,6 +10,7 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class PannelloAcquirente extends JPanel {
@@ -19,25 +18,30 @@ public class PannelloAcquirente extends JPanel {
     private final AcquirenteController ctrl;
     private final JTable tabMarketplace;
     private final JTable tabCarrello;
+
     private final DefaultTableModel modelMarketplace;
     private final DefaultTableModel modelCarrello;
+    private final JLabel lblFondi = new JLabel();
+    private final List<Item> itemList = new ArrayList<>();
 
     private final JButton btnShowMarket;
     private final JButton btnShowCart;
+    private final JTextField txtFondi = new JTextField(6);
+    private final JButton btnAggiornaFondi = new JButton("Aggiorna Fondi");
 
     public PannelloAcquirente(UtenteAutenticato utente) {
         super(new BorderLayout());
         this.ctrl = new AcquirenteController(this, utente);
+        if (utente instanceof Acquirente acquirente) {
+            txtFondi.setText(String.format("%.2f", acquirente.getFondi()));
+        }
 
-        // --- MODELLO MARKETPLACE ---
         modelMarketplace = new DefaultTableModel(
                 new Object[]{"Seleziona", "Tipo", "Nome", "Descrizione", "Prezzo", "Disponibile", "Quantità", "Azione"}, 0) {
-
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 0 || column == 6; // Solo Checkbox e Quantità
+                return column == 0 || column == 6;
             }
-
             @Override
             public Class<?> getColumnClass(int columnIndex) {
                 return switch (columnIndex) {
@@ -50,17 +54,25 @@ public class PannelloAcquirente extends JPanel {
 
         tabMarketplace = new JTable(modelMarketplace);
 
-        // --- MODELLO CARRELLO ---
         modelCarrello = new DefaultTableModel(
                 new Object[]{"Tipo", "Nome", "Quantità", "Prezzo"}, 0);
         tabCarrello = new JTable(modelCarrello);
 
-        // --- BOTTONI ---
         btnShowMarket = new JButton("Visualizza Marketplace");
         btnShowMarket.addActionListener(e -> ctrl.visualizzaMarketplace());
 
         btnShowCart = new JButton("Visualizza Carrello");
         btnShowCart.addActionListener(e -> aggiornaCarrello());
+
+        btnAggiornaFondi.addActionListener(e -> {
+            try {
+                double nuoviFondi = Double.parseDouble(txtFondi.getText().trim());
+                ctrl.aggiornaFondiAcquirente(nuoviFondi);
+                avvisaSuccesso("Fondi aggiornati con successo.");
+            } catch (NumberFormatException ex) {
+                avvisaErrore("Inserisci un valore numerico valido.");
+            }
+        });
 
         initUI();
         aggiungiValidatoreQuantita();
@@ -71,6 +83,9 @@ public class PannelloAcquirente extends JPanel {
         JPanel topPanel = new JPanel(new FlowLayout());
         topPanel.add(btnShowMarket);
         topPanel.add(btnShowCart);
+        topPanel.add(new JLabel("Fondi disponibili:"));
+        topPanel.add(txtFondi);
+        topPanel.add(btnAggiornaFondi);
         add(topPanel, BorderLayout.NORTH);
 
         JSplitPane splitPane = new JSplitPane(
@@ -82,28 +97,31 @@ public class PannelloAcquirente extends JPanel {
         add(splitPane, BorderLayout.CENTER);
     }
 
-    // --- Mostra Marketplace ---
+    public void aggiornaCampoFondi(double fondi) {
+        txtFondi.setText(String.format("%.2f", fondi));
+    }
+
     public void showMarketplace(List<Object> lista) {
         modelMarketplace.setRowCount(0);
+        itemList.clear();
+
         for (Object o : lista) {
-            if (o instanceof Prodotto p) {
+            if (o instanceof Item item) {
+                itemList.add(item);
+                String tipo = item instanceof Prodotto ? "Prodotto" : "Pacchetto";
+                double prezzo = (item instanceof Prodotto p) ? p.getPrezzo() : ((Pacchetto) item).getPrezzoTotale();
+                Object disponibile = (item instanceof Prodotto p) ? p.getQuantita() : "-";
+
                 modelMarketplace.addRow(new Object[]{
-                        false, "Prodotto", p.getNome(), p.getDescrizione(),
-                        p.getPrezzo(), p.getQuantita(), 0, ""
-                });
-            } else if (o instanceof Pacchetto pk) {
-                modelMarketplace.addRow(new Object[]{
-                        false, "Pacchetto", pk.getNome(), pk.getDescrizione(),
-                        pk.getPrezzoTotale(), "-", 0, ""
+                        false, tipo, item.getNome(), item.getDescrizione(),
+                        prezzo, disponibile, 0, ""
                 });
             }
         }
     }
 
-    // --- Aggiorna Carrello ---
     private void aggiornaCarrello() {
-        modelCarrello.setRowCount(0); // Svuota
-
+        modelCarrello.setRowCount(0);
         for (int i = 0; i < modelMarketplace.getRowCount(); i++) {
             Boolean selezionato = (Boolean) modelMarketplace.getValueAt(i, 0);
             if (Boolean.TRUE.equals(selezionato)) {
@@ -111,44 +129,34 @@ public class PannelloAcquirente extends JPanel {
                 String nome = (String) modelMarketplace.getValueAt(i, 2);
                 Object prezzoObj = modelMarketplace.getValueAt(i, 4);
                 Integer quantita = (Integer) modelMarketplace.getValueAt(i, 6);
-
                 if (quantita != null && quantita > 0) {
                     double prezzoUnitario = (prezzoObj instanceof Number) ? ((Number) prezzoObj).doubleValue() : 0.0;
                     double prezzoTotale = prezzoUnitario * quantita;
-
                     modelCarrello.addRow(new Object[]{tipo, nome, quantita, prezzoTotale});
                 }
             }
         }
     }
 
-
-    // --- Validatore Quantità ---
     private void aggiungiValidatoreQuantita() {
         modelMarketplace.addTableModelListener(new TableModelListener() {
             private boolean aggiornamentoInterno = false;
-
             @Override
             public void tableChanged(TableModelEvent e) {
                 if (aggiornamentoInterno) return;
-
                 if (e.getType() == TableModelEvent.UPDATE && e.getColumn() == 6) {
                     int row = e.getFirstRow();
                     try {
                         String tipo = (String) modelMarketplace.getValueAt(row, 1);
                         Object disponibileObj = modelMarketplace.getValueAt(row, 5);
                         Object quantitaObj = modelMarketplace.getValueAt(row, 6);
-
                         int richiesta = quantitaObj instanceof Integer ? (Integer) quantitaObj : 0;
-
                         if (tipo.equals("Prodotto")) {
                             int disponibile = disponibileObj instanceof Integer ? (Integer) disponibileObj : 0;
                             ValidatoreAcquisto.validaQuantita(richiesta, disponibile);
                         } else if (tipo.equals("Pacchetto")) {
-                            if (richiesta <= 0)
-                                throw new IllegalArgumentException("⚠ La quantità deve essere almeno 1.");
+                            if (richiesta <= 0) throw new IllegalArgumentException("⚠ La quantità deve essere almeno 1.");
                         }
-
                     } catch (IllegalArgumentException ex) {
                         avvisaErrore(ex.getMessage());
                         aggiornamentoInterno = true;
@@ -160,52 +168,36 @@ public class PannelloAcquirente extends JPanel {
         });
     }
 
-    // --- Listener per Checkbox e Azione ---
     private void aggiungiListenerCheckboxEAzione() {
-        // Listener per mostrare il bottone solo se spunto la checkbox
         tabMarketplace.getModel().addTableModelListener(e -> {
             int col = e.getColumn();
             int row = e.getFirstRow();
-            if (col == 0 && row >= 0) { // Se cambio la checkbox
+            if (col == 0 && row >= 0) {
                 Boolean selezionato = (Boolean) modelMarketplace.getValueAt(row, 0);
-                if (Boolean.TRUE.equals(selezionato)) {
-                    modelMarketplace.setValueAt("Aggiungi al carrello", row, 7);
-                } else {
-                    modelMarketplace.setValueAt("", row, 7);
-                }
+                modelMarketplace.setValueAt(selezionato ? "Aggiungi al carrello" : "", row, 7);
             }
         });
 
-        // Listener per click sulla colonna Azione
         tabMarketplace.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 int row = tabMarketplace.rowAtPoint(evt.getPoint());
                 int col = tabMarketplace.columnAtPoint(evt.getPoint());
-
-                if (col == 7) { // Colonna Azione
+                if (col == 7 && row >= 0) {
                     String azione = (String) modelMarketplace.getValueAt(row, 7);
                     if ("Aggiungi al carrello".equals(azione)) {
-                        String tipo = (String) modelMarketplace.getValueAt(row, 1);
-                        String nome = (String) modelMarketplace.getValueAt(row, 2);
                         int quantita = (Integer) modelMarketplace.getValueAt(row, 6);
-                        Object disponibile = modelMarketplace.getValueAt(row, 5);
-
                         try {
-                            ValidatoreMarketplace.validaTipo(tipo);
-                            ValidatoreMarketplace.validaNome(nome);
-                            if (tipo.equals("Prodotto")) {
-                                int disponibileInt = disponibile instanceof Integer ? (Integer) disponibile : 0;
-                                ValidatoreAcquisto.validaQuantita(quantita, disponibileInt);
-                            } else {
-                                if (quantita <= 0)
-                                    throw new IllegalArgumentException("⚠ La quantità deve essere almeno 1.");
+                            Item item = itemList.get(row);
+                            ValidatoreMarketplace.validaTipo(item instanceof Prodotto ? "Prodotto" : "Pacchetto");
+                            ValidatoreMarketplace.validaNome(item.getNome());
+                            if (item instanceof Prodotto p) {
+                                ValidatoreAcquisto.validaQuantita(quantita, p.getQuantita());
+                            } else if (quantita <= 0) {
+                                throw new IllegalArgumentException("⚠ La quantità deve essere almeno 1.");
                             }
-                            // Chiamo il controller per aggiungere al carrello
-                            ctrl.aggiungiAlCarrello(nome, tipo, quantita);
-
-                            avvisaSuccesso(nome + " aggiunto al carrello.");
-                            aggiornaCarrello(); // aggiorna visuale carrello
-
+                            ctrl.aggiungiAlCarrello(item, quantita);
+                            avvisaSuccesso(item.getNome() + " aggiunto al carrello.");
+                            aggiornaCarrello();
                         } catch (IllegalArgumentException ex) {
                             avvisaErrore(ex.getMessage());
                         }
@@ -215,9 +207,6 @@ public class PannelloAcquirente extends JPanel {
         });
     }
 
-    // --- Messaggi ---
-
-
     public void avvisaSuccesso(String msg) {
         JOptionPane.showMessageDialog(this, msg, "Successo", JOptionPane.INFORMATION_MESSAGE);
     }
@@ -226,13 +215,10 @@ public class PannelloAcquirente extends JPanel {
         JOptionPane.showMessageDialog(this, msg, "Errore", JOptionPane.ERROR_MESSAGE);
     }
 
-
     public void showCarrello(List<Object[]> carrello) {
-        modelCarrello.setRowCount(0); // Pulisci il carrello
-
+        modelCarrello.setRowCount(0);
         for (Object[] riga : carrello) {
             modelCarrello.addRow(riga);
         }
     }
-
 }

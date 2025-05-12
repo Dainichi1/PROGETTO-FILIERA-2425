@@ -61,6 +61,16 @@ public class DatabaseManager {
                                 """
                 );
             }
+            // ** utenti.fondi **
+            ResultSet rs4 = conn.getMetaData()
+                    .getColumns(null, null, "UTENTI", "FONDI");
+            if (!rs4.next()) {
+                System.out.println("[DB] Aggiungo colonna 'fondi' a utenti");
+                stmt.executeUpdate(
+                        "ALTER TABLE utenti ADD COLUMN fondi DOUBLE DEFAULT 0.0"
+                );
+            }
+
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -81,9 +91,11 @@ public class DatabaseManager {
                             password VARCHAR(50),
                             nome VARCHAR(50),
                             cognome VARCHAR(50),
-                            ruolo VARCHAR(30)
+                            ruolo VARCHAR(30),
+                            fondi DOUBLE DEFAULT 0.0
                         );
                     """;
+
 
             String prodottiSql = """
                         CREATE TABLE IF NOT EXISTS prodotti (

@@ -12,6 +12,7 @@ import unicam.filiera.dao.JdbcProdottoDAO;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 public class DistributoreController {
@@ -80,6 +81,29 @@ public class DistributoreController {
         } catch (Exception ex) {
             // ogni altro errore
             callback.accept(false, "Errore inaspettato: " + ex.getMessage());
+        }
+    }
+
+    public void gestisciInvioPacchetto(Map<String, String> datiInput,
+                                       List<String> nomiProdotti,
+                                       List<File> certificati,
+                                       List<File> foto,
+                                       BiConsumer<Boolean, String> callback) {
+        try {
+            PacchettoDto dto = new PacchettoDto(
+                    datiInput.getOrDefault("nome", "").trim(),
+                    datiInput.getOrDefault("descrizione", "").trim(),
+                    datiInput.getOrDefault("indirizzo", "").trim(),
+                    datiInput.getOrDefault("prezzo", "").trim(),
+                    nomiProdotti,
+                    certificati,
+                    foto
+            );
+
+            this.inviaPacchetto(dto, callback);
+
+        } catch (Exception ex) {
+            callback.accept(false, "Errore durante la preparazione del pacchetto: " + ex.getMessage());
         }
     }
 }

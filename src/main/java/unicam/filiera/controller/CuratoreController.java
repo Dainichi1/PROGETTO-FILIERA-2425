@@ -4,6 +4,7 @@ import unicam.filiera.dao.ProdottoDAO;
 import unicam.filiera.dao.PacchettoDAO;
 import unicam.filiera.dao.JdbcProdottoDAO;
 import unicam.filiera.dao.JdbcPacchettoDAO;
+import unicam.filiera.model.Item;
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.Pacchetto;
 import unicam.filiera.model.StatoProdotto;
@@ -11,11 +12,8 @@ import unicam.filiera.model.observer.ProdottoNotifier;
 import unicam.filiera.model.observer.PacchettoNotifier;
 
 import java.util.List;
+import java.util.function.BiConsumer;
 
-/**
- * Controller del Curatore per approvazione prodotti e pacchetti.
- * Usa iniezione di DAO e aggiorna lo stato attraverso l'interfaccia generica.
- */
 public class CuratoreController {
 
     private final ProdottoDAO prodottoDAO;
@@ -23,9 +21,6 @@ public class CuratoreController {
     private final ProdottoNotifier prodottoNotifier;
     private final PacchettoNotifier pacchettoNotifier;
 
-    /**
-     * Iniezione delle dipendenze (utile per test)
-     */
     public CuratoreController(ProdottoDAO prodottoDAO, PacchettoDAO pacchettoDAO) {
         this.prodottoDAO = prodottoDAO;
         this.pacchettoDAO = pacchettoDAO;
@@ -33,76 +28,48 @@ public class CuratoreController {
         this.pacchettoNotifier = PacchettoNotifier.getInstance();
     }
 
-    /**
-     * Costruttore di convenienza per l'app reale
-     */
     public CuratoreController() {
         this(JdbcProdottoDAO.getInstance(), JdbcPacchettoDAO.getInstance());
     }
 
-    /**
-     * Prodotti in attesa di approvazione
-     */
     public List<Prodotto> getProdottiDaApprovare() {
         return prodottoDAO.findByStato(StatoProdotto.IN_ATTESA);
     }
 
-    /**
-     * Pacchetti in attesa di approvazione
-     */
     public List<Pacchetto> getPacchettiDaApprovare() {
         return pacchettoDAO.findByStato(StatoProdotto.IN_ATTESA);
     }
 
-    /**
-     * Approva un prodotto e notifica gli osservatori
-     */
-    public boolean approvaProdotto(Prodotto prodotto) {
-        prodotto.setStato(StatoProdotto.APPROVATO);
-        prodotto.setCommento(null);
-        boolean success = prodottoDAO.update(prodotto);
-        if (success) {
-            prodottoNotifier.notificaTutti(prodotto, "APPROVATO");
+
+
+    public void valutaItem(Item item, boolean approva, String commento, BiConsumer<Boolean, String> callback) {
+        boolean success = false;
+        String nomeElemento = item instanceof Pacchetto ? "[PAC] " + item.getNome() : item.getNome();
+
+        try {
+            item.setStato(approva ? StatoProdotto.APPROVATO : StatoProdotto.RIFIUTATO);
+            item.setCommento(approva ? null : (commento != null ? commento : ""));
+
+            // Salvataggio
+            if (item instanceof Prodotto p) {
+                success = prodottoDAO.update(p);
+                if (success)
+                    prodottoNotifier.notificaTutti(p, approva ? "APPROVATO" : "RIFIUTATO");
+            } else if (item instanceof Pacchetto k) {
+                success = pacchettoDAO.update(k);
+                if (success)
+                    pacchettoNotifier.notificaTutti(k, approva ? "APPROVATO" : "RIFIUTATO");
+            }
+
+            String esito = success
+                    ? (approva ? nomeElemento + " approvato." : nomeElemento + " rifiutato.")
+                    : "Operazione fallita su " + nomeElemento;
+
+            callback.accept(success, esito);
+
+        } catch (Exception e) {
+            callback.accept(false, "Errore: " + e.getMessage());
         }
-        return success;
     }
 
-    /**
-     * Rifiuta un prodotto con commento e notifica
-     */
-    public boolean rifiutaProdotto(Prodotto prodotto, String commento) {
-        prodotto.setStato(StatoProdotto.RIFIUTATO);
-        prodotto.setCommento(commento != null ? commento : "");
-        boolean success = prodottoDAO.update(prodotto);
-        if (success) {
-            prodottoNotifier.notificaTutti(prodotto, "RIFIUTATO");
-        }
-        return success;
-    }
-
-    /**
-     * Approva un pacchetto e notifica gli osservatori
-     */
-    public boolean approvaPacchetto(Pacchetto pacchetto) {
-        pacchetto.setStato(StatoProdotto.APPROVATO);
-        pacchetto.setCommento(null);
-        boolean success = pacchettoDAO.update(pacchetto);
-        if (success) {
-            pacchettoNotifier.notificaTutti(pacchetto, "APPROVATO");
-        }
-        return success;
-    }
-
-    /**
-     * Rifiuta un pacchetto con commento e notifica
-     */
-    public boolean rifiutaPacchetto(Pacchetto pacchetto, String commento) {
-        pacchetto.setStato(StatoProdotto.RIFIUTATO);
-        pacchetto.setCommento(commento != null ? commento : "");
-        boolean success = pacchettoDAO.update(pacchetto);
-        if (success) {
-            pacchettoNotifier.notificaTutti(pacchetto, "RIFIUTATO");
-        }
-        return success;
-    }
 }

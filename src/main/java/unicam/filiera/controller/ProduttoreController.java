@@ -6,7 +6,10 @@ import unicam.filiera.service.ProdottoService;
 import unicam.filiera.service.ProdottoServiceImpl;
 import unicam.filiera.dao.JdbcProdottoDAO;
 
+import java.io.File;
 import java.util.List;
+import java.util.Map;
+import java.util.function.BiConsumer;
 
 public class ProduttoreController {
     @FunctionalInterface
@@ -54,4 +57,26 @@ public class ProduttoreController {
     public List<Prodotto> getProdottiCreatiDaMe() {
         return service.getProdottiCreatiDa(username);
     }
+
+
+    public void gestisciInvioProdotto(Map<String, String> datiInput,
+                                      List<File> certificati,
+                                      List<File> foto,
+                                      BiConsumer<String, Boolean> callback) {
+        try {
+            ProdottoDto dto = new ProdottoDto(
+                    datiInput.getOrDefault("nome", "").trim(),
+                    datiInput.getOrDefault("descrizione", "").trim(),
+                    datiInput.getOrDefault("quantita", "").trim(),
+                    datiInput.getOrDefault("prezzo", "").trim(),
+                    datiInput.getOrDefault("indirizzo", "").trim(),
+                    List.copyOf(certificati),
+                    List.copyOf(foto)
+            );
+            this.inviaProdotto(dto, (ok, msg) -> callback.accept(msg, ok));
+        } catch (Exception ex) {
+            callback.accept("Errore durante l'invio: " + ex.getMessage(), false);
+        }
+    }
+
 }

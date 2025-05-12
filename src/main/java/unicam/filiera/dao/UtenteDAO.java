@@ -23,4 +23,7 @@ public interface UtenteDAO {
      * Nuovo: recupera tutti gli utenti che hanno uno dei ruoli indicati
      */
     List<UtenteAutenticato> findByRuoli(List<Ruolo> ruoli);
+
+    void aggiornaFondi(String username, double nuoviFondi);
+
 }

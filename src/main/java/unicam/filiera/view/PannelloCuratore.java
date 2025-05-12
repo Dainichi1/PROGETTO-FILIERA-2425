@@ -2,12 +2,14 @@ package unicam.filiera.view;
 
 import unicam.filiera.controller.CuratoreController;
 import unicam.filiera.controller.ObserverManagerProdotto;
+import unicam.filiera.model.Item;
 import unicam.filiera.model.Pacchetto;
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.UtenteAutenticato;
 import unicam.filiera.model.observer.OsservatorePacchetto;
 import unicam.filiera.model.observer.OsservatoreProdotto;
 import unicam.filiera.controller.ObserverManagerPacchetto;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
@@ -122,84 +124,56 @@ public class PannelloCuratore extends JPanel
 
     private void caricaElementiInAttesa() {
         model.setRowCount(0);
-        controller.getProdottiDaApprovare().forEach(p -> aggiungiRiga(p, false));
-        controller.getPacchettiDaApprovare().forEach(k -> aggiungiRiga(k, true));
+        controller.getProdottiDaApprovare().forEach(this::aggiungiRiga);
+        controller.getPacchettiDaApprovare().forEach(this::aggiungiRiga);
+
     }
 
-    private void aggiungiRiga(Object elem, boolean isPacchetto) {
-        Prodotto p = isPacchetto ? null : (Prodotto) elem;
-        Pacchetto k = isPacchetto ? (Pacchetto) elem : null;
+    private void aggiungiRiga(Item item) {
+        String nome = item instanceof Pacchetto ? "[PAC] " + item.getNome() : item.getNome();
+        String desc = item.getDescrizione();
+        int qt = item instanceof Pacchetto k ? k.getProdotti().size() : ((Prodotto) item).getQuantita();
+        double pr = item instanceof Pacchetto k ? k.getPrezzoTotale() : ((Prodotto) item).getPrezzo();
+        String ind = item.getIndirizzo();
+        String cd = item.getCreatoDa();
 
-        String nome = isPacchetto ? "[PAC] " + k.getNome() : p.getNome();
-        String desc = isPacchetto ? k.getDescrizione() : p.getDescrizione();
-        int qt = isPacchetto ? k.getProdotti().size() : p.getQuantita();
-        double pr = isPacchetto ? k.getPrezzoTotale() : p.getPrezzo();
-        String ind = isPacchetto ? k.getIndirizzo() : p.getIndirizzo();
-        String cd = isPacchetto ? k.getCreatoDa() : p.getCreatoDa();
+        String certDir = item instanceof Pacchetto ? "uploads/certificati_pacchetti/" : "uploads/certificati/";
+        String fotoDir = item instanceof Pacchetto ? "uploads/foto_pacchetti/" : "uploads/foto/";
 
-        // Costruisco liste di File con percorso corretto
-        String certDir = isPacchetto ? "uploads/certificati_pacchetti/" : "uploads/certificati/";
-        String fotoDir = isPacchetto ? "uploads/foto_pacchetti/" : "uploads/foto/";
-
-        List<File> certFiles = (isPacchetto ? k.getCertificati() : p.getCertificati()).stream()
+        List<File> certFiles = item.getCertificati().stream()
                 .map(name -> new File(certDir + name))
                 .collect(Collectors.toList());
-        List<File> fotoFiles = (isPacchetto ? k.getFoto() : p.getFoto()).stream()
+        List<File> fotoFiles = item.getFoto().stream()
                 .map(name -> new File(fotoDir + name))
                 .collect(Collectors.toList());
 
         JButton btnA = new JButton("✔");
         JButton btnR = new JButton("✖");
+
         btnA.addActionListener(e -> {
             int row = tabella.getEditingRow();
-            if (tabella.isEditing()) {
-                tabella.getCellEditor().stopCellEditing();
-            }
+            if (tabella.isEditing()) tabella.getCellEditor().stopCellEditing();
 
-            boolean success;
-            if (isPacchetto) {
-                success = controller.approvaPacchetto(k);
-            } else {
-                success = controller.approvaProdotto(p);
-            }
-
-            if (success) {
-                if (row >= 0 && row < model.getRowCount()) {
-                    model.removeRow(row);
-                }
-                JOptionPane.showMessageDialog(this, nome + " approvato.");
-            } else {
-                JOptionPane.showMessageDialog(this, "Errore durante l'approvazione.");
-            }
+            controller.valutaItem(item, true, null, (ok, msg) -> {
+                if (ok && row >= 0 && row < model.getRowCount()) model.removeRow(row);
+                JOptionPane.showMessageDialog(this, msg);
+            });
         });
 
         btnR.addActionListener(e -> {
             int row = tabella.getEditingRow();
-            if (tabella.isEditing()) {
-                tabella.getCellEditor().stopCellEditing();
-            }
-
+            if (tabella.isEditing()) tabella.getCellEditor().stopCellEditing();
             String commento = (String) model.getValueAt(row, 10);
-            boolean success;
-            if (isPacchetto) {
-                success = controller.rifiutaPacchetto(k, commento);
-            } else {
-                success = controller.rifiutaProdotto(p, commento);
-            }
 
-            if (success) {
-                if (row >= 0 && row < model.getRowCount()) {
-                    model.removeRow(row);
-                }
-                JOptionPane.showMessageDialog(this, nome + " rifiutato.");
-            } else {
-                JOptionPane.showMessageDialog(this, "Errore durante il rifiuto.");
-            }
+            controller.valutaItem(item, false, commento, (ok, msg) -> {
+                if (ok && row >= 0 && row < model.getRowCount()) model.removeRow(row);
+                JOptionPane.showMessageDialog(this, msg);
+            });
         });
-
 
         model.addRow(new Object[]{nome, desc, qt, pr, ind, cd, certFiles, fotoFiles, btnA, btnR, ""});
     }
+
 
     // Renderer/Editor per preview di file
     private class PreviewCell extends AbstractCellEditor

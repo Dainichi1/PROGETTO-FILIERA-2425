@@ -19,7 +19,8 @@ public class UtenteAutenticato implements Utente {
         this.ruolo = ruolo;
     }
 
-    @Override
+    // Metodi getter e setter (senza fondi)
+
     public String getUsername() {
         return username;
     }
@@ -28,12 +29,10 @@ public class UtenteAutenticato implements Utente {
         return password;
     }
 
-    @Override
     public String getNome() {
         return nome;
     }
 
-    @Override
     public String getCognome() {
         return cognome;
     }

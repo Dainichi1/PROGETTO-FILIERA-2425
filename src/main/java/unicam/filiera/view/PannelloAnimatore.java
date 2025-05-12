@@ -15,11 +15,8 @@ import java.util.Map;
 public class PannelloAnimatore extends JPanel {
     private final AnimatoreController controller;
 
-    // selettore tipo evento
-    private final JComboBox<String> comboTipo =
-            new JComboBox<>(new String[]{"Fiera", "Visita su invito"});
+    private final JComboBox<String> comboTipo = new JComboBox<>(new String[]{"Fiera", "Visita su invito"});
 
-    // — campi per il form “Fiera” —
     private final JTextField txtF_DataInizio = new JTextField(15);
     private final JTextField txtF_DataFine = new JTextField(15);
     private final JTextField txtF_Prezzo = new JTextField(10);
@@ -27,7 +24,6 @@ public class PannelloAnimatore extends JPanel {
     private final JTextArea txtF_Descrizione = new JTextArea(3, 20);
     private final JTextField txtF_Indirizzo = new JTextField(20);
 
-    // — campi per il form “Visita su invito” —
     private final JTextField txtV_DataInizio = new JTextField(15);
     private final JTextField txtV_DataFine = new JTextField(15);
     private final JTextField txtV_Prezzo = new JTextField(10);
@@ -35,54 +31,46 @@ public class PannelloAnimatore extends JPanel {
     private final JTextArea txtV_Descrizione = new JTextArea(3, 20);
     private final JTextField txtV_Indirizzo = new JTextField(20);
 
-    // Mappa CheckBox → UtenteAutenticato per i destinatari
     private final Map<JCheckBox, UtenteAutenticato> destinatariMap = new LinkedHashMap<>();
-
-    // contenitore a schede
     private final JPanel formContainer = new JPanel(new CardLayout());
 
     public PannelloAnimatore(UtenteAutenticato utente) {
         super(new BorderLayout());
         this.controller = new AnimatoreController(utente.getUsername());
 
-        // HEADER
-        JLabel header = new JLabel(
-                "Benvenuto Animatore " + utente.getNome(),
-                SwingConstants.CENTER
-        );
+        JLabel header = new JLabel("Benvenuto Animatore " + utente.getNome(), SwingConstants.CENTER);
         header.setFont(new Font("Arial", Font.BOLD, 18));
         add(header, BorderLayout.NORTH);
 
-        // COMBO PER SELEZIONE TIPO
         JPanel top = new JPanel();
         top.add(new JLabel("Tipo evento:"));
         top.add(comboTipo);
         add(top, BorderLayout.SOUTH);
 
-        // i due form
         formContainer.add(buildFormFiera(), "Fiera");
         formContainer.add(buildFormVisita(), "Visita su invito");
         add(formContainer, BorderLayout.CENTER);
 
-        // cambio card al cambiare selezione
+        setupComboTipoListener();
+        comboTipo.setSelectedItem("Fiera");
+    }
+
+    private void setupComboTipoListener() {
         comboTipo.addActionListener(e -> {
             CardLayout cl = (CardLayout) formContainer.getLayout();
             cl.show(formContainer, (String) comboTipo.getSelectedItem());
         });
-        comboTipo.setSelectedItem("Fiera");
     }
 
     private JPanel buildFormFiera() {
         JPanel p = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = creaGbc();
 
-        // righe Fiera
         aggiungiRiga(p, gbc, 0, "Data Inizio (YYYY-MM-DD):", txtF_DataInizio);
         aggiungiRiga(p, gbc, 1, "Data Fine   (YYYY-MM-DD):", txtF_DataFine);
         aggiungiRiga(p, gbc, 2, "Prezzo:", txtF_Prezzo);
         aggiungiRiga(p, gbc, 3, "Min. Partecipanti:", txtF_MinPartecipanti);
 
-        // Descrizione
         gbc.gridy = 4;
         gbc.gridx = 0;
         gbc.fill = GridBagConstraints.BOTH;
@@ -93,7 +81,6 @@ public class PannelloAnimatore extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 0;
 
-        // Indirizzo
         gbc.gridy = 5;
         gbc.gridx = 0;
         p.add(new JLabel("Indirizzo:"), gbc);
@@ -101,7 +88,6 @@ public class PannelloAnimatore extends JPanel {
         gbc.weightx = 1.0;
         p.add(txtF_Indirizzo, gbc);
 
-        // Pulsanti
         gbc.gridy = 6;
         gbc.gridx = 0;
         gbc.gridwidth = 2;
@@ -126,13 +112,12 @@ public class PannelloAnimatore extends JPanel {
                 JOptionPane.showMessageDialog(
                         this, msg,
                         ok ? "Successo" : "Errore",
-                        ok ? JOptionPane.INFORMATION_MESSAGE
-                                : JOptionPane.ERROR_MESSAGE
+                        ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
                 );
-                if (ok) resetAll();
+                if (ok) resetFieraForm();
             }));
         });
-        bAnnF.addActionListener(e -> resetAll());
+        bAnnF.addActionListener(e -> resetFieraForm());
 
         return p;
     }
@@ -141,13 +126,11 @@ public class PannelloAnimatore extends JPanel {
         JPanel p = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = creaGbc();
 
-        // righe Visita
         aggiungiRiga(p, gbc, 0, "Data Inizio (YYYY-MM-DD):", txtV_DataInizio);
         aggiungiRiga(p, gbc, 1, "Data Fine   (YYYY-MM-DD):", txtV_DataFine);
         aggiungiRiga(p, gbc, 2, "Prezzo:", txtV_Prezzo);
         aggiungiRiga(p, gbc, 3, "Min. Partecipanti:", txtV_MinPartecipanti);
 
-        // Descrizione
         gbc.gridy = 4;
         gbc.gridx = 0;
         gbc.fill = GridBagConstraints.BOTH;
@@ -158,7 +141,6 @@ public class PannelloAnimatore extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 0;
 
-        // Indirizzo
         gbc.gridy = 5;
         gbc.gridx = 0;
         p.add(new JLabel("Indirizzo:"), gbc);
@@ -166,14 +148,12 @@ public class PannelloAnimatore extends JPanel {
         gbc.weightx = 1.0;
         p.add(txtV_Indirizzo, gbc);
 
-        // Checkbox destinatari
         gbc.gridy = 6;
         gbc.gridx = 0;
         gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.NONE;
         p.add(new JLabel("Seleziona destinatari:"), gbc);
 
-        // carico utenti filtrati
         List<UtenteAutenticato> utenti = controller.getUtentiPerRuoli(
                 Ruolo.PRODUTTORE,
                 Ruolo.TRASFORMATORE,
@@ -192,7 +172,6 @@ public class PannelloAnimatore extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridwidth = 1;
 
-        // Pulsanti
         gbc.gridy = 8;
         gbc.gridx = 0;
         gbc.gridwidth = 2;
@@ -222,19 +201,17 @@ public class PannelloAnimatore extends JPanel {
                 JOptionPane.showMessageDialog(
                         this, msg,
                         ok ? "Successo" : "Errore",
-                        ok ? JOptionPane.INFORMATION_MESSAGE
-                                : JOptionPane.ERROR_MESSAGE
+                        ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
                 );
-                if (ok) resetAll();
+                if (ok) resetVisitaForm();
             }));
         });
-        bAnnV.addActionListener(e -> resetAll());
+        bAnnV.addActionListener(e -> resetVisitaForm());
 
         return p;
     }
 
-    private void aggiungiRiga(JPanel p, GridBagConstraints gbc,
-                              int row, String label, JComponent field) {
+    private void aggiungiRiga(JPanel p, GridBagConstraints gbc, int row, String label, JComponent field) {
         gbc.gridy = row;
         gbc.gridx = 0;
         gbc.weightx = 0;
@@ -256,15 +233,17 @@ public class PannelloAnimatore extends JPanel {
         return gbc;
     }
 
-    private void resetAll() {
-        // reset campi Fiera
+    private void resetFieraForm() {
         txtF_DataInizio.setText("");
         txtF_DataFine.setText("");
         txtF_Prezzo.setText("");
         txtF_MinPartecipanti.setText("");
         txtF_Descrizione.setText("");
         txtF_Indirizzo.setText("");
-        // reset campi Visita
+        ((CardLayout) formContainer.getLayout()).show(formContainer, "Fiera");
+    }
+
+    private void resetVisitaForm() {
         txtV_DataInizio.setText("");
         txtV_DataFine.setText("");
         txtV_Prezzo.setText("");
@@ -272,7 +251,5 @@ public class PannelloAnimatore extends JPanel {
         txtV_Descrizione.setText("");
         txtV_Indirizzo.setText("");
         destinatariMap.keySet().forEach(cb -> cb.setSelected(false));
-        // torno alla scheda “Fiera”
-        ((CardLayout) formContainer.getLayout()).show(formContainer, "Fiera");
     }
 }

@@ -1,9 +1,9 @@
 package unicam.filiera.controller;
 
 
-import unicam.filiera.model.Pacchetto;
-import unicam.filiera.model.Prodotto;
-import unicam.filiera.model.UtenteAutenticato;
+import unicam.filiera.dao.JdbcUtenteDAO;
+import unicam.filiera.dao.UtenteDAO;
+import unicam.filiera.model.*;
 
 import unicam.filiera.view.PannelloAcquirente;
 
@@ -33,29 +33,49 @@ public class AcquirenteController {
 
     private final List<Object[]> carrello = new ArrayList<>();
 
-    public void aggiungiAlCarrello(String nome, String tipo, int quantita) {
+    public void aggiungiAlCarrello(Item item, int quantita) {
         double prezzoUnitario = 0.0;
+        String tipo;
 
-        // Cerca il prodotto o pacchetto nel marketplace per ottenere il prezzo unitario
-        for (Object o : marketplaceCtrl.ottieniElementiMarketplace()) {
-            if (tipo.equals("Prodotto") && o instanceof Prodotto p && p.getNome().equals(nome)) {
-                prezzoUnitario = p.getPrezzo();
-                break;
-            } else if (tipo.equals("Pacchetto") && o instanceof Pacchetto pk && pk.getNome().equals(nome)) {
-                prezzoUnitario = pk.getPrezzoTotale();
-                break;
-            }
+        // Determina il tipo e il prezzo in base all'istanza
+        if (item instanceof Prodotto p) {
+            prezzoUnitario = p.getPrezzo();
+            tipo = "Prodotto";
+        } else if (item instanceof Pacchetto pk) {
+            prezzoUnitario = pk.getPrezzoTotale();
+            tipo = "Pacchetto";
+        } else {
+            throw new IllegalArgumentException("Tipo di item non supportato");
         }
 
-        // Calcola il prezzo totale (prezzo unitario × quantità)
         double prezzoTotale = prezzoUnitario * quantita;
 
-        // Aggiungi al carrello (salva il prezzo totale)
-        carrello.add(new Object[]{tipo, nome, quantita, prezzoTotale});
+        carrello.add(new Object[]{
+                tipo,
+                item.getNome(),
+                quantita,
+                prezzoTotale
+        });
 
-        // Chiedi alla view di aggiornare il carrello
         view.showCarrello(carrello);
     }
+
+    public UtenteAutenticato getUtente() {
+        return utente;
+    }
+
+    public void aggiornaFondiAcquirente(double nuoviFondi) {
+        if (utente instanceof Acquirente a) {
+            a.setFondi(nuoviFondi); // ora il metodo esiste
+            UtenteDAO dao = JdbcUtenteDAO.getInstance();
+            dao.aggiornaFondi(a.getUsername(), nuoviFondi);
+        } else {
+            throw new IllegalStateException("L'utente non è un acquirente");
+        }
+    }
+
+
+
 
 
 }

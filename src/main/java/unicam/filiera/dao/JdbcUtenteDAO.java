@@ -1,5 +1,6 @@
 package unicam.filiera.dao;
 
+import unicam.filiera.model.Acquirente;
 import unicam.filiera.model.Ruolo;
 import unicam.filiera.model.UtenteAutenticato;
 
@@ -41,16 +42,32 @@ public class JdbcUtenteDAO implements UtenteDAO {
                 if (rs.next() && rs.getInt(1) > 0) return false;
             }
             // --- inserimento ---
-            String insert = "INSERT INTO utenti (username, password, nome, cognome, ruolo) VALUES (?,?,?,?,?)";
-            try (PreparedStatement ps = conn.prepareStatement(insert)) {
-                ps.setString(1, utente.getUsername());
-                ps.setString(2, utente.getPassword());
-                ps.setString(3, utente.getNome());
-                ps.setString(4, utente.getCognome());
-                ps.setString(5, utente.getRuolo().name());
-                ps.executeUpdate();
-                return true;
+            if (utente.getRuolo() == Ruolo.ACQUIRENTE) {
+                String insert = "INSERT INTO utenti (username, password, nome, cognome, ruolo, fondi) VALUES (?,?,?,?,?,?)";
+                try (PreparedStatement ps = conn.prepareStatement(insert)) {
+                    ps.setString(1, utente.getUsername());
+                    ps.setString(2, utente.getPassword());
+                    ps.setString(3, utente.getNome());
+                    ps.setString(4, utente.getCognome());
+                    ps.setString(5, utente.getRuolo().name());
+                    ps.setDouble(6, ((Acquirente) utente).getFondi());
+                    ps.executeUpdate();
+                    return true;
+                }
+            } else {
+                String insert = "INSERT INTO utenti (username, password, nome, cognome, ruolo) VALUES (?,?,?,?,?)";
+                try (PreparedStatement ps = conn.prepareStatement(insert)) {
+                    ps.setString(1, utente.getUsername());
+                    ps.setString(2, utente.getPassword());
+                    ps.setString(3, utente.getNome());
+                    ps.setString(4, utente.getCognome());
+                    ps.setString(5, utente.getRuolo().name());
+                    ps.executeUpdate();
+                    return true;
+                }
             }
+
+
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -66,14 +83,26 @@ public class JdbcUtenteDAO implements UtenteDAO {
                 ps.setString(2, password);
                 ResultSet rs = ps.executeQuery();
                 if (rs.next()) {
-                    return new UtenteAutenticato(
-                            rs.getString("username"),
-                            rs.getString("password"),
-                            rs.getString("nome"),
-                            rs.getString("cognome"),
-                            Ruolo.valueOf(rs.getString("ruolo"))
-                    );
+                    Ruolo ruolo = Ruolo.valueOf(rs.getString("ruolo"));
+                    if (ruolo == Ruolo.ACQUIRENTE) {
+                        return new Acquirente(
+                                rs.getString("username"),
+                                rs.getString("password"),
+                                rs.getString("nome"),
+                                rs.getString("cognome"),
+                                rs.getDouble("fondi")
+                        );
+                    } else {
+                        return new UtenteAutenticato(
+                                rs.getString("username"),
+                                rs.getString("password"),
+                                rs.getString("nome"),
+                                rs.getString("cognome"),
+                                ruolo
+                        );
+                    }
                 }
+
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -88,14 +117,28 @@ public class JdbcUtenteDAO implements UtenteDAO {
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SELECT * FROM utenti")) {
             while (rs.next()) {
-                list.add(new UtenteAutenticato(
-                        rs.getString("username"),
-                        rs.getString("password"),
-                        rs.getString("nome"),
-                        rs.getString("cognome"),
-                        Ruolo.valueOf(rs.getString("ruolo"))
-                ));
+                Ruolo ruolo = Ruolo.valueOf(rs.getString("ruolo"));
+                UtenteAutenticato u;
+                if (ruolo == Ruolo.ACQUIRENTE) {
+                    u = new Acquirente(
+                            rs.getString("username"),
+                            rs.getString("password"),
+                            rs.getString("nome"),
+                            rs.getString("cognome"),
+                            rs.getDouble("fondi")
+                    );
+                } else {
+                    u = new UtenteAutenticato(
+                            rs.getString("username"),
+                            rs.getString("password"),
+                            rs.getString("nome"),
+                            rs.getString("cognome"),
+                            ruolo
+                    );
+                }
+                list.add(u);
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -130,30 +173,62 @@ public class JdbcUtenteDAO implements UtenteDAO {
     @Override
     public List<UtenteAutenticato> findByRuoli(List<Ruolo> ruoli) {
         if (ruoli.isEmpty()) return List.of();
-        // costruisco in modo dinamico la clausola IN (?,?,...)
+
         String placeholders = String.join(",", ruoli.stream().map(r -> "?").toList());
         String sql = "SELECT * FROM utenti WHERE ruolo IN (" + placeholders + ")";
         List<UtenteAutenticato> list = new ArrayList<>();
+
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
+
             for (int i = 0; i < ruoli.size(); i++) {
                 ps.setString(i + 1, ruoli.get(i).name());
             }
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    UtenteAutenticato u = new UtenteAutenticato(
-                            rs.getString("username"),
-                            rs.getString("password"),
-                            rs.getString("nome"),
-                            rs.getString("cognome"),
-                            Ruolo.valueOf(rs.getString("ruolo"))
-                    );
+                    Ruolo ruolo = Ruolo.valueOf(rs.getString("ruolo"));
+
+                    UtenteAutenticato u;
+                    if (ruolo == Ruolo.ACQUIRENTE) {
+                        u = new Acquirente(
+                                rs.getString("username"),
+                                rs.getString("password"),
+                                rs.getString("nome"),
+                                rs.getString("cognome"),
+                                rs.getDouble("fondi")
+                        );
+                    } else {
+                        u = new UtenteAutenticato(
+                                rs.getString("username"),
+                                rs.getString("password"),
+                                rs.getString("nome"),
+                                rs.getString("cognome"),
+                                ruolo
+                        );
+                    }
+
                     list.add(u);
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
         return list;
     }
+
+
+    @Override
+    public void aggiornaFondi(String username, double nuoviFondi) {
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement("UPDATE utenti SET fondi = ? WHERE username = ?")) {
+            ps.setDouble(1, nuoviFondi);
+            ps.setString(2, username);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

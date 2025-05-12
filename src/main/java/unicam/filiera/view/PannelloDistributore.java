@@ -14,6 +14,7 @@ import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 /**
@@ -177,18 +178,20 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
     }
 
     private void sendToController() {
-        PacchettoDto dto = new PacchettoDto(
-                nomeField.getText().trim(),
-                descrField.getText().trim(),
-                indirizzoField.getText().trim(),
-                prezzoField.getText().trim(),
-                prodottiSel.stream()
-                        .map(Prodotto::getNome)
-                        .toList(),
-                certSel,
-                fotoSel
+        // 1. Raccogli dati grezzi dai campi di input
+        var datiInput = Map.of(
+                "nome", nomeField.getText().trim(),
+                "descrizione", descrField.getText().trim(),
+                "indirizzo", indirizzoField.getText().trim(),
+                "prezzo", prezzoField.getText().trim()
         );
 
+        // 2. Raccogli i nomi dei prodotti selezionati
+        List<String> nomiProdotti = prodottiSel.stream()
+                .map(Prodotto::getNome)
+                .toList();
+
+        // 3. Definisci il callback
         BiConsumer<Boolean, String> callback = (ok, msg) -> SwingUtilities.invokeLater(() -> {
             JOptionPane.showMessageDialog(
                     this, msg,
@@ -201,8 +204,16 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
             }
         });
 
-        controller.inviaPacchetto(dto, callback);
+        // 4. Chiama il controller
+        controller.gestisciInvioPacchetto(
+                datiInput,
+                nomiProdotti,
+                List.copyOf(certSel),
+                List.copyOf(fotoSel),
+                callback
+        );
     }
+
 
     private void refreshProdotti() {
         modelProdotti.setRowCount(0);

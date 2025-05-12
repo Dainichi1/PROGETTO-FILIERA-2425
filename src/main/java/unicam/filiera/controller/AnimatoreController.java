@@ -28,9 +28,6 @@ public class AnimatoreController {
     private final String organizzatore;
     private final UtenteDAO utenteDAO;
 
-    /**
-     * Iniezione del service (utile per i test)
-     */
     public AnimatoreController(FieraService fieraService,
                                VisitaInvitoService visitaService,
                                UtenteDAO utenteDAO,
@@ -41,9 +38,6 @@ public class AnimatoreController {
         this.organizzatore = organizzatore;
     }
 
-    /**
-     * Costruttore di convenienza per l’app reale
-     */
     public AnimatoreController(String organizzatore) {
         this(
                 new FieraServiceImpl(JdbcFieraDAO.getInstance()),
@@ -53,11 +47,6 @@ public class AnimatoreController {
         );
     }
 
-    //––– Metodi “fiera” –––//
-
-    /**
-     * Invia al service una nuova fiera da pubblicare
-     */
     public void inviaFiera(FieraDto dto, EsitoListener callback) {
         try {
             fieraService.creaFiera(dto, organizzatore);
@@ -69,19 +58,10 @@ public class AnimatoreController {
         }
     }
 
-    /**
-     * Restituisce le fiere create da questo animatore
-     */
     public List<Fiera> getFiereCreateDaMe() {
         return fieraService.getFiereCreateDa(organizzatore);
     }
 
-
-    //––– Metodi “visita su invito” –––//
-
-    /**
-     * Invia al service una nuova visita su invito da pubblicare
-     */
     public void inviaVisitaInvito(VisitaInvitoDto dto, EsitoListener callback) {
         try {
             visitaService.creaVisitaInvito(dto, organizzatore);
@@ -93,9 +73,6 @@ public class AnimatoreController {
         }
     }
 
-    /**
-     * Restituisce le visite su invito create da questo animatore
-     */
     public List<VisitaInvito> getVisiteInvitoCreateDaMe() {
         return visitaService.getVisiteCreateDa(organizzatore);
     }

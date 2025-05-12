@@ -3,6 +3,7 @@ package unicam.filiera.controller;
 import unicam.filiera.dao.JdbcUtenteDAO;
 import unicam.filiera.dao.UtenteDAO;
 import unicam.filiera.factory.UtenteFactory;
+import unicam.filiera.model.Acquirente;
 import unicam.filiera.model.Utente;
 import unicam.filiera.model.UtenteAutenticato;
 import unicam.filiera.model.Ruolo;
@@ -63,9 +64,20 @@ public class AutenticazioneController {
         }
 
         // Usa la factory per ottenere il sottotipo corretto
-        return UtenteFactory.creaAttore(
-                raw.getUsername(), raw.getPassword(),
-                raw.getNome(), raw.getCognome(),
-                raw.getRuolo());
+        if (raw.getRuolo() == Ruolo.ACQUIRENTE) {
+            return UtenteFactory.creaAttore(
+                    raw.getUsername(), raw.getPassword(),
+                    raw.getNome(), raw.getCognome(),
+                    raw.getRuolo(),
+                    ((Acquirente) raw).getFondi()
+            );
+        } else {
+            return UtenteFactory.creaAttore(
+                    raw.getUsername(), raw.getPassword(),
+                    raw.getNome(), raw.getCognome(),
+                    raw.getRuolo()
+            );
+        }
     }
+
 }

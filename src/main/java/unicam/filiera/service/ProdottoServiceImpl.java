@@ -7,6 +7,7 @@ import unicam.filiera.model.observer.ProdottoNotifier;
 import unicam.filiera.dao.ProdottoDAO;
 import unicam.filiera.util.ValidatoreProdotto;
 
+import java.io.File;
 import java.util.List;
 
 /**
@@ -23,53 +24,49 @@ public class ProdottoServiceImpl implements ProdottoService {
 
     @Override
     public void creaProdotto(ProdottoDto dto, String creatore) {
-        // parsing controllato di quantità e prezzo
+        // 1. Parsing dei dati testuali
         int quantita;
+        double prezzo;
+
         try {
             quantita = Integer.parseInt(dto.getQuantitaTxt());
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("⚠ Quantità non valida (deve essere un intero)");
+            throw new IllegalArgumentException("⚠ Quantità non valida (deve essere un intero positivo)");
         }
 
-        double prezzo;
         try {
             prezzo = Double.parseDouble(dto.getPrezzoTxt());
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("⚠ Prezzo non valido (deve essere un numero)");
         }
 
-        // validazioni di dominio
-        ValidatoreProdotto.valida(
-                dto.getNome(),
-                dto.getDescrizione(),
-                dto.getIndirizzo(),
-                quantita,
-                prezzo
-        );
-        ValidatoreProdotto.validaFileCaricati(
-                dto.getCertificati().size(),
-                dto.getFoto().size()
-        );
+        // 2. Validazione dominio
+        ValidatoreProdotto.valida(dto.getNome(), dto.getDescrizione(), dto.getIndirizzo(), quantita, prezzo);
+        ValidatoreProdotto.validaFileCaricati(dto.getCertificati().size(), dto.getFoto().size());
 
-        // costruzione del dominio in stato IN_ATTESA
-        Prodotto p = new Prodotto.Builder()
+        // 3. Mapping DTO → Domain
+        Prodotto prodotto = new Prodotto.Builder()
                 .nome(dto.getNome())
                 .descrizione(dto.getDescrizione())
                 .quantita(quantita)
                 .prezzo(prezzo)
                 .indirizzo(dto.getIndirizzo())
+                .certificati(dto.getCertificati().stream().map(File::getName).toList())
+                .foto(dto.getFoto().stream().map(File::getName).toList())
                 .creatoDa(creatore)
                 .stato(StatoProdotto.IN_ATTESA)
                 .build();
 
-        // persistenza + upload files
-        if (!dao.save(p, dto.getCertificati(), dto.getFoto())) {
-            throw new RuntimeException("Errore durante il salvataggio del prodotto");
+        // 4. Salvataggio
+        if (!dao.save(prodotto, dto.getCertificati(), dto.getFoto())) {
+            throw new RuntimeException("Errore durante il salvataggio del prodotto e dei file");
         }
 
-        // notifica observer
-        notifier.notificaTutti(p, "NUOVO_PRODOTTO");
+
+        // 5. Notifica observer
+        notifier.notificaTutti(prodotto, "NUOVO_PRODOTTO");
     }
+
 
     @Override
     public List<Prodotto> getProdottiCreatiDa(String creatore) {

@@ -1,301 +1,245 @@
 package unicam.filiera.view;
 
 import unicam.filiera.controller.AcquirenteController;
-import unicam.filiera.model.*;
-import unicam.filiera.util.ValidatoreAcquisto;
-import unicam.filiera.util.ValidatoreMarketplace;
+import unicam.filiera.dto.CartItemDto;
+import unicam.filiera.dto.CartTotalsDto;
+import unicam.filiera.model.Item;
+import unicam.filiera.model.Prodotto;
+import unicam.filiera.model.Pacchetto;
+import unicam.filiera.model.UtenteAutenticato;
+import unicam.filiera.model.Acquirente;
 
 import javax.swing.*;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.List;
-
+import java.util.ArrayList;
+import java.util.function.BiConsumer;
 
 public class PannelloAcquirente extends JPanel {
-
     private final AcquirenteController ctrl;
-    private final JTable tabMarketplace;
-    private final JTable tabCarrello;
 
+    // Marketplace
+    private final JTable tabMarketplace;
     private final DefaultTableModel modelMarketplace;
-    private final DefaultTableModel modelCarrello;
-    private final JLabel lblFondi = new JLabel();
-    private final JLabel lblTotali = new JLabel("Totale: 0 articoli - €0.00");
     private final List<Item> itemList = new ArrayList<>();
 
-    private final JButton btnShowMarket;
-    private final JButton btnShowCart;
+    // Carrello
+    private final JTable tabCarrello;
+    private final DefaultTableModel modelCarrello;
+    private final JLabel lblTotali = new JLabel("Totale: 0 articoli - €0.00");
+
+    // Fondi
     private final JTextField txtFondi = new JTextField(6);
     private final JButton btnAggiornaFondi = new JButton("Aggiorna Fondi");
+
+    // Controlli in alto
+    private final JButton btnShowMarket = new JButton("Visualizza Marketplace");
+    private final JButton btnShowCart = new JButton("Visualizza Carrello");
 
     public PannelloAcquirente(UtenteAutenticato utente) {
         super(new BorderLayout());
         this.ctrl = new AcquirenteController(this, utente);
-        if (utente instanceof Acquirente acquirente) {
-            txtFondi.setText(String.format("%.2f", acquirente.getFondi()));
+
+        // Imposta campo fondi iniziale
+        if (utente instanceof Acquirente a) {
+            txtFondi.setText(String.format("%.2f", a.getFondi()));
         }
 
+        // --- Marketplace table ---
         modelMarketplace = new DefaultTableModel(
-                new Object[]{"Seleziona", "Tipo", "Nome", "Descrizione", "Prezzo", "Disponibile", "Quantità", "Azione"}, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return column == 0 || column == 6;
-            }
-
-            @Override
-            public Class<?> getColumnClass(int columnIndex) {
-                return switch (columnIndex) {
-                    case 0 -> Boolean.class;
-                    case 6 -> Integer.class;
-                    default -> String.class;
-                };
-            }
-        };
-
-        tabMarketplace = new JTable(modelMarketplace);
-
-        modelCarrello = new DefaultTableModel(
-                new Object[]{"Tipo","Nome","Quantità","Prezzo","Conferma","Elimina"},
+                new Object[]{"Seleziona", "Tipo", "Nome", "Descrizione", "Prezzo", "Disponibile", "Quantità", "Azione"},
                 0
         ) {
-            @Override public boolean isCellEditable(int row, int col) {
-                return col == 2; // solo la Qta è editabile
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return c == 0 || c == 6;
             }
-            @Override public Class<?> getColumnClass(int col) {
-                return (col == 2) ? Integer.class : String.class;
+
+            @Override
+            public Class<?> getColumnClass(int c) {
+                return (c == 0) ? Boolean.class :
+                        (c == 6) ? Integer.class : String.class;
+            }
+        };
+        tabMarketplace = new JTable(modelMarketplace);
+        modelMarketplace.addTableModelListener(e -> {
+            int col = e.getColumn(), row = e.getFirstRow();
+            if (col == 0 && row >= 0) {
+                boolean sel = (Boolean) modelMarketplace.getValueAt(row, 0);
+                modelMarketplace.setValueAt(sel ? "Aggiungi al carrello" : "", row, 7);
+            }
+        });
+
+        // --- Carrello table ---
+        modelCarrello = new DefaultTableModel(
+                new Object[]{"Tipo", "Nome", "Quantità", "Prezzo Unitario", "Totale", "Aggiorna", "Elimina"},
+                0
+        ) {
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return c == 2;
+            }
+
+            @Override
+            public Class<?> getColumnClass(int c) {
+                return (c == 2) ? Integer.class : String.class;
             }
         };
         tabCarrello = new JTable(modelCarrello);
 
-        btnShowMarket = new JButton("Visualizza Marketplace");
+        // --- Azioni bottoni ---
         btnShowMarket.addActionListener(e -> ctrl.visualizzaMarketplace());
-
-        btnShowCart = new JButton("Visualizza Carrello");
         btnShowCart.addActionListener(e -> ctrl.visualizzaCarrello());
-
         btnAggiornaFondi.addActionListener(e -> {
-            try {
-                double nuoviFondi = Double.parseDouble(txtFondi.getText().trim());
-                ctrl.aggiornaFondiAcquirente(nuoviFondi);
-                avvisaSuccesso("Fondi aggiornati con successo.");
-            } catch (NumberFormatException ex) {
-                avvisaErrore("Inserisci un valore numerico valido.");
-            }
+
         });
 
         initUI();
-        aggiungiValidatoreQuantita();
-        aggiungiListenerCheckboxEAzione();
-        aggiungiListenerQuantitaCarrello();
+        aggiungiListenerMarketplace();
+        aggiungiListenerCarrello();
     }
 
     private void initUI() {
-        JPanel topPanel = new JPanel(new FlowLayout());
-        topPanel.add(btnShowMarket);
-        topPanel.add(btnShowCart);
-        topPanel.add(new JLabel("Fondi disponibili:"));
-        topPanel.add(txtFondi);
-        topPanel.add(btnAggiornaFondi);
-        topPanel.add(new JLabel("   "));      // un po' di spazio
-        topPanel.add(lblTotali);
-        add(topPanel, BorderLayout.NORTH);
+        // Top panel
+        JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        top.add(btnShowMarket);
+        top.add(btnShowCart);
+        top.add(new JLabel("   "));
+        top.add(new JLabel("Fondi:"));
+        top.add(txtFondi);
+        top.add(btnAggiornaFondi);
+        top.add(new JLabel("   "));
+        top.add(lblTotali);
+        add(top, BorderLayout.NORTH);
 
-        JSplitPane splitPane = new JSplitPane(
+        // Split pane
+        JSplitPane split = new JSplitPane(
                 JSplitPane.VERTICAL_SPLIT,
                 new JScrollPane(tabMarketplace),
                 new JScrollPane(tabCarrello)
         );
-        splitPane.setDividerLocation(300);
-        add(splitPane, BorderLayout.CENTER);
+        split.setDividerLocation(300);
+        add(split, BorderLayout.CENTER);
     }
 
-    public void aggiornaCampoFondi(double fondi) {
-        txtFondi.setText(String.format("%.2f", fondi));
-    }
-
+    /**
+     * Chiamato dal controller per popolare marketplace
+     */
     public void showMarketplace(List<Object> lista) {
         modelMarketplace.setRowCount(0);
         itemList.clear();
-
         for (Object o : lista) {
             if (o instanceof Item item) {
                 itemList.add(item);
-                String tipo = item instanceof Prodotto ? "Prodotto" : "Pacchetto";
-                double prezzo = (item instanceof Prodotto p) ? p.getPrezzo() : ((Pacchetto) item).getPrezzoTotale();
-                Object disponibile = (item instanceof Prodotto p) ? p.getQuantita() : "-";
-
+                String tipo = (item instanceof Prodotto) ? "Prodotto" : "Pacchetto";
+                double prezzo = (item instanceof Prodotto p) ? p.getPrezzo()
+                        : ((Pacchetto) item).getPrezzoTotale();
+                Object disp = (item instanceof Prodotto p) ? p.getQuantita() : "-";
                 modelMarketplace.addRow(new Object[]{
                         false, tipo, item.getNome(), item.getDescrizione(),
-                        prezzo, disponibile, 0, ""
+                        prezzo, disp, 0, ""
                 });
             }
         }
     }
 
-
-
-    private void aggiungiValidatoreQuantita() {
-        modelMarketplace.addTableModelListener(new TableModelListener() {
-            private boolean aggiornamentoInterno = false;
-
-            @Override
-            public void tableChanged(TableModelEvent e) {
-                if (aggiornamentoInterno) return;
-                if (e.getType() == TableModelEvent.UPDATE && e.getColumn() == 6) {
-                    int row = e.getFirstRow();
-                    try {
-                        String tipo = (String) modelMarketplace.getValueAt(row, 1);
-                        Object disponibileObj = modelMarketplace.getValueAt(row, 5);
-                        Object quantitaObj = modelMarketplace.getValueAt(row, 6);
-                        int richiesta = quantitaObj instanceof Integer ? (Integer) quantitaObj : 0;
-                        if (tipo.equals("Prodotto")) {
-                            int disponibile = disponibileObj instanceof Integer ? (Integer) disponibileObj : 0;
-                            ValidatoreAcquisto.validaQuantita(richiesta, disponibile);
-                        } else if (tipo.equals("Pacchetto")) {
-                            if (richiesta <= 0)
-                                throw new IllegalArgumentException("⚠ La quantità deve essere almeno 1.");
-                        }
-                    } catch (IllegalArgumentException ex) {
-                        avvisaErrore(ex.getMessage());
-                        aggiornamentoInterno = true;
-                        modelMarketplace.setValueAt(0, row, 6);
-                        aggiornamentoInterno = false;
-                    }
-                }
-            }
-        });
-    }
-
-    private void aggiungiListenerCheckboxEAzione() {
-        tabMarketplace.getModel().addTableModelListener(e -> {
-            int col = e.getColumn();
-            int row = e.getFirstRow();
-            if (col == 0 && row >= 0) {
-                Boolean selezionato = (Boolean) modelMarketplace.getValueAt(row, 0);
-                modelMarketplace.setValueAt(selezionato ? "Aggiungi al carrello" : "", row, 7);
-            }
-        });
-
-        tabMarketplace.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                int row = tabMarketplace.rowAtPoint(evt.getPoint());
-                int col = tabMarketplace.columnAtPoint(evt.getPoint());
-                if (col == 7 && row >= 0) {
-                    String azione = (String) modelMarketplace.getValueAt(row, 7);
-                    if ("Aggiungi al carrello".equals(azione)) {
-                        int quantita = (Integer) modelMarketplace.getValueAt(row, 6);
-                        try {
-                            Item item = itemList.get(row);
-                            ValidatoreMarketplace.validaTipo(item instanceof Prodotto ? "Prodotto" : "Pacchetto");
-                            ValidatoreMarketplace.validaNome(item.getNome());
-                            if (item instanceof Prodotto p) {
-                                ValidatoreAcquisto.validaQuantita(quantita, p.getQuantita());
-                            } else if (quantita <= 0) {
-                                throw new IllegalArgumentException("⚠ La quantità deve essere almeno 1.");
-                            }
-                            ctrl.aggiungiAlCarrello(item, quantita);
-                            avvisaSuccesso(item.getNome() + " aggiunto al carrello.");
-
-                        } catch (IllegalArgumentException ex) {
-                            avvisaErrore(ex.getMessage());
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    public void avvisaSuccesso(String msg) {
-        JOptionPane.showMessageDialog(this, msg, "Successo", JOptionPane.INFORMATION_MESSAGE);
-    }
-
-    public void avvisaErrore(String msg) {
-        JOptionPane.showMessageDialog(this, msg, "Errore", JOptionPane.ERROR_MESSAGE);
+    /**
+     * Chiamato dal controller per popolare il carrello
+     */
+    public void showCart(List<CartItemDto> items, CartTotalsDto tot) {
+        modelCarrello.setRowCount(0);
+        for (CartItemDto dto : items) {
+            modelCarrello.addRow(new Object[]{
+                    dto.getTipo(),
+                    dto.getNome(),
+                    dto.getQuantita(),
+                    dto.getPrezzoUnitario(),
+                    dto.getTotale(),
+                    "Aggiorna",
+                    "Elimina"
+            });
+        }
+        lblTotali.setText(
+                String.format("Totale: %d articoli - €%.2f",
+                        tot.getTotaleArticoli(),
+                        tot.getCostoTotale())
+        );
     }
 
     /**
-     * Mostra il totale degli item e il costo complessivo del carrello.
+     * Callback factory per mostrare popup di esito
      */
-    public void showTotali(TotaleCarrello tot) {
-        lblTotali.setText(
-                String.format("Totale: %d articoli - €%.2f",
-                        tot.totaleQuantita(),
-                        tot.totaleCosto())
-        );
-
+    private BiConsumer<String, Boolean> showResult() {
+        return (msg, ok) -> SwingUtilities.invokeLater(() -> {
+            JOptionPane.showMessageDialog(
+                    this, msg,
+                    ok ? "Successo" : "Errore",
+                    ok ? JOptionPane.INFORMATION_MESSAGE
+                            : JOptionPane.ERROR_MESSAGE
+            );
+        });
     }
 
+    /**
+     * Validazione lato UI e invio addToCart()
+     */
+    private void aggiungiListenerMarketplace() {
+        tabMarketplace.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                int row = tabMarketplace.rowAtPoint(e.getPoint());
+                int col = tabMarketplace.columnAtPoint(e.getPoint());
+                if (row < 0 || col != 7) return;
+                String az = (String) modelMarketplace.getValueAt(row, 7);
+                if (!"Aggiungi al carrello".equals(az)) return;
 
-    public void showCarrello(List<Object[]> carrelloRows) {
-        modelCarrello.setRowCount(0);
-        for (Object[] riga : carrelloRows) {
-            // riga ha 5 elementi: [tipo, nome, qta, prezzo, "Conferma"]
-            Object[] r = new Object[6];
-            System.arraycopy(riga, 0, r, 0, 5);
-            r[5] = "Elimina";
-            modelCarrello.addRow(r);
-        }
-    }
+                Item item = itemList.get(row);
+                Object qObj = modelMarketplace.getValueAt(row, 6);
+                int q = (qObj instanceof Integer) ? (Integer) qObj : 0;
 
-    public void clickConfermaQuantità(Item item, int nuovaQuantità) {
-        try {
-            if (nuovaQuantità == 0) {
-                ctrl.rimuoviItemDalCarrello(item);
-                avvisaSuccesso("Item rimosso dal carrello.");
-                return;
+                ctrl.addToCart(item, q, showResult());
             }
-
-            // Validazione centralizzata
-            ValidatoreAcquisto.validaQuantitaItem(item, nuovaQuantità);
-
-            // Se tutto è valido, aggiorna il carrello
-            ctrl.aggiornaQuantitaItemNelCarrello(item, nuovaQuantità);
-            avvisaSuccesso("Quantità aggiornata con successo.");
-
-        } catch (IllegalArgumentException ex) {
-            avvisaErrore(ex.getMessage());
-        }
+        });
     }
 
 
-    private void aggiungiListenerQuantitaCarrello() {
+    /**
+     * Listener per “Aggiorna” e “Elimina” nel carrello
+     */
+    private void aggiungiListenerCarrello() {
         tabCarrello.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                int row = tabCarrello.rowAtPoint(evt.getPoint());
-                int col = tabCarrello.columnAtPoint(evt.getPoint());
-                if (row<0) return;
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                int viewRow = tabCarrello.rowAtPoint(e.getPoint());
+                int viewCol = tabCarrello.columnAtPoint(e.getPoint());
+                if (viewRow < 0 || viewCol < 0) return;
 
-                String nome = (String)modelCarrello.getValueAt(row, 1);
-                Item item = ctrl.getItemNelCarrelloByNome(nome);
-                if (item==null) return;
+                // Converte in indice del modello, nel caso tu abbia usato sorter/filter
+                int modelRow = tabCarrello.convertRowIndexToModel(viewRow);
+                int modelCol = tabCarrello.convertColumnIndexToModel(viewCol);
 
-                if (col == 4) {          // “Conferma” quantità
-                    Integer nuovaQta = (Integer)modelCarrello.getValueAt(row, 2);
-                    clickConfermaQuantità(item, nuovaQta);
-                }
-                else if (col == 5) {     // “Elimina”
-                    ctrl.requestDeleteItem(item);
+                Object cellValue = modelCarrello.getValueAt(modelRow, modelCol);
+                String nome = (String) modelCarrello.getValueAt(modelRow, 1);
+
+                if ("Elimina".equals(cellValue)) {
+                    ctrl.requestDeleteCartItem(nome, showResult());
+                } else if ("Aggiorna".equals(cellValue)) {
+                    Object qObj = modelCarrello.getValueAt(modelRow, 2);
+                    int q = (qObj instanceof Integer) ? (Integer) qObj : 0;
+                    if (q == 0) {
+                        // se vuole zero, puoi pure chiamare delete
+                        ctrl.requestDeleteCartItem(nome, showResult());
+                    } else {
+                        ctrl.updateCartItem(nome, q, showResult());
+                    }
                 }
             }
         });
     }
 
-    public void askDeleteConfirmation(Item item) {
-        int choice = JOptionPane.showConfirmDialog(
-                this,
-                "Sei sicuro di voler eliminare \"" + item.getNome() + "\" dal carrello?",
-                "Conferma eliminazione",
-                JOptionPane.YES_NO_OPTION
+
+    public void avvisaErrore(String msg) {
+        JOptionPane.showMessageDialog(
+                this, msg, "Errore", JOptionPane.ERROR_MESSAGE
         );
-        if (choice == JOptionPane.YES_OPTION) {
-            ctrl.deleteItem(item);
-        } else {
-            ctrl.cancelDelete();
-        }
     }
-
-
 }

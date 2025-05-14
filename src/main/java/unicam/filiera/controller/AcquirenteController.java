@@ -1,157 +1,124 @@
 package unicam.filiera.controller;
 
-
 import unicam.filiera.dao.JdbcUtenteDAO;
 import unicam.filiera.dao.UtenteDAO;
-import unicam.filiera.model.*;
-import unicam.filiera.model.TotaleCarrello;
+import unicam.filiera.dto.CartItemDto;
+import unicam.filiera.dto.CartTotalsDto;
+import unicam.filiera.model.Item;
+import unicam.filiera.model.Prodotto;
+import unicam.filiera.model.UtenteAutenticato;
+import unicam.filiera.service.CarrelloService;
+import unicam.filiera.service.CarrelloServiceImpl;
 import unicam.filiera.util.ValidatoreAcquisto;
+import unicam.filiera.util.ValidatoreMarketplace;
 import unicam.filiera.view.PannelloAcquirente;
 
+import javax.swing.*;
 import java.util.List;
-import java.util.ArrayList;
-
+import java.util.function.BiConsumer;
 
 public class AcquirenteController {
-    private final MarketplaceController marketplaceCtrl;
-    private final List<Item> itemNelCarrello = new ArrayList<>();
-    private final List<Object[]> carrello = new ArrayList<>();
-
-
+    private final CarrelloService carrelloService;
     private final PannelloAcquirente view;
     private final UtenteAutenticato utente;
+    private final MarketplaceController marketplaceCtrl;
 
     public AcquirenteController(PannelloAcquirente view, UtenteAutenticato utente) {
-        this.view = view;
-        this.utente = utente;
+        this.view            = view;
+        this.utente          = utente;
+        this.carrelloService = new CarrelloServiceImpl();
         this.marketplaceCtrl = new MarketplaceController();
-
-
     }
 
+    /** Visualizza la lista marketplace (Prodotti + Pacchetti) */
     public void visualizzaMarketplace() {
-        List<Object> lista = marketplaceCtrl.ottieniElementiMarketplace(); // prodotti + pacchetti
+        List<Object> lista = marketplaceCtrl.ottieniElementiMarketplace();
         view.showMarketplace(lista);
     }
 
+    /** Carica dal service il carrello e il totale, quindi li manda alla view */
+    public void visualizzaCarrello() {
+        List<CartItemDto> items = carrelloService.getCartItems();
+        CartTotalsDto   tot   = carrelloService.calculateTotals();
+        view.showCart(items, tot);
+    }
 
-    public void aggiungiAlCarrello(Item item, int quantita) {
-        ValidatoreAcquisto.validaQuantitaItem(item, quantita);
+    /**
+     * Aggiunge un item e richiama loadCart(); in caso di eccezione invoca callback(false).
+     */
+    public void addToCart(Item item, int quantita, BiConsumer<String,Boolean> callback) {
+        try {
+            // 1) validazione tipo + nome
+            String tipo = (item instanceof Prodotto) ? "Prodotto" : "Pacchetto";
+            ValidatoreMarketplace.validaTipo(tipo);
+            ValidatoreMarketplace.validaNome(item.getNome());
 
-        double prezzoUnitario = item instanceof Prodotto p ? p.getPrezzo() :
-                item instanceof Pacchetto pk ? pk.getPrezzoTotale() : 0.0;
-        String tipo = item instanceof Prodotto ? "Prodotto" : "Pacchetto";
+            // 2) validazione quantità
+            ValidatoreAcquisto.validaQuantitaItem(item, quantita);
 
-        carrello.add(new Object[]{tipo,
-                item.getNome(),
-                quantita,
-                prezzoUnitario * quantita,
-                "Conferma"});
-        itemNelCarrello.add(item);
+            // 3) effettiva aggiunta
+            carrelloService.addItem(item, quantita);
 
-        // 1) ridisegno la tabella del carrello…
-        view.showCarrello(carrello);
+            // 4) ricarico il carrello in view
+            List<CartItemDto> items = carrelloService.getCartItems();
+            CartTotalsDto tot = carrelloService.calculateTotals();
+            view.showCart(items, tot);
 
-        // 2) …e subito dopo ricalcolo e mostro i totali
-        TotaleCarrello tot = calculateTotals();
-        view.showTotali(tot);
+            callback.accept(item.getNome() + " aggiunto al carrello", true);
+        }
+        catch (RuntimeException ex) {            // prende sia IAE che tutte le altre RTE
+            callback.accept(ex.getMessage(), false);
+        }
     }
 
 
-    public Item getItemNelCarrelloByNome(String nome) {
-        return itemNelCarrello.stream()
-                .filter(i -> i.getNome().equals(nome))
-                .findFirst()
-                .orElse(null);
+    /**
+     * Aggiorna la quantità di un item esistente; in caso di eccezione invoca callback(false).
+     */
+    public void updateCartItem(String nomeItem, int nuovaQta, BiConsumer<String,Boolean> callback) {
+        try {
+            carrelloService.updateItemQuantity(nomeItem, nuovaQta);
+            visualizzaCarrello();
+            callback.accept("Quantità di \"" + nomeItem + "\" aggiornata", true);
+        } catch (IllegalArgumentException ex) {
+            callback.accept(ex.getMessage(), false);
+        }
     }
 
+    public void requestDeleteCartItem(String nomeItem, BiConsumer<String,Boolean> callback) {
+        // 1) chiedo la conferma all'utente **qui**, nel controller
+        int choice = JOptionPane.showConfirmDialog(
+                /* parent = */ view,
+                "Sei sicuro di voler eliminare \"" + nomeItem + "\" dal carrello?",
+                "Conferma eliminazione",
+                JOptionPane.YES_NO_OPTION
+        );
 
-    public UtenteAutenticato getUtente() {
-        return utente;
+        if (choice == JOptionPane.YES_OPTION) {
+            // 2a) confermato: chiamo il solito delete + ricarico
+            carrelloService.removeItem(nomeItem);
+            visualizzaCarrello();
+            callback.accept(nomeItem + " rimosso dal carrello", true);
+        }
+        else {
+            // 2b) annullato: non faccio nulla (oppure un messaggio facoltativo)
+            callback.accept("Eliminazione annullata", true);
+        }
     }
 
-    public void aggiornaFondiAcquirente(double nuoviFondi) {
-        if (utente instanceof Acquirente a) {
-            a.setFondi(nuoviFondi); // ora il metodo esiste
+    /** Aggiorna i fondi dell'acquirente (come prima), con callback di esito */
+    public void aggiornaFondiAcquirente(double nuoviFondi, BiConsumer<String,Boolean> callback) {
+        if (!(utente instanceof unicam.filiera.model.Acquirente a)) {
+            callback.accept("L'utente non è un acquirente", false);
+            return;
+        }
+        try {
+            a.setFondi(nuoviFondi);
             UtenteDAO dao = JdbcUtenteDAO.getInstance();
             dao.aggiornaFondi(a.getUsername(), nuoviFondi);
-        } else {
-            throw new IllegalStateException("L'utente non è un acquirente");
+            callback.accept("Fondi aggiornati: €" + nuoviFondi, true);
+        } catch (Exception e) {
+            callback.accept("Errore nell'aggiornamento fondi", false);
         }
     }
-
-    /**
-     * Aggiorna la quantità di un item nel carrello.
-     */
-    public void aggiornaQuantitaItemNelCarrello(Item item, int nuovaQuantita) {
-        for (Object[] riga : carrello) {
-            if (riga[1].equals(item.getNome())) {
-                double prezzoUnitario = ((double) riga[3]) / ((int) riga[2]); // prezzo / quantità corrente
-                riga[2] = nuovaQuantita;
-                riga[3] = prezzoUnitario * nuovaQuantita;
-                riga[4] = "Conferma";
-                view.showCarrello(carrello);
-                TotaleCarrello tot = calculateTotals();
-                view.showTotali(tot);
-                return;
-            }
-        }
-    }
-
-
-    public void rimuoviItemDalCarrello(Item item) {
-        carrello.removeIf(riga -> riga[1].equals(item.getNome()));
-        itemNelCarrello.removeIf(i -> i.getNome().equals(item.getNome()));
-        view.showCarrello(carrello);
-        TotaleCarrello tot = calculateTotals();
-        view.showTotali(tot);
-
-    }
-
-
-    public Item getItemByNome(String tipo, String nome) {
-        return marketplaceCtrl.ottieniElementiMarketplace().stream()
-                .filter(i -> i instanceof Item item && item.getNome().equals(nome) &&
-                        ((tipo.equals("Prodotto") && item instanceof Prodotto) ||
-                                (tipo.equals("Pacchetto") && item instanceof Pacchetto)))
-                .map(i -> (Item) i)
-                .findFirst()
-                .orElse(null);
-    }
-
-    /**
-     * Mostra in view lo stato corrente del carrello interno.
-     */
-    public void visualizzaCarrello() {
-        view.showCarrello(carrello);
-    }
-
-    public TotaleCarrello calculateTotals() {
-        int totaleQuantita = carrello.stream()
-                .mapToInt(riga -> (int) riga[2])
-                .sum();
-        double totaleCosto = carrello.stream()
-                .mapToDouble(riga -> (double) riga[3])
-                .sum();
-        return new TotaleCarrello(totaleQuantita, totaleCosto);
-    }
-
-    /** Chiamato dalla view quando l’utente clicca “Elimina” */
-    public void requestDeleteItem(Item item) {
-        view.askDeleteConfirmation(item);
-    }
-
-    /** Se l’utente conferma, rimuove e aggiorna view + totali */
-    public void deleteItem(Item item) {
-        rimuoviItemDalCarrello(item);
-        // rimuoviItemDalCarrello già fa showCarrello() e showTotali()
-        view.avvisaSuccesso(item.getNome() + " eliminato dal carrello.");
-    }
-
-    /** Se l’utente annulla, torno alla home (marketplace) */
-    public void cancelDelete() {
-        view.showMarketplace(marketplaceCtrl.ottieniElementiMarketplace());
-    }
-
-
 }

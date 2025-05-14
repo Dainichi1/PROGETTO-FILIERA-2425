@@ -98,4 +98,33 @@ public class PacchettoServiceImpl implements PacchettoService {
     public List<Pacchetto> getPacchettiByStato(StatoProdotto stato) {
         return pacchettoDao.findByStato(stato);
     }
+
+    @Override
+    public void eliminaPacchetto(String nome, String creatore) {
+        // 1. Recupera il pacchetto specifico
+        List<Pacchetto> lista = pacchettoDao.findByCreatore(creatore);
+        Pacchetto p = lista.stream()
+                .filter(x -> x.getNome().equalsIgnoreCase(nome))
+                .findFirst()
+                .orElse(null);
+
+        if (p == null) {
+            throw new IllegalArgumentException("Pacchetto \"" + nome + "\" non trovato");
+        }
+
+        // 2. Verifica che non sia approvato
+        if (p.getStato() == StatoProdotto.APPROVATO) {
+            throw new IllegalStateException("Non puoi eliminare un pacchetto già approvato");
+        }
+
+        // 3. Esegui la cancellazione
+        boolean ok = pacchettoDao.deleteByNomeAndCreatore(nome, creatore);
+        if (!ok) {
+            throw new RuntimeException("Errore durante l'eliminazione di \"" + nome + "\"");
+        }
+
+        // 4. Notifica gli observer
+        notifier.notificaTutti(p, "ELIMINATO_PACCHETTO");
+    }
+
 }

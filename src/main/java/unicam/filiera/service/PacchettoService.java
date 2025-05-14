@@ -18,4 +18,11 @@ public interface PacchettoService {
 
     /** Recupera i pacchetti filtrati per stato. */
     List<Pacchetto> getPacchettiByStato(StatoProdotto stato);
+
+    /**
+     * Elimina un pacchetto solo se il suo stato è IN_ATTESA o RIFIUTATO.
+     * @throws IllegalStateException se lo stato non consente l’eliminazione.
+     * @throws IllegalArgumentException se non trovato.
+     */
+    void eliminaPacchetto(String nome, String creatore);
 }

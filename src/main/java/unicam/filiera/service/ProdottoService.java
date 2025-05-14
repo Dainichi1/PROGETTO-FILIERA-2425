@@ -19,4 +19,6 @@ public interface ProdottoService {
     List<Prodotto> getProdottiCreatiDa(String creatore);
 
     List<Prodotto> getProdottiByStato(StatoProdotto stato);
+
+    void eliminaProdotto(String nome, String creatore);
 }

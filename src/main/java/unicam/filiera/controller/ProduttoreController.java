@@ -52,6 +52,22 @@ public class ProduttoreController {
     }
 
     /**
+     * Rimuove il prodotto dal DB se valido, rilancia eccezione se qualcosa non va.
+     *
+     * @return true se è andato tutto a buon fine
+     */
+    public boolean eliminaProdotto(String nome) {
+        try {
+            service.eliminaProdotto(nome, username);
+            return true;
+        } catch (RuntimeException ex) {
+
+            return false;
+        }
+    }
+
+
+    /**
      * Restituisce i prodotti creati da questo utente
      */
     public List<Prodotto> getProdottiCreatiDaMe() {

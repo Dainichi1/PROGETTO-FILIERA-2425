@@ -21,6 +21,8 @@ public interface ProdottoDAO {
 
     boolean update(Prodotto prodotto);
 
+    boolean deleteByNomeAndCreatore(String nome, String creatore);
+
     List<Prodotto> findByCreatore(String creatore);
 
     List<Prodotto> findByStato(StatoProdotto stato);
@@ -28,4 +30,8 @@ public interface ProdottoDAO {
     List<Prodotto> findAll();
 
     Prodotto findByNome(String nome);
+
+    Prodotto findByNomeAndCreatore(String nome, String creatore);
+
+
 }

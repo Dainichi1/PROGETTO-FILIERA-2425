@@ -60,10 +60,64 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
         btnToggleForm.addActionListener(e -> toggleForm());
 
         // Table
-        String[] cols = {"Nome", "Descrizione", "Qtà", "Prezzo", "Indirizzo", "Certificati", "Foto", "Stato", "Commento"};
+        String[] cols = {
+                "Nome", "Descrizione", "Qtà", "Prezzo", "Indirizzo",
+                "Certificati", "Foto", "Stato", "Commento", "Azioni"
+        };
         model = new DefaultTableModel(cols, 0);
         tabella = new JTable(model);
         add(new JScrollPane(tabella), BorderLayout.EAST);
+
+        tabella.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                int row = tabella.rowAtPoint(e.getPoint());
+                int col = tabella.columnAtPoint(e.getPoint());
+
+                // Ultima colonna: "Azioni"
+                if (col == 9 && row >= 0) {
+                    String nome     = (String) model.getValueAt(row, 0);
+                    String statoStr = model.getValueAt(row, 7).toString();
+
+                    if (!statoStr.equals("IN_ATTESA") && !statoStr.equals("RIFIUTATO")) {
+                        JOptionPane.showMessageDialog(
+                                PannelloProduttore.this,
+                                "Puoi eliminare solo prodotti in attesa o rifiutati.",
+                                "Operazione non permessa",
+                                JOptionPane.WARNING_MESSAGE
+                        );
+                        return;
+                    }
+
+                    int conferma = JOptionPane.showConfirmDialog(
+                            PannelloProduttore.this,
+                            "Vuoi davvero eliminare il prodotto \"" + nome + "\"?",
+                            "Conferma eliminazione",
+                            JOptionPane.YES_NO_OPTION
+                    );
+
+                    if (conferma == JOptionPane.YES_OPTION) {
+                        boolean ok = controller.eliminaProdotto(nome);
+                        if (ok) {
+                            JOptionPane.showMessageDialog(
+                                    PannelloProduttore.this,
+                                    "Prodotto eliminato con successo.",
+                                    "Successo",
+                                    JOptionPane.INFORMATION_MESSAGE
+                            );
+                            refreshTable();
+                        } else {
+                            JOptionPane.showMessageDialog(
+                                    PannelloProduttore.this,
+                                    "Errore durante l'eliminazione.",
+                                    "Errore",
+                                    JOptionPane.ERROR_MESSAGE
+                            );
+                        }
+                    }
+                }
+            }
+        });
 
         // File selectors
         btnCert.addActionListener(e -> chooseFiles(true));
@@ -151,8 +205,10 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
         for (Prodotto p : controller.getProdottiCreatiDaMe()) {
             model.addRow(new Object[]{
                     p.getNome(), p.getDescrizione(), p.getQuantita(), p.getPrezzo(), p.getIndirizzo(),
-                    String.join(", ", p.getCertificati()), String.join(", ", p.getFoto()), p.getStato(), p.getCommento()
+                    String.join(", ", p.getCertificati()), String.join(", ", p.getFoto()),
+                    p.getStato(), p.getCommento(), "Elimina"
             });
+
         }
     }
 

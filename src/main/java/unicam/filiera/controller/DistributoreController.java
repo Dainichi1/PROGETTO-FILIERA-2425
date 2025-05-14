@@ -106,4 +106,16 @@ public class DistributoreController {
             callback.accept(false, "Errore durante la preparazione del pacchetto: " + ex.getMessage());
         }
     }
+
+    /**
+     * Rimuove il pacchetto dal DB se non approvato
+     */
+    public boolean eliminaPacchetto(String nome) {
+        try {
+            pacchettoService.eliminaPacchetto(nome, username);
+            return true;
+        } catch (RuntimeException ex) {
+            return false;
+        }
+    }
 }

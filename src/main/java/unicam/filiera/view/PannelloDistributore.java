@@ -75,10 +75,62 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
         // Pacchetti table
         String[] colPack = {
                 "Nome", "Descrizione", "Indirizzo", "Prezzo Totale",
-                "Prodotti", "Certificati", "Foto", "Stato", "Commento"
+                "Prodotti", "Certificati", "Foto", "Stato", "Commento", "Azioni"
         };
+
         modelPacchetti = new DefaultTableModel(colPack, 0);
         tabellaPacchetti = new JTable(modelPacchetti);
+
+        tabellaPacchetti.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                int row = tabellaPacchetti.rowAtPoint(e.getPoint());
+                int col = tabellaPacchetti.columnAtPoint(e.getPoint());
+
+                if (col == 9 && row >= 0) {
+                    String nome = (String) modelPacchetti.getValueAt(row, 0);
+                    String stato = modelPacchetti.getValueAt(row, 7).toString();
+
+                    if (!stato.equals("IN_ATTESA") && !stato.equals("RIFIUTATO")) {
+                        JOptionPane.showMessageDialog(
+                                PannelloDistributore.this,
+                                "Puoi eliminare solo pacchetti in attesa o rifiutati.",
+                                "Operazione non permessa",
+                                JOptionPane.WARNING_MESSAGE
+                        );
+                        return;
+                    }
+
+                    int conferma = JOptionPane.showConfirmDialog(
+                            PannelloDistributore.this,
+                            "Vuoi davvero eliminare il pacchetto \"" + nome + "\"?",
+                            "Conferma eliminazione",
+                            JOptionPane.YES_NO_OPTION
+                    );
+
+                    if (conferma == JOptionPane.YES_OPTION) {
+                        boolean ok = controller.eliminaPacchetto(nome);
+                        if (ok) {
+                            JOptionPane.showMessageDialog(
+                                    PannelloDistributore.this,
+                                    "Pacchetto eliminato con successo.",
+                                    "Successo",
+                                    JOptionPane.INFORMATION_MESSAGE
+                            );
+                            refreshPacchetti();
+                        } else {
+                            JOptionPane.showMessageDialog(
+                                    PannelloDistributore.this,
+                                    "Errore durante l'eliminazione.",
+                                    "Errore",
+                                    JOptionPane.ERROR_MESSAGE
+                            );
+                        }
+                    }
+                }
+            }
+        });
+
 
         // Split pane
         JSplitPane split = new JSplitPane(
@@ -230,12 +282,11 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
         for (Pacchetto p : controller.getPacchettiCreatiDaMe()) {
             modelPacchetti.addRow(new Object[]{
                     p.getNome(), p.getDescrizione(), p.getIndirizzo(),
-                    p.getPrezzoTotale(),
-                    p.getProdotti().size() + " prodotti",
-                    String.join(", ", p.getCertificati()),
-                    String.join(", ", p.getFoto()),
-                    p.getStato(), p.getCommento()
+                    p.getPrezzoTotale(), p.getProdotti().size() + " prodotti",
+                    String.join(", ", p.getCertificati()), String.join(", ", p.getFoto()),
+                    p.getStato(), p.getCommento(), "Elimina"
             });
+
         }
     }
 

@@ -123,6 +123,39 @@ public class JdbcPacchettoDAO implements PacchettoDAO {
     }
 
     @Override
+    public Pacchetto findByNomeAndCreatore(String nome, String creatore) {
+        String sql = "SELECT * FROM pacchetti WHERE nome = ? AND creato_da = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, nome);
+            stmt.setString(2, creatore);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return buildFromRs(rs);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public boolean deleteByNomeAndCreatore(String nome, String creatore) {
+        String sql = "DELETE FROM pacchetti WHERE nome = ? AND creato_da = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, nome);
+            stmt.setString(2, creatore);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+
+    @Override
     public List<Pacchetto> findByCreatore(String creatore) {
         return findBy("SELECT * FROM pacchetti WHERE creato_da = ?", creatore);
     }

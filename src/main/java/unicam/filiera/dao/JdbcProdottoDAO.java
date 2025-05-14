@@ -79,6 +79,42 @@ public class JdbcProdottoDAO implements ProdottoDAO {
     }
 
     @Override
+    public Prodotto findByNomeAndCreatore(String nome, String creatore) {
+        String sql = """
+            SELECT * FROM prodotti
+             WHERE nome = ? 
+               AND creato_da = ?
+        """;
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement st = conn.prepareStatement(sql)) {
+            st.setString(1, nome);
+            st.setString(2, creatore);
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    return buildProdottoFromRs(rs);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public boolean deleteByNomeAndCreatore(String nome, String creatore) {
+        String sql = "DELETE FROM prodotti WHERE nome = ? AND creato_da = ?";
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, nome);
+            ps.setString(2, creatore);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
     public boolean update(Prodotto p) {
         String sql =
                 "UPDATE prodotti SET descrizione = ?, quantita = ?, prezzo = ?, indirizzo = ?, stato = ?, commento = ? " +

@@ -8,9 +8,19 @@ import java.util.List;
 
 public interface PacchettoDAO {
     boolean saveDetails(Pacchetto p);
+
     boolean saveFiles(Pacchetto p, List<File> certFiles, List<File> fotoFiles);
+
     boolean update(Pacchetto p);
+
     List<Pacchetto> findByCreatore(String creatore);
+
     List<Pacchetto> findByStato(StatoProdotto stato);
+
     List<Pacchetto> findAll();
+
+    Pacchetto findByNomeAndCreatore(String nome, String creatore);
+
+    boolean deleteByNomeAndCreatore(String nome, String creatore);
+
 }

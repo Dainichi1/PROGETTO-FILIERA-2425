@@ -108,14 +108,8 @@ public class PacchettoServiceImpl implements PacchettoService {
                 .findFirst()
                 .orElse(null);
 
-        if (p == null) {
-            throw new IllegalArgumentException("Pacchetto \"" + nome + "\" non trovato");
-        }
-
-        // 2. Verifica che non sia approvato
-        if (p.getStato() == StatoProdotto.APPROVATO) {
-            throw new IllegalStateException("Non puoi eliminare un pacchetto già approvato");
-        }
+        // 2. Valida eliminazione
+        ValidatorePacchetto.validaEliminazione(p);
 
         // 3. Esegui la cancellazione
         boolean ok = pacchettoDao.deleteByNomeAndCreatore(nome, creatore);
@@ -126,5 +120,6 @@ public class PacchettoServiceImpl implements PacchettoService {
         // 4. Notifica gli observer
         notifier.notificaTutti(p, "ELIMINATO_PACCHETTO");
     }
+
 
 }

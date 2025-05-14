@@ -1,5 +1,8 @@
 package unicam.filiera.util;
 
+import unicam.filiera.model.Prodotto;
+import unicam.filiera.model.StatoProdotto;
+
 public class ValidatoreProdotto {
 
     /**
@@ -41,4 +44,13 @@ public class ValidatoreProdotto {
         if (numFoto < 1)
             throw new IllegalArgumentException("⚠ Devi selezionare almeno una foto!");
     }
+
+    public static void validaEliminazione(Prodotto p) {
+        if (p == null)
+            throw new IllegalArgumentException("Prodotto non trovato");
+
+        if (p.getStato() == StatoProdotto.APPROVATO)
+            throw new IllegalStateException("Non puoi eliminare un prodotto già approvato");
+    }
+
 }

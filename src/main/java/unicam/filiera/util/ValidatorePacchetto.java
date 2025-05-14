@@ -3,6 +3,7 @@ package unicam.filiera.util;
 import java.util.List;
 
 import unicam.filiera.model.Prodotto;
+import unicam.filiera.model.StatoProdotto;
 
 public class ValidatorePacchetto {
 
@@ -11,7 +12,7 @@ public class ValidatorePacchetto {
      */
     public static void valida(String nome,
                               String descrizione,
-                              String indirizzo,      // <-- nuovo
+                              String indirizzo,
                               double prezzoTotale,
                               List<Prodotto> prodotti) {
 
@@ -42,4 +43,13 @@ public class ValidatorePacchetto {
         if (numFoto < 1)
             throw new IllegalArgumentException("⚠ Devi selezionare almeno una foto per il pacchetto!");
     }
+
+    public static void validaEliminazione(unicam.filiera.model.Pacchetto p) {
+        if (p == null)
+            throw new IllegalArgumentException("Pacchetto non trovato");
+
+        if (p.getStato() == StatoProdotto.APPROVATO)
+            throw new IllegalStateException("Non puoi eliminare un pacchetto già approvato");
+    }
+
 }

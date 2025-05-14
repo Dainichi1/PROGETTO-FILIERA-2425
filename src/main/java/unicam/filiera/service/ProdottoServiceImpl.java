@@ -80,21 +80,17 @@ public class ProdottoServiceImpl implements ProdottoService {
 
     @Override
     public void eliminaProdotto(String nome, String creatore) {
-        // 1) Recupera l’entity col giusto creatore
         Prodotto p = dao.findByNomeAndCreatore(nome, creatore);
-        if (p == null) {
-            throw new IllegalArgumentException("Prodotto \"" + nome + "\" non trovato");
-        }
-        // 2) Verifica lo stato
-        if (p.getStato() == StatoProdotto.APPROVATO) {
-            throw new IllegalStateException("Non puoi eliminare un prodotto già approvato");
-        }
-        // 3) Esegui la cancellazione
+
+        // delega al validatore
+        ValidatoreProdotto.validaEliminazione(p);
+
         boolean ok = dao.deleteByNomeAndCreatore(nome, creatore);
         if (!ok) {
             throw new RuntimeException("Errore durante l'eliminazione di \"" + nome + "\"");
         }
-        // 4) (Opzionale) notifica eventuali observer sul dominio
+
         notifier.notificaTutti(p, "ELIMINATO_PRODOTTO");
     }
+
 }

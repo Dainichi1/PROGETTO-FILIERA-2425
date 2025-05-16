@@ -93,4 +93,58 @@ public class ProdottoServiceImpl implements ProdottoService {
         notifier.notificaTutti(p, "ELIMINATO_PRODOTTO");
     }
 
+    /**
+     * Aggiorna tutti i campi di un prodotto RIFIUTATO e lo rimette IN_ATTESA.
+     */
+    @Override
+    public void aggiornaProdotto(String nomeOriginale, ProdottoDto dto, String creatore) {
+        // 1. parsing
+        int quantita;
+        try {
+            quantita = Integer.parseInt(dto.getQuantitaTxt());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("⚠ Quantità non valida (deve essere un intero positivo)");
+        }
+        double prezzo;
+        try {
+            prezzo = Double.parseDouble(dto.getPrezzoTxt());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("⚠ Prezzo non valido (deve essere un numero)");
+        }
+
+        // 2. validazione base + file
+        ValidatoreProdotto.valida(dto.getNome(), dto.getDescrizione(), dto.getIndirizzo(), quantita, prezzo);
+        ValidatoreProdotto.validaFileCaricati(dto.getCertificati().size(), dto.getFoto().size());
+
+        // 3. esistenza e stato RIFIUTATO
+        Prodotto existing = dao.findByNomeAndCreatore(nomeOriginale, creatore);
+        ValidatoreProdotto.validaModifica(existing);
+
+        // 4. ricostruisco il Prodotto e resetto il commento
+        Prodotto updated = new Prodotto.Builder()
+                .nome(dto.getNome())
+                .descrizione(dto.getDescrizione())
+                .quantita(quantita)
+                .prezzo(prezzo)
+                .indirizzo(dto.getIndirizzo())
+                .certificati(dto.getCertificati().stream().map(File::getName).toList())
+                .foto(dto.getFoto().stream().map(File::getName).toList())
+                .creatoDa(creatore)
+                .stato(StatoProdotto.IN_ATTESA)
+                .commento(null)
+                .build();
+
+        // 5. full‐update sul DAO (campi + upload file)
+        boolean ok = dao.update(
+                nomeOriginale,
+                creatore,
+                updated,
+                dto.getCertificati(),
+                dto.getFoto()
+        );
+        if (!ok) throw new RuntimeException("Errore durante l'aggiornamento del prodotto");
+
+        // 6. notifica per riaprire il ciclo di approvazione
+        notifier.notificaTutti(updated, "NUOVO_PRODOTTO");
+    }
 }

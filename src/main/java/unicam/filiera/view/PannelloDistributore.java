@@ -5,6 +5,7 @@ import unicam.filiera.controller.ObserverManagerPacchetto;
 import unicam.filiera.dto.PacchettoDto;
 import unicam.filiera.model.Pacchetto;
 import unicam.filiera.model.Prodotto;
+import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.model.UtenteAutenticato;
 import unicam.filiera.model.observer.OsservatorePacchetto;
 
@@ -24,6 +25,8 @@ import java.util.function.BiConsumer;
 public class PannelloDistributore extends JPanel implements OsservatorePacchetto {
     private final UtenteAutenticato utente;
     private final DistributoreController controller;
+    private boolean editMode = false;
+    private String originalName;
 
     private final List<File> certSel = new ArrayList<>();
     private final List<File> fotoSel = new ArrayList<>();
@@ -69,16 +72,30 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
 
         // Prodotti table
         String[] colProd = {"Nome", "Descrizione", "Quantità", "Prezzo", "Indirizzo"};
-        modelProdotti = new DefaultTableModel(colProd, 0);
+        modelProdotti = new DefaultTableModel(colProd, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                // nessuna cella è editabile via GUI
+                return false;
+            }
+        };
         tabellaProdotti = new JTable(modelProdotti);
 
         // Pacchetti table
         String[] colPack = {
                 "Nome", "Descrizione", "Indirizzo", "Prezzo Totale",
-                "Prodotti", "Certificati", "Foto", "Stato", "Commento", "Azioni"
+                "Prodotti", "Certificati", "Foto", "Stato", "Commento",
+                "Elimina", "Modifica"
         };
 
-        modelPacchetti = new DefaultTableModel(colPack, 0);
+
+        modelPacchetti = new DefaultTableModel(colPack, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                // nessuna cella è editabile via GUI (ma restano intercettabili con il mouse)
+                return false;
+            }
+        };
         tabellaPacchetti = new JTable(modelPacchetti);
 
         tabellaPacchetti.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -86,11 +103,13 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 int row = tabellaPacchetti.rowAtPoint(e.getPoint());
                 int col = tabellaPacchetti.columnAtPoint(e.getPoint());
+                if (row < 0) return;
 
-                if (col == 9 && row >= 0) {
-                    String nome = (String) modelPacchetti.getValueAt(row, 0);
-                    String stato = modelPacchetti.getValueAt(row, 7).toString();
+                String nome = (String) modelPacchetti.getValueAt(row, 0);
+                String stato = modelPacchetti.getValueAt(row, 7).toString();
 
+                // ——— Elimina (colonna 9) ——————————————————————
+                if (col == 9) {
                     if (!stato.equals("IN_ATTESA") && !stato.equals("RIFIUTATO")) {
                         JOptionPane.showMessageDialog(
                                 PannelloDistributore.this,
@@ -100,14 +119,12 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
                         );
                         return;
                     }
-
                     int conferma = JOptionPane.showConfirmDialog(
                             PannelloDistributore.this,
                             "Vuoi davvero eliminare il pacchetto \"" + nome + "\"?",
                             "Conferma eliminazione",
                             JOptionPane.YES_NO_OPTION
                     );
-
                     if (conferma == JOptionPane.YES_OPTION) {
                         boolean ok = controller.eliminaPacchetto(nome);
                         if (ok) {
@@ -127,6 +144,33 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
                             );
                         }
                     }
+                    return;
+                }
+
+                // ——— Modifica (colonna 10) ——————————————————————
+                if (col == 10) {
+                    if (!stato.equals("RIFIUTATO")) {
+                        JOptionPane.showMessageDialog(
+                                PannelloDistributore.this,
+                                "Puoi modificare solo pacchetti RIFIUTATI.",
+                                "Operazione non permessa",
+                                JOptionPane.WARNING_MESSAGE
+                        );
+                        return;
+                    }
+                    // Recupera il Pacchetto dal controller
+                    Pacchetto p = controller.trovaPacchettoPerNome(nome);
+                    if (p == null) {
+                        JOptionPane.showMessageDialog(
+                                PannelloDistributore.this,
+                                "Impossibile recuperare il pacchetto per la modifica.",
+                                "Errore",
+                                JOptionPane.ERROR_MESSAGE
+                        );
+                        return;
+                    }
+                    // Entra in modalità edit
+                    enterEditMode(p);
                 }
             }
         });
@@ -156,6 +200,32 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
 
         // Observer registration for pacchetti
         ObserverManagerPacchetto.registraOsservatore(this);
+    }
+
+    private void enterEditMode(Pacchetto p) {
+        editMode = true;
+        originalName = p.getNome();
+        // apri form se chiuso
+        if (!formVisibile) btnToggleForm.doClick();
+        // popola i campi
+        nomeField.setText(p.getNome());
+        descrField.setText(p.getDescrizione());
+        indirizzoField.setText(p.getIndirizzo());
+        prezzoField.setText(String.valueOf(p.getPrezzoTotale()));
+        prodottiSel.clear();
+        prodottiSel.addAll(p.getProdotti());
+        labelCert.setText("Ricarica certificati");
+        labelFoto.setText("Ricarica foto");
+        btnInvia.setText("Aggiorna Pacchetto");
+        btnToggleForm.setText("Annulla modifica");
+    }
+
+    private void exitEditMode() {
+        editMode = false;
+        originalName = null;
+        resetForm();
+        btnInvia.setText("Invia Pacchetto");
+        btnToggleForm.setText(formVisibile ? "Chiudi form" : "Crea Pacchetto");
     }
 
     private void buildForm() {
@@ -208,14 +278,61 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
         btnInvia.addActionListener(e -> {
             if (JOptionPane.showConfirmDialog(
                     this,
-                    "Inviare il pacchetto al curatore per approvazione?",
-                    "Conferma invio",
+                    editMode
+                            ? "Sei sicuro di voler aggiornare e rinviare il pacchetto?"
+                            : "Inviare il pacchetto al curatore per approvazione?",
+                    editMode ? "Conferma aggiornamento" : "Conferma invio",
                     JOptionPane.YES_NO_OPTION
-            ) == JOptionPane.YES_OPTION) {
-                sendToController();
+            ) != JOptionPane.YES_OPTION) {
+                if (editMode) exitEditMode();
+                return;
+            }
+
+            // raccogli i dati...
+            Map<String, String> datiInput = Map.of(
+                    "nome", nomeField.getText().trim(),
+                    "descrizione", descrField.getText().trim(),
+                    "indirizzo", indirizzoField.getText().trim(),
+                    "prezzo", prezzoField.getText().trim()
+            );
+            List<String> nomiProdotti = prodottiSel.stream()
+                    .map(Prodotto::getNome).toList();
+
+            BiConsumer<Boolean, String> callback = (ok, msg) -> SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(
+                        this, msg,
+                        ok ? "Successo" : "Errore",
+                        ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
+                );
+                if (ok) {
+                    if (editMode) exitEditMode();
+                    resetForm();
+                    refreshPacchetti();
+                }
+            });
+
+            if (editMode) {
+                controller.gestisciModificaPacchetto(
+                        originalName,
+                        datiInput,
+                        nomiProdotti,
+                        List.copyOf(certSel),
+                        List.copyOf(fotoSel),
+                        callback
+                );
+            } else {
+                controller.gestisciInvioPacchetto(
+                        datiInput,
+                        nomiProdotti,
+                        List.copyOf(certSel),
+                        List.copyOf(fotoSel),
+                        callback
+                );
             }
         });
+
     }
+
 
     private void pickFiles(boolean certificati) {
         JFileChooser chooser = new JFileChooser();
@@ -281,14 +398,23 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
         modelPacchetti.setRowCount(0);
         for (Pacchetto p : controller.getPacchettiCreatiDaMe()) {
             modelPacchetti.addRow(new Object[]{
-                    p.getNome(), p.getDescrizione(), p.getIndirizzo(),
-                    p.getPrezzoTotale(), p.getProdotti().size() + " prodotti",
-                    String.join(", ", p.getCertificati()), String.join(", ", p.getFoto()),
-                    p.getStato(), p.getCommento(), "Elimina"
+                    p.getNome(),
+                    p.getDescrizione(),
+                    p.getIndirizzo(),
+                    p.getPrezzoTotale(),
+                    p.getProdotti().size() + " prodotti",
+                    String.join(", ", p.getCertificati()),
+                    String.join(", ", p.getFoto()),
+                    p.getStato(),
+                    p.getCommento(),
+                    "Elimina",                                    // colonna Azioni 1
+                    p.getStato() == StatoProdotto.RIFIUTATO       // colonna Azioni 2
+                            ? "Modifica"
+                            : ""
             });
-
         }
     }
+
 
     @Override
     public void notifica(Pacchetto p, String evento) {

@@ -45,6 +45,9 @@ public class ValidatoreProdotto {
             throw new IllegalArgumentException("⚠ Devi selezionare almeno una foto!");
     }
 
+    /**
+     * Valida che un prodotto esista e sia eliminabile (non APPROVATO).
+     */
     public static void validaEliminazione(Prodotto p) {
         if (p == null)
             throw new IllegalArgumentException("Prodotto non trovato");
@@ -53,4 +56,14 @@ public class ValidatoreProdotto {
             throw new IllegalStateException("Non puoi eliminare un prodotto già approvato");
     }
 
+    /**
+     * Valida che un prodotto esista e sia modificabile (deve essere RIFIUTATO).
+     */
+    public static void validaModifica(Prodotto p) {
+        if (p == null)
+            throw new IllegalArgumentException("Prodotto non trovato per la modifica");
+
+        if (p.getStato() != StatoProdotto.RIFIUTATO)
+            throw new IllegalStateException("Puoi modificare solo prodotti con stato RIFIUTATO");
+    }
 }

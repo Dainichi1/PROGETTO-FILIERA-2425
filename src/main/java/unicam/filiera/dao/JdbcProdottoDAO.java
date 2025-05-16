@@ -37,9 +37,9 @@ public class JdbcProdottoDAO implements ProdottoDAO {
         try (Connection conn = DatabaseManager.getConnection()) {
             // 1) inserimento dettagli iniziali
             String insert = """
-                        INSERT INTO prodotti
-                         (nome, descrizione, quantita, prezzo, indirizzo, certificati, foto, creato_da, stato, commento)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO prodotti
+                      (nome, descrizione, quantita, prezzo, indirizzo, certificati, foto, creato_da, stato, commento)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """;
             try (PreparedStatement st = conn.prepareStatement(insert)) {
                 st.setString(1, p.getNome());
@@ -47,7 +47,7 @@ public class JdbcProdottoDAO implements ProdottoDAO {
                 st.setInt(3, p.getQuantita());
                 st.setDouble(4, p.getPrezzo());
                 st.setString(5, p.getIndirizzo());
-                st.setString(6, ""); // placeholder
+                st.setString(6, "");
                 st.setString(7, "");
                 st.setString(8, p.getCreatoDa());
                 st.setString(9, p.getStato().name());
@@ -55,7 +55,7 @@ public class JdbcProdottoDAO implements ProdottoDAO {
                 st.executeUpdate();
             }
 
-            // 2) upload file e aggiornamento
+            // 2) upload file e aggiornamento record
             List<String> certNames = certFiles.stream()
                     .map(f -> copiaFile(f, CERT_DIR))
                     .collect(Collectors.toList());
@@ -72,6 +72,7 @@ public class JdbcProdottoDAO implements ProdottoDAO {
                 st.executeUpdate();
             }
             return true;
+
         } catch (Exception ex) {
             ex.printStackTrace();
             return false;
@@ -79,12 +80,96 @@ public class JdbcProdottoDAO implements ProdottoDAO {
     }
 
     @Override
+    public boolean update(Prodotto p) {
+        // update solo dei campi descrizione/quantita/prezzo/indirizzo/stato/commento
+        String sql = """
+                UPDATE prodotti
+                   SET descrizione = ?, quantita = ?, prezzo = ?, indirizzo = ?, stato = ?, commento = ?
+                 WHERE nome = ? AND creato_da = ?
+                """;
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement st = conn.prepareStatement(sql)) {
+            st.setString(1, p.getDescrizione());
+            st.setInt(2, p.getQuantita());
+            st.setDouble(3, p.getPrezzo());
+            st.setString(4, p.getIndirizzo());
+            st.setString(5, p.getStato().name());
+            st.setString(6, p.getCommento());
+            st.setString(7, p.getNome());
+            st.setString(8, p.getCreatoDa());
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Full‐update: modifica TUTTI i campi del prodotto (anche nome),
+     * più re‐upload di certificati e foto.
+     */
+    @Override
+    public boolean update(
+            String nomeOriginale,
+            String creatore,
+            Prodotto p,
+            List<File> certFiles,
+            List<File> fotoFiles
+    ) {
+        try (Connection conn = DatabaseManager.getConnection()) {
+            conn.setAutoCommit(false);
+
+            // 1) upload nuovi file
+            List<String> certNames = certFiles.stream()
+                    .map(f -> copiaFile(f, CERT_DIR))
+                    .collect(Collectors.toList());
+            List<String> fotoNames = fotoFiles.stream()
+                    .map(f -> copiaFile(f, FOTO_DIR))
+                    .collect(Collectors.toList());
+
+            // 2) update di tutti i campi, incluse le liste file
+            String sql = """
+                    UPDATE prodotti
+                       SET nome = ?, descrizione = ?, quantita = ?, prezzo = ?, indirizzo = ?,
+                           certificati = ?, foto = ?, stato = ?, commento = ?
+                     WHERE nome = ? AND creato_da = ?
+                    """;
+            try (PreparedStatement st = conn.prepareStatement(sql)) {
+                st.setString(1, p.getNome());
+                st.setString(2, p.getDescrizione());
+                st.setInt(3, p.getQuantita());
+                st.setDouble(4, p.getPrezzo());
+                st.setString(5, p.getIndirizzo());
+                st.setString(6, String.join(",", certNames));
+                st.setString(7, String.join(",", fotoNames));
+                st.setString(8, p.getStato().name());
+                st.setString(9, p.getCommento());
+                // WHERE
+                st.setString(10, nomeOriginale);
+                st.setString(11, creatore);
+                int updated = st.executeUpdate();
+                conn.commit();
+                return updated > 0;
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            // se qualcosa va storto, proviamo a rollback
+            try {
+                DatabaseManager.getConnection().rollback();
+            } catch (Exception ignore) {
+            }
+            return false;
+        }
+    }
+
+    @Override
     public Prodotto findByNomeAndCreatore(String nome, String creatore) {
         String sql = """
-            SELECT * FROM prodotti
-             WHERE nome = ? 
-               AND creato_da = ?
-        """;
+                    SELECT * FROM prodotti
+                     WHERE nome = ? 
+                       AND creato_da = ?
+                """;
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement st = conn.prepareStatement(sql)) {
             st.setString(1, nome);
@@ -110,28 +195,6 @@ public class JdbcProdottoDAO implements ProdottoDAO {
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
             ex.printStackTrace();
-            return false;
-        }
-    }
-
-    @Override
-    public boolean update(Prodotto p) {
-        String sql =
-                "UPDATE prodotti SET descrizione = ?, quantita = ?, prezzo = ?, indirizzo = ?, stato = ?, commento = ? " +
-                        "WHERE nome = ? AND creato_da = ?";
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement st = conn.prepareStatement(sql)) {
-            st.setString(1, p.getDescrizione());
-            st.setInt(2, p.getQuantita());
-            st.setDouble(3, p.getPrezzo());
-            st.setString(4, p.getIndirizzo());
-            st.setString(5, p.getStato().name());
-            st.setString(6, p.getCommento());
-            st.setString(7, p.getNome());
-            st.setString(8, p.getCreatoDa());
-            return st.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
             return false;
         }
     }
@@ -234,5 +297,4 @@ public class JdbcProdottoDAO implements ProdottoDAO {
                 .commento(rs.getString("commento"))
                 .build();
     }
-
 }

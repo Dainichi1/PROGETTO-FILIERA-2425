@@ -13,6 +13,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Implementazione JDBC di PacchettoDAO.
+ */
 public class JdbcPacchettoDAO implements PacchettoDAO {
     private static JdbcPacchettoDAO instance;
     private static final String CERT_DIR = "uploads/certificati_pacchetti";
@@ -30,69 +33,58 @@ public class JdbcPacchettoDAO implements PacchettoDAO {
         return instance;
     }
 
-    /**
-     * 1) salva solo i campi testuali, senza certificati/foto
-     */
     @Override
-    public boolean saveDetails(Pacchetto p) {
-        String insertSql = """
-                    INSERT INTO pacchetti
-                      (nome, descrizione, indirizzo, prezzo_totale, prodotti,
-                       certificati, foto, creato_da, stato, commento)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """;
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(insertSql)) {
+    public boolean save(Pacchetto p, List<File> certFiles, List<File> fotoFiles) {
+        try (Connection conn = DatabaseManager.getConnection()) {
+            // 1) inserisci i dati testuali
+            String insert = """
+                        INSERT INTO pacchetti
+                          (nome, descrizione, indirizzo, prezzo_totale, prodotti, certificati, foto, creato_da, stato, commento)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """;
+            try (PreparedStatement st = conn.prepareStatement(insert)) {
+                st.setString(1, p.getNome());
+                st.setString(2, p.getDescrizione());
+                st.setString(3, p.getIndirizzo());
+                st.setDouble(4, p.getPrezzoTotale());
+                st.setString(5,
+                        p.getProdotti().stream()
+                                .map(Prodotto::getNome)
+                                .collect(Collectors.joining(","))
+                );
+                // placeholder per i file
+                st.setString(6, "");
+                st.setString(7, "");
+                st.setString(8, p.getCreatoDa());
+                st.setString(9, p.getStato().name());
+                st.setNull(10, Types.VARCHAR);
+                st.executeUpdate();
+            }
 
-            stmt.setString(1, p.getNome());
-            stmt.setString(2, p.getDescrizione());
-            stmt.setString(3, p.getIndirizzo());
-            stmt.setDouble(4, p.getPrezzoTotale());
-            stmt.setString(5,
-                    p.getProdotti().stream()
-                            .map(Prodotto::getNome)
-                            .collect(Collectors.joining(",")));
-            stmt.setString(6, "");  // placeholder
-            stmt.setString(7, "");
-            stmt.setString(8, p.getCreatoDa());
-            stmt.setString(9, p.getStato().name());
-            stmt.setNull(10, Types.VARCHAR);
-            stmt.executeUpdate();
+            // 2) upload file e aggiornamento record
+            List<String> certNames = certFiles.stream()
+                    .map(f -> copiaFile(f, CERT_DIR))
+                    .collect(Collectors.toList());
+            List<String> fotoNames = fotoFiles.stream()
+                    .map(f -> copiaFile(f, FOTO_DIR))
+                    .collect(Collectors.toList());
+
+            String update = "UPDATE pacchetti SET certificati = ?, foto = ? WHERE nome = ? AND creato_da = ?";
+            try (PreparedStatement st = conn.prepareStatement(update)) {
+                st.setString(1, String.join(",", certNames));
+                st.setString(2, String.join(",", fotoNames));
+                st.setString(3, p.getNome());
+                st.setString(4, p.getCreatoDa());
+                st.executeUpdate();
+            }
+
             return true;
-        } catch (SQLException ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
             return false;
         }
     }
 
-    /**
-     * 2) copia fisicamente i file e aggiorna le colonne
-     */
-    @Override
-    public boolean saveFiles(Pacchetto p, List<File> certFiles, List<File> fotoFiles) {
-        String updateFiles =
-                "UPDATE pacchetti SET certificati = ?, foto = ? WHERE nome = ? AND creato_da = ?";
-        List<String> certNames = certFiles.stream()
-                .map(f -> copiaFile(f, CERT_DIR))
-                .collect(Collectors.toList());
-        List<String> fotoNames = fotoFiles.stream()
-                .map(f -> copiaFile(f, FOTO_DIR))
-                .collect(Collectors.toList());
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(updateFiles)) {
-
-            stmt.setString(1, String.join(",", certNames));
-            stmt.setString(2, String.join(",", fotoNames));
-            stmt.setString(3, p.getNome());
-            stmt.setString(4, p.getCreatoDa());
-            stmt.executeUpdate();
-            return true;
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-            return false;
-        }
-    }
 
     @Override
     public boolean update(Pacchetto p) {
@@ -120,6 +112,87 @@ public class JdbcPacchettoDAO implements PacchettoDAO {
             e.printStackTrace();
             return false;
         }
+    }
+
+    /**
+     * Full-update: modifica tutti i campi del pacchetto (anche nome),
+     * più re-upload di certificati e foto.
+     */
+    @Override
+    public boolean update(
+            String nomeOriginale,
+            String creatore,
+            Pacchetto p,
+            List<File> certFiles,
+            List<File> fotoFiles
+    ) {
+        try (Connection conn = DatabaseManager.getConnection()) {
+            conn.setAutoCommit(false);
+
+            // 1) upload nuovi file
+            List<String> certNames = certFiles.stream()
+                    .map(f -> copiaFile(f, CERT_DIR))
+                    .collect(Collectors.toList());
+            List<String> fotoNames = fotoFiles.stream()
+                    .map(f -> copiaFile(f, FOTO_DIR))
+                    .collect(Collectors.toList());
+
+            // 2) full UPDATE di tutti i campi
+            String sql = """
+                        UPDATE pacchetti
+                           SET nome         = ?,
+                               descrizione  = ?,
+                               indirizzo    = ?,
+                               prezzo_totale= ?,
+                               prodotti     = ?,
+                               certificati  = ?,
+                               foto         = ?,
+                               stato        = ?,
+                               commento     = ?
+                         WHERE nome = ? AND creato_da = ?
+                    """;
+            try (PreparedStatement st = conn.prepareStatement(sql)) {
+                st.setString(1, p.getNome());
+                st.setString(2, p.getDescrizione());
+                st.setString(3, p.getIndirizzo());
+                st.setDouble(4, p.getPrezzoTotale());
+                st.setString(5, p.getProdotti().stream()
+                        .map(Prodotto::getNome)
+                        .collect(Collectors.joining(",")));
+                st.setString(6, String.join(",", certNames));
+                st.setString(7, String.join(",", fotoNames));
+                st.setString(8, p.getStato().name());
+                st.setString(9, p.getCommento());
+                st.setString(10, nomeOriginale);
+                st.setString(11, creatore);
+
+                int updated = st.executeUpdate();
+                conn.commit();
+                return updated > 0;
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            try {
+                DatabaseManager.getConnection().rollback();
+            } catch (Exception ignore) {
+            }
+            return false;
+        }
+    }
+
+    @Override
+    public List<Pacchetto> findByCreatore(String creatore) {
+        return findBy("SELECT * FROM pacchetti WHERE creato_da = ?", creatore);
+    }
+
+    @Override
+    public List<Pacchetto> findByStato(StatoProdotto stato) {
+        return findBy("SELECT * FROM pacchetti WHERE stato = ?", stato.name());
+    }
+
+    @Override
+    public List<Pacchetto> findAll() {
+        return findBy("SELECT * FROM pacchetti", null);
     }
 
     @Override
@@ -154,23 +227,7 @@ public class JdbcPacchettoDAO implements PacchettoDAO {
         }
     }
 
-
-    @Override
-    public List<Pacchetto> findByCreatore(String creatore) {
-        return findBy("SELECT * FROM pacchetti WHERE creato_da = ?", creatore);
-    }
-
-    @Override
-    public List<Pacchetto> findByStato(StatoProdotto stato) {
-        return findBy("SELECT * FROM pacchetti WHERE stato = ?", stato.name());
-    }
-
-    @Override
-    public List<Pacchetto> findAll() {
-        return findBy("SELECT * FROM pacchetti", null);
-    }
-
-    // --- helper generico per le query di lettura ---
+    // Helper generico per query di lettura
     private List<Pacchetto> findBy(String sql, String param) {
         List<Pacchetto> list = new ArrayList<>();
         try (Connection conn = DatabaseManager.getConnection();
@@ -188,7 +245,7 @@ public class JdbcPacchettoDAO implements PacchettoDAO {
         return list;
     }
 
-    // Crea un Pacchetto da ResultSet
+    // Costruisce un Pacchetto da ResultSet
     private Pacchetto buildFromRs(ResultSet rs) throws SQLException {
         String certCsv = rs.getString("certificati");
         List<String> cert = (certCsv == null || certCsv.isBlank())
@@ -214,9 +271,7 @@ public class JdbcPacchettoDAO implements PacchettoDAO {
                 .build();
     }
 
-
-    // Estrae la lista di Prodotto a partire dalla stringa "nome1,nome2,…"
-
+    // Recupera la lista di Prodotto a partire dalla stringa "nome1,nome2,…"
     private List<Prodotto> recuperaProdotti(String prodottiString) {
         List<Prodotto> prodotti = new ArrayList<>();
         if (prodottiString == null || prodottiString.isBlank()) return prodotti;
@@ -234,7 +289,6 @@ public class JdbcPacchettoDAO implements PacchettoDAO {
         }
         return prodotti;
     }
-
 
     private String copiaFile(File file, String destDir) {
         try {

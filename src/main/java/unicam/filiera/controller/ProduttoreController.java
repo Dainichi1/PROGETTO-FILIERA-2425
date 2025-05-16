@@ -12,87 +12,105 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 public class ProduttoreController {
-    @FunctionalInterface
-    public interface EsitoListener {
-        void completato(Boolean ok, String msg);
-    }
 
-    private final ProdottoService service;
     private final String username;
+    private final ProdottoService service;
 
-    /**
-     * Iniezione del service
-     */
-    public ProduttoreController(ProdottoService service, String username) {
-        this.service = service;
+    public ProduttoreController(String username, ProdottoService service) {
         this.username = username;
+        this.service = service;
     }
 
-    /**
-     * Costruttore di convenienza per l’app reale
-     */
     public ProduttoreController(String username) {
-        this(new ProdottoServiceImpl(JdbcProdottoDAO.getInstance()), username);
+        this(username, new ProdottoServiceImpl(JdbcProdottoDAO.getInstance()));
     }
 
-    /**
-     * Invia il DTO al service; in caso di validazione fallita,
-     * il ValidatoreProdotto lancerà IllegalArgumentException.
-     */
-    public void inviaProdotto(ProdottoDto dto, EsitoListener callback) {
-        try {
-            service.creaProdotto(dto, username);
-            callback.completato(true, "Prodotto inviato al Curatore!");
-        } catch (IllegalArgumentException iae) {
-            // qui catturiamo i messaggi dei nostri validatori
-            callback.completato(false, iae.getMessage());
-        } catch (Exception e) {
-            callback.completato(false, "Errore: " + e.getMessage());
-        }
-    }
+    // ——————————————— metodi di sola lettura ———————————————
 
     /**
-     * Rimuove il prodotto dal DB se valido, rilancia eccezione se qualcosa non va.
-     *
-     * @return true se è andato tutto a buon fine
-     */
-    public boolean eliminaProdotto(String nome) {
-        try {
-            service.eliminaProdotto(nome, username);
-            return true;
-        } catch (RuntimeException ex) {
-
-            return false;
-        }
-    }
-
-
-    /**
-     * Restituisce i prodotti creati da questo utente
+     * Restituisce tutti i prodotti creati da questo utente.
      */
     public List<Prodotto> getProdottiCreatiDaMe() {
         return service.getProdottiCreatiDa(username);
     }
 
+    /**
+     * Recupera un singolo prodotto per nome (usato in UI per la modifica).
+     */
+    public Prodotto trovaProdottoPerNome(String nome) {
+        return getProdottiCreatiDaMe().stream()
+                .filter(p -> p.getNome().equals(nome))
+                .findFirst()
+                .orElse(null);
+    }
+
+    // ——————————————— creazione & invio ———————————————
+
+    public void inviaProdotto(ProdottoDto dto, BiConsumer<Boolean, String> callback) {
+        try {
+            service.creaProdotto(dto, username);
+            callback.accept(true, "Prodotto inviato al Curatore!");
+        } catch (IllegalArgumentException iae) {
+            callback.accept(false, iae.getMessage());
+        } catch (Exception ex) {
+            callback.accept(false, "Errore inaspettato: " + ex.getMessage());
+        }
+    }
 
     public void gestisciInvioProdotto(Map<String, String> datiInput,
                                       List<File> certificati,
                                       List<File> foto,
-                                      BiConsumer<String, Boolean> callback) {
+                                      BiConsumer<Boolean, String> callback) {
         try {
             ProdottoDto dto = new ProdottoDto(
-                    datiInput.getOrDefault("nome", "").trim(),
-                    datiInput.getOrDefault("descrizione", "").trim(),
-                    datiInput.getOrDefault("quantita", "").trim(),
-                    datiInput.getOrDefault("prezzo", "").trim(),
-                    datiInput.getOrDefault("indirizzo", "").trim(),
-                    List.copyOf(certificati),
-                    List.copyOf(foto)
+                    datiInput.getOrDefault("nome", ""),
+                    datiInput.getOrDefault("descrizione", ""),
+                    datiInput.getOrDefault("quantita", ""),
+                    datiInput.getOrDefault("prezzo", ""),
+                    datiInput.getOrDefault("indirizzo", ""),
+                    certificati,
+                    foto
             );
-            this.inviaProdotto(dto, (ok, msg) -> callback.accept(msg, ok));
+            inviaProdotto(dto, callback);
         } catch (Exception ex) {
-            callback.accept("Errore durante l'invio: " + ex.getMessage(), false);
+            callback.accept(false, "Errore durante la preparazione del prodotto: " + ex.getMessage());
         }
     }
 
+    // ——————————————— elimina ———————————————
+
+    public boolean eliminaProdotto(String nome) {
+        try {
+            service.eliminaProdotto(nome, username);
+            return true;
+        } catch (RuntimeException ex) {
+            return false;
+        }
+    }
+
+    // ————————— modifica & rinvio prodotto rifiutato ————————
+
+    public void gestisciModificaProdotto(String originalName,
+                                         Map<String, String> datiInput,
+                                         List<File> certificati,
+                                         List<File> foto,
+                                         BiConsumer<Boolean, String> callback) {
+        try {
+            ProdottoDto dto = new ProdottoDto(
+                    datiInput.getOrDefault("nome", ""),
+                    datiInput.getOrDefault("descrizione", ""),
+                    datiInput.getOrDefault("quantita", ""),
+                    datiInput.getOrDefault("prezzo", ""),
+                    datiInput.getOrDefault("indirizzo", ""),
+                    certificati,
+                    foto
+            );
+            service.aggiornaProdotto(originalName, dto, username);
+            callback.accept(true, "Prodotto aggiornato e rinviato al Curatore!");
+        } catch (IllegalArgumentException iae) {
+            callback.accept(false, iae.getMessage());
+        } catch (Exception ex) {
+            callback.accept(false, "Errore inaspettato durante l'aggiornamento: " + ex.getMessage());
+        }
+    }
 }

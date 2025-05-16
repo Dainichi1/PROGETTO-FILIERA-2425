@@ -4,7 +4,11 @@ import java.util.List;
 
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.StatoProdotto;
+import unicam.filiera.model.Pacchetto;
 
+/**
+ * Validatore per la logica di dominio dei Pacchetti.
+ */
 public class ValidatorePacchetto {
 
     /**
@@ -29,22 +33,30 @@ public class ValidatorePacchetto {
             throw new IllegalArgumentException("⚠ Il prezzo totale deve essere maggiore di zero");
 
         if (prodotti == null || prodotti.size() < 2)
-            throw new IllegalArgumentException("⚠ Devi selezionare almeno due prodotti per creare un pacchetto!");
+            throw new IllegalArgumentException(
+                    "⚠ Devi selezionare almeno due prodotti per creare un pacchetto!");
     }
 
-
     /**
-     * Valida se almeno un file è presente.
+     * Valida la presenza di almeno un certificato e una foto.
      */
     public static void validaFileCaricati(int numCertificati, int numFoto) {
         if (numCertificati < 1)
-            throw new IllegalArgumentException("⚠ Devi selezionare almeno un certificato per il pacchetto!");
+            throw new IllegalArgumentException(
+                    "⚠ Devi selezionare almeno un certificato per il pacchetto!");
 
         if (numFoto < 1)
-            throw new IllegalArgumentException("⚠ Devi selezionare almeno una foto per il pacchetto!");
+            throw new IllegalArgumentException(
+                    "⚠ Devi selezionare almeno una foto per il pacchetto!");
     }
 
-    public static void validaEliminazione(unicam.filiera.model.Pacchetto p) {
+    /**
+     * Valida se un pacchetto può essere eliminato.
+     *
+     * @throws IllegalArgumentException se non trovato
+     * @throws IllegalStateException    se già approvato
+     */
+    public static void validaEliminazione(Pacchetto p) {
         if (p == null)
             throw new IllegalArgumentException("Pacchetto non trovato");
 
@@ -52,4 +64,19 @@ public class ValidatorePacchetto {
             throw new IllegalStateException("Non puoi eliminare un pacchetto già approvato");
     }
 
+    /**
+     * Valida se un pacchetto può essere modificato (deve essere in stato RIFIUTATO).
+     *
+     * @throws IllegalArgumentException se non trovato
+     * @throws IllegalStateException    se stato diverso da RIFIUTATO
+     */
+    public static void validaModifica(Pacchetto p) {
+        if (p == null) {
+            throw new IllegalArgumentException("Pacchetto non trovato per la modifica");
+        }
+        if (p.getStato() != StatoProdotto.RIFIUTATO) {
+            throw new IllegalStateException(
+                    "Puoi modificare solo pacchetti con stato RIFIUTATO");
+        }
+    }
 }

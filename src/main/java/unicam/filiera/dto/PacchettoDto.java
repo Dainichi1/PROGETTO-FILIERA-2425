@@ -4,9 +4,14 @@ import java.io.File;
 import java.util.List;
 
 /**
- * DTO per trasferire i dati di un nuovo Pacchetto dalla View al Service.
+ * DTO per trasferire i dati di un Pacchetto (nuovo o in modifica).
  */
 public class PacchettoDto {
+    /**
+     * Nome originario del pacchetto prima della modifica; null se è un nuovo pacchetto
+     */
+    private final String originalName;
+
     private final String nome;
     private final String descrizione;
     private final String indirizzo;
@@ -15,6 +20,9 @@ public class PacchettoDto {
     private final List<File> certificati;
     private final List<File> foto;
 
+    /**
+     * Costruttore per flusso “nuovo pacchetto”
+     */
     public PacchettoDto(
             String nome,
             String descrizione,
@@ -23,6 +31,22 @@ public class PacchettoDto {
             List<String> nomiProdotti,
             List<File> certificati,
             List<File> foto) {
+        this(null, nome, descrizione, indirizzo, prezzoTxt, nomiProdotti, certificati, foto);
+    }
+
+    /**
+     * Costruttore completo, usato per il flusso di modifica
+     */
+    public PacchettoDto(
+            String originalName,
+            String nome,
+            String descrizione,
+            String indirizzo,
+            String prezzoTxt,
+            List<String> nomiProdotti,
+            List<File> certificati,
+            List<File> foto) {
+        this.originalName = originalName;
         this.nome = nome;
         this.descrizione = descrizione;
         this.indirizzo = indirizzo;
@@ -30,6 +54,13 @@ public class PacchettoDto {
         this.nomiProdotti = List.copyOf(nomiProdotti);
         this.certificati = List.copyOf(certificati);
         this.foto = List.copyOf(foto);
+    }
+
+    /**
+     * @return il nome originario in caso di modifica, altrimenti null
+     */
+    public String getOriginalName() {
+        return originalName;
     }
 
     public String getNome() {
@@ -48,9 +79,6 @@ public class PacchettoDto {
         return prezzoTxt;
     }
 
-    /**
-     * Restituisce i nomi (o identificativi) dei prodotti inclusi nel pacchetto.
-     */
     public List<String> getNomiProdotti() {
         return nomiProdotti;
     }

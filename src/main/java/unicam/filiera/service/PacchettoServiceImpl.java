@@ -2,6 +2,7 @@ package unicam.filiera.service;
 
 import unicam.filiera.dto.PacchettoDto;
 import unicam.filiera.model.Pacchetto;
+import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.model.observer.PacchettoNotifier;
 import unicam.filiera.dao.PacchettoDAO;
@@ -12,6 +13,7 @@ import unicam.filiera.util.ValidatorePacchetto;
 
 import java.io.File;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class PacchettoServiceImpl implements PacchettoService {
@@ -77,12 +79,9 @@ public class PacchettoServiceImpl implements PacchettoService {
                 .build();
 
         // 3a) salva dettagli pacchetto
-        if (!pacchettoDao.saveDetails(p)) {
-            throw new RuntimeException("Errore salvataggio dettagli pacchetto");
-        }
-        // 3b) salva file pacchetto
-        if (!pacchettoDao.saveFiles(p, dto.getCertificati(), dto.getFoto())) {
-            throw new RuntimeException("Errore upload file pacchetto");
+        boolean ok = pacchettoDao.save(p, dto.getCertificati(), dto.getFoto());
+        if (!ok) {
+            throw new RuntimeException("Errore durante il salvataggio del pacchetto");
         }
 
         // 4) notifica observer
@@ -121,5 +120,56 @@ public class PacchettoServiceImpl implements PacchettoService {
         notifier.notificaTutti(p, "ELIMINATO_PACCHETTO");
     }
 
+
+    /**
+     * Aggiorna tutti i campi di un pacchetto RIFIUTATO e lo rimette IN_ATTESA.
+     */
+    @Override
+    public void aggiornaPacchetto(String nomeOriginale, PacchettoDto dto, String creatore) {
+        // 1) Parsing
+        double prezzoTotale;
+        try {
+            prezzoTotale = Double.parseDouble(dto.getPrezzoTxt());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("⚠ Prezzo totale non valido (deve essere un numero)");
+        }
+
+        // 2) Raccolgo i prodotti
+        List<Prodotto> prodotti = dto.getNomiProdotti().stream()
+                .map(String::trim)
+                .map(prodottoDao::findByNome)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        // 3) Validazioni
+        ValidatorePacchetto.valida(dto.getNome(), dto.getDescrizione(), dto.getIndirizzo(), prezzoTotale, prodotti);
+        ValidatorePacchetto.validaFileCaricati(dto.getCertificati().size(), dto.getFoto().size());
+
+        // 4) Controllo esistenza / stato RIFIUTATO
+        Pacchetto existing = pacchettoDao.findByNomeAndCreatore(nomeOriginale, creatore);
+        ValidatorePacchetto.validaModifica(existing);
+
+        // 5) Mapping → Domain
+        Pacchetto updated = new Pacchetto.Builder()
+                .nome(dto.getNome())
+                .descrizione(dto.getDescrizione())
+                .indirizzo(dto.getIndirizzo())
+                .prezzoTotale(prezzoTotale)
+                .prodotti(prodotti)
+                .certificati(dto.getCertificati().stream().map(File::getName).toList())
+                .foto(dto.getFoto().stream().map(File::getName).toList())
+                .creatoDa(creatore)
+                .stato(StatoProdotto.IN_ATTESA)
+                .commento(null)
+                .build();
+
+        // 6) Full‐update
+        if (!pacchettoDao.update(nomeOriginale, creatore, updated, dto.getCertificati(), dto.getFoto())) {
+            throw new RuntimeException("Errore durante l'aggiornamento del pacchetto");
+        }
+
+        // 7) Notifica in tempo reale
+        notifier.notificaTutti(updated, "NUOVO_PACCHETTO");
+    }
 
 }

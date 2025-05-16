@@ -21,9 +21,6 @@ public class DistributoreController {
     private final PacchettoService pacchettoService;
     private final ProdottoService prodottoService;
 
-    /**
-     * iniezione di dipendenza per i test
-     */
     public DistributoreController(String username,
                                   PacchettoService pacchettoService,
                                   ProdottoService prodottoService) {
@@ -32,54 +29,40 @@ public class DistributoreController {
         this.prodottoService = prodottoService;
     }
 
-    /**
-     * costruttore di convenienza per l’app reale
-     */
     public DistributoreController(String username) {
         this(username,
                 new PacchettoServiceImpl(),
                 new ProdottoServiceImpl(JdbcProdottoDAO.getInstance()));
     }
 
-    /* ======================================================================
-       SERVIZI DI SOLA-LETTURA (usati dalla view)
-       ====================================================================== */
+
+    // ———————————————— metodi di sola lettura ————————————————
 
     /**
-     * Prodotti approvati e quindi visibili nel Marketplace.
+     * Prodotti APPROVATI (visibili in marketplace).
      */
     public List<Prodotto> getProdottiMarketplace() {
         return prodottoService.getProdottiByStato(StatoProdotto.APPROVATO);
     }
 
     /**
-     * Pacchetti creati dallo stesso distributore.
+     * Tutti i pacchetti creati da questo utente, di qualunque stato.
      */
     public List<Pacchetto> getPacchettiCreatiDaMe() {
         return pacchettoService.getPacchettiCreatiDa(username);
     }
 
-    /* ======================================================================
-       CASO D’USO “CREA & INVIA PACCHETTO”
-       ====================================================================== */
 
-    /**
-     * Flusso completo: validazione, persistenza, upload file,
-     * passaggio in stato IN_ATTESA e notifica al Curatore.
-     * Il risultato viene ritornato tramite callback per non far dipendere
-     * la view dalla logica.
-     */
+    // ———————————————— creazione & invio ————————————————
+
     public void inviaPacchetto(PacchettoDto dto,
                                BiConsumer<Boolean, String> callback) {
         try {
-            // delego tutto al service
             pacchettoService.creaPacchetto(dto, username);
             callback.accept(true, "Pacchetto inviato al curatore per approvazione!");
         } catch (IllegalArgumentException iae) {
-            // validazioni fallite
             callback.accept(false, iae.getMessage());
         } catch (Exception ex) {
-            // ogni altro errore
             callback.accept(false, "Errore inaspettato: " + ex.getMessage());
         }
     }
@@ -99,17 +82,12 @@ public class DistributoreController {
                     certificati,
                     foto
             );
-
-            this.inviaPacchetto(dto, callback);
-
+            inviaPacchetto(dto, callback);
         } catch (Exception ex) {
             callback.accept(false, "Errore durante la preparazione del pacchetto: " + ex.getMessage());
         }
     }
 
-    /**
-     * Rimuove il pacchetto dal DB se non approvato
-     */
     public boolean eliminaPacchetto(String nome) {
         try {
             pacchettoService.eliminaPacchetto(nome, username);
@@ -117,5 +95,41 @@ public class DistributoreController {
         } catch (RuntimeException ex) {
             return false;
         }
+    }
+
+
+    // ——————————— modifica & rinvio pacchetto rifiutato ———————————
+
+    public void gestisciModificaPacchetto(String nomeOriginale,
+                                          Map<String, String> datiInput,
+                                          List<String> nomiProdotti,
+                                          List<File> certificati,
+                                          List<File> foto,
+                                          BiConsumer<Boolean, String> callback) {
+        try {
+            PacchettoDto dto = new PacchettoDto(
+                    nomeOriginale,
+                    datiInput.getOrDefault("nome", "").trim(),
+                    datiInput.getOrDefault("descrizione", "").trim(),
+                    datiInput.getOrDefault("indirizzo", "").trim(),
+                    datiInput.getOrDefault("prezzo", "").trim(),
+                    nomiProdotti,
+                    certificati,
+                    foto
+            );
+            pacchettoService.aggiornaPacchetto(nomeOriginale, dto, username);
+            callback.accept(true, "Pacchetto aggiornato e rinviato al curatore!");
+        } catch (IllegalArgumentException iae) {
+            callback.accept(false, iae.getMessage());
+        } catch (Exception ex) {
+            callback.accept(false, "Errore inaspettato durante l'aggiornamento: " + ex.getMessage());
+        }
+    }
+
+    public Pacchetto trovaPacchettoPerNome(String nome) {
+        return pacchettoService.getPacchettiCreatiDa(username).stream()
+                .filter(p -> p.getNome().equals(nome))
+                .findFirst()
+                .orElse(null);
     }
 }

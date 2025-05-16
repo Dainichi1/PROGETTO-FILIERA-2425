@@ -6,14 +6,30 @@ import unicam.filiera.model.Item;
 import unicam.filiera.model.Pacchetto;
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.util.ValidatoreAcquisto;
-import unicam.filiera.controller.MarketplaceController;  // <— lo useremo come “repo”
+import unicam.filiera.controller.MarketplaceController;  // “repo” degli item di mercato
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class CarrelloServiceImpl implements CarrelloService {
-    private final List<CartItemDto> items = new ArrayList<>();
-    private final MarketplaceController marketplace = new MarketplaceController();
+
+    private final MarketplaceController marketplace;
+    private final List<CartItemDto> items;
+
+    /**
+     * Costruttore di iniezione: riceve il controller del marketplace
+     */
+    public CarrelloServiceImpl(MarketplaceController marketplace) {
+        this.marketplace = marketplace;
+        this.items = new ArrayList<>();
+    }
+
+    /**
+     * Costruttore di convenienza: usa l’istanza di default di MarketplaceController
+     */
+    public CarrelloServiceImpl() {
+        this(new MarketplaceController());
+    }
 
     @Override
     public void addItem(Item item, int quantita) {
@@ -47,7 +63,7 @@ public class CarrelloServiceImpl implements CarrelloService {
         // 3) validazione sul vero oggetto
         ValidatoreAcquisto.validaQuantitaItem(reale, nuovaQuantita);
 
-        // 4) sostituisci il DTO
+        // 4) sostituisci il DTO con la nuova quantità
         items.remove(old);
         items.add(new CartItemDto(
                 old.getTipo(),
@@ -69,7 +85,7 @@ public class CarrelloServiceImpl implements CarrelloService {
 
     @Override
     public CartTotalsDto calculateTotals() {
-        int    totQta  = items.stream().mapToInt(CartItemDto::getQuantita).sum();
+        int totQta = items.stream().mapToInt(CartItemDto::getQuantita).sum();
         double totCost = items.stream().mapToDouble(CartItemDto::getTotale).sum();
         return new CartTotalsDto(totQta, totCost);
     }

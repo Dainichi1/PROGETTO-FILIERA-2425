@@ -92,8 +92,27 @@ public class PannelloAcquirente extends JPanel {
         btnShowMarket.addActionListener(e -> ctrl.visualizzaMarketplace());
         btnShowCart.addActionListener(e -> ctrl.visualizzaCarrello());
         btnAggiornaFondi.addActionListener(e -> {
+            try {
+                // Leggi il valore dal campo di testo
+                double nuoviFondi = Double.parseDouble(txtFondi.getText().replace(',', '.'));
 
+                // Chiedi al controller di aggiornare i fondi
+                ctrl.aggiornaFondiAcquirente(nuoviFondi, (msg, ok) -> {
+                    SwingUtilities.invokeLater(() -> {
+                        JOptionPane.showMessageDialog(this, msg,
+                                ok ? "Successo" : "Errore",
+                                ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE);
+                        if (ok) {
+                            // Se l’update è ok, aggiorna il campo testo (per sicurezza)
+                            txtFondi.setText(String.format("%.2f", nuoviFondi));
+                        }
+                    });
+                });
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Importo non valido!", "Errore", JOptionPane.ERROR_MESSAGE);
+            }
         });
+
 
         initUI();
         aggiungiListenerMarketplace();

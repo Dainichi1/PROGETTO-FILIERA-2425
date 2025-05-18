@@ -10,6 +10,7 @@ public class Pacchetto extends Item {
 
     /* ---- campi specifici ---- */
     private final double prezzoTotale;
+    private final int quantita;
     private final List<Prodotto> prodotti;
 
     /* ---- costruttore privato (invocato dal Builder) ---- */
@@ -26,12 +27,18 @@ public class Pacchetto extends Item {
         );
         this.prezzoTotale = b.prezzoTotale;
         this.prodotti = List.copyOf(b.prodotti);
+        this.quantita = b.quantita;
     }
 
     /* ---- getter specifici ---- */
     public double getPrezzoTotale() {
         return prezzoTotale;
     }
+
+    public int getQuantita() {
+        return quantita;
+    }
+
 
     public List<Prodotto> getProdotti() {
         return prodotti;
@@ -46,6 +53,8 @@ public class Pacchetto extends Item {
         /* ---- campi comuni (Item) ---- */
         private String nome;
         private String descrizione;
+        private int quantita;
+
         private String indirizzo;
         private List<String> certificati;
         private List<String> foto;
@@ -82,6 +91,12 @@ public class Pacchetto extends Item {
             this.foto = f;
             return this;
         }
+
+        public Builder quantita(int q) {
+            this.quantita = q;
+            return this;
+        }
+
 
         public Builder creatoDa(String u) {
             this.creatoDa = u;
@@ -123,11 +138,13 @@ public class Pacchetto extends Item {
     @Override
     public String toString() {
         return String.format(
-                "Pacchetto[nome=%s, prodotti=%d, prezzoTot=%.2f €, stato=%s]",
+                "Pacchetto[nome=%s, prodotti=%d, prezzoTot=%.2f €, quantita=%d, stato=%s]",
                 getNome(),
                 prodotti != null ? prodotti.size() : 0,
                 prezzoTotale,
+                quantita, // <-- aggiunto qui
                 getStato() != null ? getStato().name() : "N/D"
         );
     }
+
 }

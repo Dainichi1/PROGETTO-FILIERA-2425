@@ -35,6 +35,12 @@ public class PacchettoServiceImpl implements PacchettoService {
     public void creaPacchetto(PacchettoDto dto, String creatore) {
         // parsing controllato del prezzo totale
         double prezzoTotale;
+        int quantita;
+        try {
+            quantita = Integer.parseInt(dto.getQuantitaTxt());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("⚠ Quantità non valida (deve essere un numero intero)");
+        }
         try {
             prezzoTotale = Double.parseDouble(dto.getPrezzoTxt());
         } catch (NumberFormatException e) {
@@ -67,6 +73,7 @@ public class PacchettoServiceImpl implements PacchettoService {
                 .descrizione(dto.getDescrizione())
                 .indirizzo(dto.getIndirizzo())
                 .prezzoTotale(prezzoTotale)
+                .quantita(quantita)
                 .prodotti(prodotti)
                 .certificati(dto.getCertificati().stream()
                         .map(File::getName)
@@ -128,6 +135,13 @@ public class PacchettoServiceImpl implements PacchettoService {
     public void aggiornaPacchetto(String nomeOriginale, PacchettoDto dto, String creatore) {
         // 1) Parsing
         double prezzoTotale;
+        int quantita;
+        try {
+            quantita = Integer.parseInt(dto.getQuantitaTxt());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("⚠ Quantità non valida (deve essere un numero intero)");
+        }
+
         try {
             prezzoTotale = Double.parseDouble(dto.getPrezzoTxt());
         } catch (NumberFormatException e) {
@@ -155,6 +169,7 @@ public class PacchettoServiceImpl implements PacchettoService {
                 .descrizione(dto.getDescrizione())
                 .indirizzo(dto.getIndirizzo())
                 .prezzoTotale(prezzoTotale)
+                .quantita(quantita)
                 .prodotti(prodotti)
                 .certificati(dto.getCertificati().stream().map(File::getName).toList())
                 .foto(dto.getFoto().stream().map(File::getName).toList())

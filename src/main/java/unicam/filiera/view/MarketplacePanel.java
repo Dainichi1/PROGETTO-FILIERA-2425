@@ -100,12 +100,14 @@ public class MarketplacePanel extends JPanel
                     Nome: %s
                     Descrizione: %s
                     Prezzo Totale: %.2f €
+                    Quantità: %d
                     Indirizzo: %s
                     Prodotti inclusi: %d
                     Certificati: %s
                     Foto: %s
                     """.formatted(
                     k.getNome(), k.getDescrizione(), k.getPrezzoTotale(),
+                    k.getQuantita(),
                     k.getIndirizzo(), k.getProdotti().size(),
                     String.join(", ", k.getCertificati()),
                     String.join(", ", k.getFoto())

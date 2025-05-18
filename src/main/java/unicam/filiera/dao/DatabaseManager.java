@@ -71,6 +71,57 @@ public class DatabaseManager {
                 );
             }
 
+            ResultSet rsPacchettoQta = conn.getMetaData()
+                    .getColumns(null, null, "PACCHETTI", "QUANTITA");
+            if (!rsPacchettoQta.next()) {
+                System.out.println("[DB] Aggiungo colonna 'quantita' a pacchetti");
+                stmt.executeUpdate("ALTER TABLE pacchetti ADD COLUMN quantita INT DEFAULT 0");
+            }
+
+
+            // ** crea la tabella acquisti se non esiste **
+            ResultSet rsAcquisti = conn.getMetaData()
+                    .getTables(null, null, "ACQUISTI", new String[]{"TABLE"});
+            if (!rsAcquisti.next()) {
+                System.out.println("[DB] Creo tabella 'acquisti'");
+                stmt.executeUpdate(
+                        """
+                                CREATE TABLE acquisti (
+                                    id IDENTITY PRIMARY KEY,
+                                    username_acquirente VARCHAR(50) NOT NULL,
+                                    totale DOUBLE NOT NULL,
+                                    stato_pagamento VARCHAR(20) NOT NULL,
+                                    tipo_metodo_pagamento VARCHAR(30) NOT NULL,
+                                    data_ora TIMESTAMP NOT NULL,
+                                    fondi_pre_acquisto DOUBLE,
+                                    fondi_post_acquisto DOUBLE,
+                                    elenco_item TEXT,
+                                    FOREIGN KEY (username_acquirente) REFERENCES utenti(username)
+                                );
+                                """
+                );
+            }
+
+// ** crea la tabella acquisto_items se non esiste **
+            ResultSet rsAcquistoItems = conn.getMetaData()
+                    .getTables(null, null, "ACQUISTO_ITEMS", new String[]{"TABLE"});
+            if (!rsAcquistoItems.next()) {
+                System.out.println("[DB] Creo tabella 'acquisto_items'");
+                stmt.executeUpdate(
+                        """
+                                CREATE TABLE acquisto_items (
+                                    id_acquisto INT,
+                                    nome_item VARCHAR(100),
+                                    tipo_item VARCHAR(30),
+                                    quantita INT,
+                                    prezzo_unitario DOUBLE,
+                                    totale DOUBLE,
+                                    FOREIGN KEY (id_acquisto) REFERENCES acquisti(id)
+                                );
+                                """
+                );
+            }
+
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -125,7 +176,8 @@ public class DatabaseManager {
                             foto TEXT,
                             creato_da VARCHAR(50),
                             stato VARCHAR(20) DEFAULT 'IN_ATTESA',
-                            commento VARCHAR(255) DEFAULT NULL
+                            commento VARCHAR(255) DEFAULT NULL,
+                            quantita INT DEFAULT 0
                         );
                     """;
 
@@ -158,11 +210,41 @@ public class DatabaseManager {
                         );
                     """;
 
+            String acquistiSql = """
+                        CREATE TABLE IF NOT EXISTS acquisti (
+                            id IDENTITY PRIMARY KEY,
+                            username_acquirente VARCHAR(50) NOT NULL,
+                            totale DOUBLE NOT NULL,
+                            stato_pagamento VARCHAR(20) NOT NULL,
+                            tipo_metodo_pagamento VARCHAR(30) NOT NULL,
+                            data_ora TIMESTAMP NOT NULL,
+                            fondi_pre_acquisto DOUBLE,
+                            fondi_post_acquisto DOUBLE,
+                            elenco_item TEXT,   -- puoi serializzare in JSON o CSV
+                            FOREIGN KEY (username_acquirente) REFERENCES utenti(username)
+                        );
+                    """;
+
+            String acquistoItemsSql = """
+                        CREATE TABLE IF NOT EXISTS acquisto_items (
+                            id_acquisto INT,
+                            nome_item VARCHAR(100),
+                            tipo_item VARCHAR(30),
+                            quantita INT,
+                            prezzo_unitario DOUBLE,
+                            totale DOUBLE,
+                            FOREIGN KEY (id_acquisto) REFERENCES acquisti(id)
+                        );
+                    """;
+
+
             stmt.executeUpdate(utentiSql);
             stmt.executeUpdate(prodottiSql);
             stmt.executeUpdate(pacchettiSql);
             stmt.executeUpdate(fiereSql);
             stmt.executeUpdate(visiteSql);
+            stmt.executeUpdate(acquistiSql);
+            stmt.executeUpdate(acquistoItemsSql);
 
         } catch (SQLException e) {
             e.printStackTrace();

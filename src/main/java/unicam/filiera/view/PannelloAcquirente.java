@@ -1,13 +1,11 @@
 package unicam.filiera.view;
 
 import unicam.filiera.controller.AcquirenteController;
+import unicam.filiera.controller.ObserverManagerItem;
 import unicam.filiera.dto.CartItemDto;
 import unicam.filiera.dto.CartTotalsDto;
-import unicam.filiera.model.Item;
-import unicam.filiera.model.Prodotto;
-import unicam.filiera.model.Pacchetto;
-import unicam.filiera.model.UtenteAutenticato;
-import unicam.filiera.model.Acquirente;
+import unicam.filiera.model.*;
+import unicam.filiera.model.observer.OsservatoreItem;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -16,7 +14,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.function.BiConsumer;
 
-public class PannelloAcquirente extends JPanel {
+public class PannelloAcquirente extends JPanel implements OsservatoreItem {
     private final AcquirenteController ctrl;
 
     // Marketplace
@@ -28,6 +26,7 @@ public class PannelloAcquirente extends JPanel {
     private final JTable tabCarrello;
     private final DefaultTableModel modelCarrello;
     private final JLabel lblTotali = new JLabel("Totale: 0 articoli - €0.00");
+    private final JButton btnAcquista = new JButton("Acquista");
 
     // Fondi
     private final JTextField txtFondi = new JTextField(6);
@@ -48,7 +47,7 @@ public class PannelloAcquirente extends JPanel {
 
         // --- Marketplace table ---
         modelMarketplace = new DefaultTableModel(
-                new Object[]{"Seleziona", "Tipo", "Nome", "Descrizione", "Prezzo", "Disponibile", "Quantità", "Azione"},
+                new Object[]{"Seleziona", "Tipo", "Nome", "Descrizione", "Prezzo", "Disponibile", "Quantità", "Certificati", "Foto", "Azione"},
                 0
         ) {
             @Override
@@ -67,7 +66,7 @@ public class PannelloAcquirente extends JPanel {
             int col = e.getColumn(), row = e.getFirstRow();
             if (col == 0 && row >= 0) {
                 boolean sel = (Boolean) modelMarketplace.getValueAt(row, 0);
-                modelMarketplace.setValueAt(sel ? "Aggiungi al carrello" : "", row, 7);
+                modelMarketplace.setValueAt(sel ? "Aggiungi al carrello" : "", row, 9);
             }
         });
 
@@ -91,6 +90,8 @@ public class PannelloAcquirente extends JPanel {
         // --- Azioni bottoni ---
         btnShowMarket.addActionListener(e -> ctrl.visualizzaMarketplace());
         btnShowCart.addActionListener(e -> ctrl.visualizzaCarrello());
+        btnAcquista.addActionListener(e -> mostraDialogPagamento());
+
         btnAggiornaFondi.addActionListener(e -> {
             try {
                 // Leggi il valore dal campo di testo
@@ -113,6 +114,7 @@ public class PannelloAcquirente extends JPanel {
             }
         });
 
+        ObserverManagerItem.registraOsservatore(this);
 
         initUI();
         aggiungiListenerMarketplace();
@@ -130,6 +132,7 @@ public class PannelloAcquirente extends JPanel {
         top.add(btnAggiornaFondi);
         top.add(new JLabel("   "));
         top.add(lblTotali);
+        top.add(btnAcquista);
         add(top, BorderLayout.NORTH);
 
         // Split pane
@@ -140,6 +143,8 @@ public class PannelloAcquirente extends JPanel {
         );
         split.setDividerLocation(300);
         add(split, BorderLayout.CENTER);
+        btnAcquista.setEnabled(false); // Disabilita di default all’avvio
+
     }
 
     /**
@@ -154,13 +159,26 @@ public class PannelloAcquirente extends JPanel {
                 String tipo = (item instanceof Prodotto) ? "Prodotto" : "Pacchetto";
                 double prezzo = (item instanceof Prodotto p) ? p.getPrezzo()
                         : ((Pacchetto) item).getPrezzoTotale();
-                Object disp = (item instanceof Prodotto p) ? p.getQuantita() : "-";
+                Object disp;
+                if ((item instanceof Prodotto p)) {
+                    disp = p.getQuantita();
+                } else {
+                    Pacchetto pac = (Pacchetto) item;
+                    disp = pac.getQuantita();
+                }
                 modelMarketplace.addRow(new Object[]{
                         false, tipo, item.getNome(), item.getDescrizione(),
-                        prezzo, disp, 0, ""
+                        prezzo, disp, 0,
+                        (item instanceof Prodotto p) ? String.join(", ", p.getCertificati()) :
+                                (item instanceof Pacchetto pac) ? String.join(", ", pac.getCertificati()) : "",
+                        (item instanceof Prodotto p) ? String.join(", ", p.getFoto()) :
+                                (item instanceof Pacchetto pac) ? String.join(", ", pac.getFoto()) : "",
+                        ""
                 });
+
             }
         }
+        btnAcquista.setEnabled(false);
     }
 
     /**
@@ -184,6 +202,8 @@ public class PannelloAcquirente extends JPanel {
                         tot.getTotaleArticoli(),
                         tot.getCostoTotale())
         );
+        btnAcquista.setEnabled(!items.isEmpty());
+
     }
 
     /**
@@ -208,18 +228,77 @@ public class PannelloAcquirente extends JPanel {
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 int row = tabMarketplace.rowAtPoint(e.getPoint());
                 int col = tabMarketplace.columnAtPoint(e.getPoint());
-                if (row < 0 || col != 7) return;
-                String az = (String) modelMarketplace.getValueAt(row, 7);
-                if (!"Aggiungi al carrello".equals(az)) return;
+                if (row < 0 || col < 0) return;
 
-                Item item = itemList.get(row);
-                Object qObj = modelMarketplace.getValueAt(row, 6);
-                int q = (qObj instanceof Integer) ? (Integer) qObj : 0;
+                // Click su "Aggiungi al carrello"
+                if (col == 9) {
+                    String az = (String) modelMarketplace.getValueAt(row, 9);
+                    if (!"Aggiungi al carrello".equals(az)) return;
 
-                ctrl.addToCart(item, q, showResult());
+                    Item item = itemList.get(row);
+                    Object qObj = modelMarketplace.getValueAt(row, 6);
+                    int q = (qObj instanceof Integer) ? (Integer) qObj : 0;
+
+                    ctrl.addToCart(item, q, showResult());
+                    return;
+                }
+
+                // Click su "Certificati"
+                if (col == 7) { // Certificati
+                    Item item = itemList.get(row);
+                    List<String> certs = (item instanceof Prodotto p) ? p.getCertificati()
+                            : (item instanceof Pacchetto pac) ? pac.getCertificati() : List.of();
+                    mostraDialogFile("Certificati", certs, "uploads/certificati");
+                    return;
+                }
+
+                if (col == 8) { // Foto
+                    Item item = itemList.get(row);
+                    List<String> fotos = (item instanceof Prodotto p) ? p.getFoto()
+                            : (item instanceof Pacchetto pac) ? pac.getFoto() : List.of();
+                    mostraDialogFile("Foto", fotos, "uploads/foto");
+                    return;
+                }
+
             }
         });
     }
+
+    private void mostraDialogFile(String titolo, List<String> files, String cartellaBase) {
+        if (files == null || files.isEmpty() || (files.size() == 1 && files.get(0).isBlank())) {
+            JOptionPane.showMessageDialog(this, "Nessun file disponibile.", titolo, JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        // Usa una JList per la selezione
+        JList<String> lista = new JList<>(files.toArray(new String[0]));
+        lista.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        int res = JOptionPane.showConfirmDialog(
+                this, new JScrollPane(lista),
+                titolo + " (clicca su un file e poi OK per aprirlo)",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (res == JOptionPane.OK_OPTION) {
+            String selected = lista.getSelectedValue();
+            if (selected != null && !selected.isBlank()) {
+                try {
+                    // Costruisci il percorso completo al file
+                    java.io.File f = new java.io.File(cartellaBase, selected);
+                    if (!f.exists()) {
+                        JOptionPane.showMessageDialog(this, "File non trovato:\n" + f.getAbsolutePath(), "Errore", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    java.awt.Desktop.getDesktop().open(f);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Impossibile aprire il file:\n" + ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }
+    }
+
 
 
     /**
@@ -261,4 +340,83 @@ public class PannelloAcquirente extends JPanel {
                 this, msg, "Errore", JOptionPane.ERROR_MESSAGE
         );
     }
+
+    public void aggiornaFondi(double nuoviFondi) {
+        txtFondi.setText(String.format("%.2f", nuoviFondi));
+    }
+
+
+    private void mostraDialogPagamento() {
+        // Esempio semplice: JComboBox in JOptionPane
+        String[] metodi = {"Carta", "Paypal", "Pagamento alla consegna"};
+        TipoMetodoPagamento[] tipi = {
+                TipoMetodoPagamento.CARTA_DI_CREDITO,
+                TipoMetodoPagamento.BONIFICO,
+                TipoMetodoPagamento.PAGAMENTO_ALLA_CONSEGNA
+        };
+
+        JComboBox<String> combo = new JComboBox<>(metodi);
+        int res = JOptionPane.showConfirmDialog(
+                this,
+                combo,
+                "Seleziona metodo di pagamento",
+                JOptionPane.OK_CANCEL_OPTION
+        );
+        if (res != JOptionPane.OK_OPTION) return;
+
+        TipoMetodoPagamento selezionato = tipi[combo.getSelectedIndex()];
+        mostraDialogConfermaAcquisto(selezionato);
+    }
+
+    private void mostraDialogConfermaAcquisto(TipoMetodoPagamento metodo) {
+        int res = JOptionPane.showConfirmDialog(
+                this,
+                "Vuoi procedere con l'acquisto?",
+                "Conferma acquisto",
+                JOptionPane.YES_NO_OPTION
+        );
+        if (res == JOptionPane.YES_OPTION) {
+            effettuaAcquistoConEsiti(metodo);
+        }
+    }
+
+    private void effettuaAcquistoConEsiti(TipoMetodoPagamento metodo) {
+        ctrl.effettuaAcquisto(metodo, (msg, ok) -> {
+            SwingUtilities.invokeLater(() -> {
+                if (ok) {
+                    JOptionPane.showMessageDialog(this, msg, "Successo", JOptionPane.INFORMATION_MESSAGE);
+                    ctrl.visualizzaCarrello(); // aggiorna la view
+                } else {
+                    int retry = JOptionPane.showOptionDialog(
+                            this,
+                            msg + "\nVuoi riprovare con un altro metodo di pagamento?",
+                            "Pagamento fallito",
+                            JOptionPane.YES_NO_OPTION,
+                            JOptionPane.ERROR_MESSAGE,
+                            null,
+                            new Object[]{"Sì, scegli altro metodo", "No, annulla acquisto"},
+                            "Sì, scegli altro metodo"
+                    );
+                    if (retry == JOptionPane.YES_OPTION) {
+                        mostraDialogPagamento();
+                    }
+                    // Se NO, non fa nulla (torna alla schermata corrente)
+                }
+            });
+        });
+    }
+
+    @Override
+    public void notificaItem(String nomeItem, String evento) {
+        // Aggiorna in tempo reale il marketplace se cambia la disponibilità di un prodotto/pacchetto
+        SwingUtilities.invokeLater(ctrl::visualizzaMarketplace);
+    }
+
+    @Override
+    public void removeNotify() {
+        super.removeNotify();
+        ObserverManagerItem.rimuoviOsservatore(this);
+    }
+
+
 }

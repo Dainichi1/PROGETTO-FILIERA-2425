@@ -36,6 +36,8 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
     private final JTextField descrField = new JTextField();
     private final JTextField indirizzoField = new JTextField();
     private final JTextField prezzoField = new JTextField();
+    private final JTextField quantitaField = new JTextField();
+
 
     private final JLabel labelCert = new JLabel("Nessun file selezionato");
     private final JLabel labelFoto = new JLabel("Nessun file selezionato");
@@ -83,7 +85,7 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
 
         // Pacchetti table
         String[] colPack = {
-                "Nome", "Descrizione", "Indirizzo", "Prezzo Totale",
+                "Nome", "Descrizione", "Indirizzo", "Prezzo Totale", "Quantità",
                 "Prodotti", "Certificati", "Foto", "Stato", "Commento",
                 "Elimina", "Modifica"
         };
@@ -106,10 +108,10 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
                 if (row < 0) return;
 
                 String nome = (String) modelPacchetti.getValueAt(row, 0);
-                String stato = modelPacchetti.getValueAt(row, 7).toString();
+                String stato = modelPacchetti.getValueAt(row, 8).toString();
 
-                // ——— Elimina (colonna 9) ——————————————————————
-                if (col == 9) {
+                // ——— Elimina (colonna 10) ——————————————————————
+                if (col == 10) {
                     if (!stato.equals("IN_ATTESA") && !stato.equals("RIFIUTATO")) {
                         JOptionPane.showMessageDialog(
                                 PannelloDistributore.this,
@@ -147,8 +149,8 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
                     return;
                 }
 
-                // ——— Modifica (colonna 10) ——————————————————————
-                if (col == 10) {
+                // ——— Modifica (colonna 11) ——————————————————————
+                if (col == 11) {
                     if (!stato.equals("RIFIUTATO")) {
                         JOptionPane.showMessageDialog(
                                 PannelloDistributore.this,
@@ -212,6 +214,7 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
         descrField.setText(p.getDescrizione());
         indirizzoField.setText(p.getIndirizzo());
         prezzoField.setText(String.valueOf(p.getPrezzoTotale()));
+        quantitaField.setText(String.valueOf(p.getQuantita()));
         prodottiSel.clear();
         prodottiSel.addAll(p.getProdotti());
         labelCert.setText("Ricarica certificati");
@@ -237,6 +240,9 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
         formPanel.add(indirizzoField);
         formPanel.add(new JLabel("Prezzo Totale:"));
         formPanel.add(prezzoField);
+        formPanel.add(new JLabel("Quantità:"));
+        formPanel.add(quantitaField);
+
         formPanel.add(btnCert);
         formPanel.add(labelCert);
         formPanel.add(btnFoto);
@@ -293,7 +299,8 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
                     "nome", nomeField.getText().trim(),
                     "descrizione", descrField.getText().trim(),
                     "indirizzo", indirizzoField.getText().trim(),
-                    "prezzo", prezzoField.getText().trim()
+                    "prezzo", prezzoField.getText().trim(),
+                    "quantita", quantitaField.getText().trim()
             );
             List<String> nomiProdotti = prodottiSel.stream()
                     .map(Prodotto::getNome).toList();
@@ -352,7 +359,8 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
                 "nome", nomeField.getText().trim(),
                 "descrizione", descrField.getText().trim(),
                 "indirizzo", indirizzoField.getText().trim(),
-                "prezzo", prezzoField.getText().trim()
+                "prezzo", prezzoField.getText().trim(),
+                "quantita", quantitaField.getText().trim()
         );
 
         // 2. Raccogli i nomi dei prodotti selezionati
@@ -402,6 +410,7 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
                     p.getDescrizione(),
                     p.getIndirizzo(),
                     p.getPrezzoTotale(),
+                    p.getQuantita(),
                     p.getProdotti().size() + " prodotti",
                     String.join(", ", p.getCertificati()),
                     String.join(", ", p.getFoto()),
@@ -463,6 +472,7 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
         descrField.setText("");
         indirizzoField.setText("");
         prezzoField.setText("");
+        quantitaField.setText("");
         certSel.clear();
         fotoSel.clear();
         prodottiSel.clear();

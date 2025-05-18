@@ -20,17 +20,25 @@ public class ValidatoreAcquisto {
 
     /**
      * Valida la quantità richiesta in base al tipo di Item.
-     * @param item Item da validare (Prodotto o Pacchetto)
+     *
+     * @param item      Item da validare (Prodotto o Pacchetto)
      * @param richiesta Quantità desiderata
      */
     public static void validaQuantitaItem(Item item, int richiesta) {
         if (item instanceof Prodotto p) {
             validaQuantita(richiesta, p.getQuantita());
-        } else if (item instanceof Pacchetto) {
-            if (richiesta <= 0)
-                throw new IllegalArgumentException("⚠ La quantità deve essere almeno 1.");
+        } else if (item instanceof Pacchetto pac) {
+            validaQuantita(richiesta, pac.getQuantita());
         } else {
             throw new IllegalArgumentException("⚠ Tipo di item non supportato.");
         }
     }
+
+    public static void validaFondi(double fondiDisponibili, double totaleAcquisto) {
+        if (fondiDisponibili <= 0)
+            throw new IllegalArgumentException("Non puoi procedere: saldo fondi a zero!");
+        if (fondiDisponibili < totaleAcquisto)
+            throw new IllegalArgumentException("Fondi insufficienti per completare l'acquisto.");
+    }
+
 }

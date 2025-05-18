@@ -260,6 +260,21 @@ public class JdbcProdottoDAO implements ProdottoDAO {
         return null;
     }
 
+    @Override
+    public boolean aggiornaQuantita(String nome, int nuovaQuantita) {
+        String sql = "UPDATE prodotti SET quantita = ? WHERE nome = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement st = conn.prepareStatement(sql)) {
+            st.setInt(1, nuovaQuantita);
+            st.setString(2, nome);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+
     // ---------- helper privati ----------
 
     private String copiaFile(File f, String destDir) {

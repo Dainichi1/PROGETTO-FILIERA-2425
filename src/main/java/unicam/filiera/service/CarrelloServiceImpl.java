@@ -56,7 +56,7 @@ public class CarrelloServiceImpl implements CarrelloService {
         // 2) recupera l’Item “vero” dal marketplace
         Item reale = marketplace.ottieniElementiMarketplace().stream()
                 .filter(o -> o instanceof Item it && it.getNome().equals(nomeItem))
-                .map(o -> (Item)o)
+                .map(o -> (Item) o)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Impossibile trovare il prodotto"));
 
@@ -89,4 +89,10 @@ public class CarrelloServiceImpl implements CarrelloService {
         double totCost = items.stream().mapToDouble(CartItemDto::getTotale).sum();
         return new CartTotalsDto(totQta, totCost);
     }
+
+    @Override
+    public void clear() {
+        items.clear();
+    }
+
 }

@@ -78,6 +78,7 @@ public class DistributoreController {
                     datiInput.getOrDefault("descrizione", "").trim(),
                     datiInput.getOrDefault("indirizzo", "").trim(),
                     datiInput.getOrDefault("prezzo", "").trim(),
+                    datiInput.getOrDefault("quantita", "").trim(),
                     nomiProdotti,
                     certificati,
                     foto
@@ -113,6 +114,7 @@ public class DistributoreController {
                     datiInput.getOrDefault("descrizione", "").trim(),
                     datiInput.getOrDefault("indirizzo", "").trim(),
                     datiInput.getOrDefault("prezzo", "").trim(),
+                    datiInput.getOrDefault("quantita", "").trim(),
                     nomiProdotti,
                     certificati,
                     foto

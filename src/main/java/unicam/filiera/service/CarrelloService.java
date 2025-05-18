@@ -23,6 +23,9 @@ public interface CarrelloService {
      */
     void removeItem(String nomeItem);
 
+    void clear();
+
+
     /**
      * Restituisce la lista di tutti gli item correnti
      */

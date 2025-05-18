@@ -14,6 +14,9 @@ public interface PacchettoDAO {
      */
     boolean update(Pacchetto p);
 
+    boolean aggiornaQuantita(String nome, int nuovaQuantita);
+
+
     /**
      * Full update: tutti i campi + re‐upload file
      */

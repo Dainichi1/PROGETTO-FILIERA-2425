@@ -39,25 +39,27 @@ public class JdbcPacchettoDAO implements PacchettoDAO {
             // 1) inserisci i dati testuali
             String insert = """
                         INSERT INTO pacchetti
-                          (nome, descrizione, indirizzo, prezzo_totale, prodotti, certificati, foto, creato_da, stato, commento)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                          (nome, descrizione, indirizzo, prezzo_totale, quantita, prodotti, certificati, foto, creato_da, stato, commento)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """;
+
             try (PreparedStatement st = conn.prepareStatement(insert)) {
                 st.setString(1, p.getNome());
                 st.setString(2, p.getDescrizione());
                 st.setString(3, p.getIndirizzo());
                 st.setDouble(4, p.getPrezzoTotale());
-                st.setString(5,
+                st.setInt(5, p.getQuantita());
+                st.setString(6,
                         p.getProdotti().stream()
                                 .map(Prodotto::getNome)
                                 .collect(Collectors.joining(","))
                 );
                 // placeholder per i file
-                st.setString(6, "");
                 st.setString(7, "");
-                st.setString(8, p.getCreatoDa());
-                st.setString(9, p.getStato().name());
-                st.setNull(10, Types.VARCHAR);
+                st.setString(8, "");
+                st.setString(9, p.getCreatoDa());
+                st.setString(10, p.getStato().name());
+                st.setNull(11, Types.VARCHAR);
                 st.executeUpdate();
             }
 
@@ -87,32 +89,45 @@ public class JdbcPacchettoDAO implements PacchettoDAO {
 
 
     @Override
+
     public boolean update(Pacchetto p) {
         String sql = """
                     UPDATE pacchetti
-                       SET descrizione   = ?,
-                           prezzo_totale = ?,
-                           indirizzo     = ?,
-                           stato         = ?,
-                           commento      = ?
+                       SET nome         = ?,
+                           descrizione  = ?,
+                           indirizzo    = ?,
+                           prezzo_totale= ?,
+                           quantita     = ?,            
+                           prodotti     = ?,
+                           certificati  = ?,
+                           foto         = ?,
+                           stato        = ?,
+                           commento     = ?
                      WHERE nome = ? AND creato_da = ?
                 """;
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, p.getDescrizione());
-            stmt.setDouble(2, p.getPrezzoTotale());
+            stmt.setString(1, p.getNome());
+            stmt.setString(2, p.getDescrizione());
             stmt.setString(3, p.getIndirizzo());
-            stmt.setString(4, p.getStato().name());
-            stmt.setString(5, p.getCommento());
-            stmt.setString(6, p.getNome());
-            stmt.setString(7, p.getCreatoDa());
+            stmt.setDouble(4, p.getPrezzoTotale());
+            stmt.setInt(5, p.getQuantita());
+            stmt.setString(6, p.getProdotti().stream()
+                    .map(Prodotto::getNome).collect(Collectors.joining(",")));
+            stmt.setString(7, String.join(",", p.getCertificati()));
+            stmt.setString(8, String.join(",", p.getFoto()));
+            stmt.setString(9, p.getStato().name());
+            stmt.setString(10, p.getCommento());
+            stmt.setString(11, p.getNome());
+            stmt.setString(12, p.getCreatoDa());
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
     }
+
 
     /**
      * Full-update: modifica tutti i campi del pacchetto (anche nome),
@@ -144,6 +159,7 @@ public class JdbcPacchettoDAO implements PacchettoDAO {
                                descrizione  = ?,
                                indirizzo    = ?,
                                prezzo_totale= ?,
+                               quantita     = ?,
                                prodotti     = ?,
                                certificati  = ?,
                                foto         = ?,
@@ -156,15 +172,16 @@ public class JdbcPacchettoDAO implements PacchettoDAO {
                 st.setString(2, p.getDescrizione());
                 st.setString(3, p.getIndirizzo());
                 st.setDouble(4, p.getPrezzoTotale());
-                st.setString(5, p.getProdotti().stream()
+                st.setInt(5, p.getQuantita());
+                st.setString(6, p.getProdotti().stream()
                         .map(Prodotto::getNome)
                         .collect(Collectors.joining(",")));
-                st.setString(6, String.join(",", certNames));
-                st.setString(7, String.join(",", fotoNames));
-                st.setString(8, p.getStato().name());
-                st.setString(9, p.getCommento());
-                st.setString(10, nomeOriginale);
-                st.setString(11, creatore);
+                st.setString(7, String.join(",", certNames));
+                st.setString(8, String.join(",", fotoNames));
+                st.setString(9, p.getStato().name());
+                st.setString(10, p.getCommento());
+                st.setString(11, nomeOriginale);
+                st.setString(12, creatore);
 
                 int updated = st.executeUpdate();
                 conn.commit();
@@ -179,6 +196,21 @@ public class JdbcPacchettoDAO implements PacchettoDAO {
             return false;
         }
     }
+
+    @Override
+    public boolean aggiornaQuantita(String nome, int nuovaQuantita) {
+        String sql = "UPDATE pacchetti SET quantita = ? WHERE nome = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement st = conn.prepareStatement(sql)) {
+            st.setInt(1, nuovaQuantita);
+            st.setString(2, nome);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 
     @Override
     public List<Pacchetto> findByCreatore(String creatore) {
@@ -262,6 +294,7 @@ public class JdbcPacchettoDAO implements PacchettoDAO {
                 .descrizione(rs.getString("descrizione"))
                 .indirizzo(rs.getString("indirizzo"))
                 .prezzoTotale(rs.getDouble("prezzo_totale"))
+                .quantita(rs.getInt("quantita"))
                 .prodotti(recuperaProdotti(rs.getString("prodotti")))
                 .certificati(cert)
                 .foto(foto)

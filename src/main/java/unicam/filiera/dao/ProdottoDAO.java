@@ -19,6 +19,9 @@ public interface ProdottoDAO {
      */
     boolean save(Prodotto p, List<File> certificati, List<File> foto);
 
+    boolean aggiornaQuantita(String nome, int nuovaQuantita);
+
+
     /**
      * Aggiorna SOLO i campi testuali e lo stato/commento.
      * (utile per workflow di approvazione)

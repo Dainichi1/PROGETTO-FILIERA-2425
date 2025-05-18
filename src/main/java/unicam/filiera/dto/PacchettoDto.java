@@ -16,6 +16,7 @@ public class PacchettoDto {
     private final String descrizione;
     private final String indirizzo;
     private final String prezzoTxt;
+    private final String quantitaTxt;
     private final List<String> nomiProdotti;
     private final List<File> certificati;
     private final List<File> foto;
@@ -28,10 +29,11 @@ public class PacchettoDto {
             String descrizione,
             String indirizzo,
             String prezzoTxt,
+            String quantitaTxt,
             List<String> nomiProdotti,
             List<File> certificati,
             List<File> foto) {
-        this(null, nome, descrizione, indirizzo, prezzoTxt, nomiProdotti, certificati, foto);
+        this(null, nome, descrizione, indirizzo, prezzoTxt, quantitaTxt, nomiProdotti, certificati, foto);
     }
 
     /**
@@ -43,6 +45,7 @@ public class PacchettoDto {
             String descrizione,
             String indirizzo,
             String prezzoTxt,
+            String quantitaTxt,
             List<String> nomiProdotti,
             List<File> certificati,
             List<File> foto) {
@@ -51,6 +54,7 @@ public class PacchettoDto {
         this.descrizione = descrizione;
         this.indirizzo = indirizzo;
         this.prezzoTxt = prezzoTxt;
+        this.quantitaTxt = quantitaTxt;
         this.nomiProdotti = List.copyOf(nomiProdotti);
         this.certificati = List.copyOf(certificati);
         this.foto = List.copyOf(foto);
@@ -77,6 +81,10 @@ public class PacchettoDto {
 
     public String getPrezzoTxt() {
         return prezzoTxt;
+    }
+
+    public String getQuantitaTxt() {
+        return quantitaTxt;
     }
 
     public List<String> getNomiProdotti() {

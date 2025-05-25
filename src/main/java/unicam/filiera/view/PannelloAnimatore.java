@@ -1,6 +1,7 @@
 package unicam.filiera.view;
 
 import unicam.filiera.controller.AnimatoreController;
+import unicam.filiera.controller.EliminazioneProfiloController;
 import unicam.filiera.dto.FieraDto;
 import unicam.filiera.dto.VisitaInvitoDto;
 import unicam.filiera.model.Ruolo;
@@ -14,6 +15,7 @@ import java.util.Map;
 
 public class PannelloAnimatore extends JPanel {
     private final AnimatoreController controller;
+    private final EliminazioneProfiloController eliminaController;
 
     private final JComboBox<String> comboTipo = new JComboBox<>(new String[]{"Fiera", "Visita su invito"});
 
@@ -33,10 +35,14 @@ public class PannelloAnimatore extends JPanel {
 
     private final Map<JCheckBox, UtenteAutenticato> destinatariMap = new LinkedHashMap<>();
     private final JPanel formContainer = new JPanel(new CardLayout());
+    private final JButton btnEliminaProfilo = new JButton("Elimina profilo");
+
 
     public PannelloAnimatore(UtenteAutenticato utente) {
         super(new BorderLayout());
         this.controller = new AnimatoreController(utente.getUsername());
+        this.eliminaController = new EliminazioneProfiloController(utente.getUsername());
+
 
         JLabel header = new JLabel("Benvenuto Animatore " + utente.getNome(), SwingConstants.CENTER);
         header.setFont(new Font("Arial", Font.BOLD, 18));
@@ -45,6 +51,7 @@ public class PannelloAnimatore extends JPanel {
         JPanel top = new JPanel();
         top.add(new JLabel("Tipo evento:"));
         top.add(comboTipo);
+        top.add(btnEliminaProfilo);
         add(top, BorderLayout.SOUTH);
 
         formContainer.add(buildFormFiera(), "Fiera");
@@ -53,6 +60,29 @@ public class PannelloAnimatore extends JPanel {
 
         setupComboTipoListener();
         comboTipo.setSelectedItem("Fiera");
+        btnEliminaProfilo.addActionListener(e -> mostraDialogEliminaProfilo());
+
+    }
+
+    private void mostraDialogEliminaProfilo() {
+        int res = JOptionPane.showConfirmDialog(
+                this,
+                "Sei sicuro di voler eliminare il tuo profilo?\nLa richiesta sarà inviata al Gestore.",
+                "Conferma eliminazione profilo",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+        if (res != JOptionPane.YES_OPTION) return;
+
+        eliminaController.inviaRichiestaEliminazione((ok, msg) -> {
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(
+                        this, msg,
+                        ok ? "Richiesta inviata" : "Errore",
+                        ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
+                );
+            });
+        });
     }
 
     private void setupComboTipoListener() {

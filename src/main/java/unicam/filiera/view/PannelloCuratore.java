@@ -1,12 +1,9 @@
 package unicam.filiera.view;
 
-import unicam.filiera.controller.CuratoreController;
-import unicam.filiera.controller.ObserverManagerProdotto;
-import unicam.filiera.controller.ObserverManagerProdottoTrasformato;
+import unicam.filiera.controller.*;
 import unicam.filiera.model.*;
 import unicam.filiera.model.observer.OsservatorePacchetto;
 import unicam.filiera.model.observer.OsservatoreProdotto;
-import unicam.filiera.controller.ObserverManagerPacchetto;
 import unicam.filiera.model.observer.OsservatoreProdottoTrasformato;
 
 import javax.swing.*;
@@ -33,9 +30,13 @@ public class PannelloCuratore extends JPanel
     private final JScrollPane scrollPane;
     private final JButton toggleButton;
     private final CuratoreController controller = new CuratoreController();
+     private final EliminazioneProfiloController eliminaController;
+     private final JButton btnEliminaProfilo = new JButton("Elimina profilo");
 
     public PannelloCuratore(UtenteAutenticato utente) {
         super(new BorderLayout());
+        this.eliminaController = new EliminazioneProfiloController(utente.getUsername());
+
 
         // Header
         JLabel benvenuto = new JLabel(
@@ -98,7 +99,12 @@ public class PannelloCuratore extends JPanel
             revalidate();
             repaint();
         });
-        add(toggleButton, BorderLayout.SOUTH);
+        btnEliminaProfilo.addActionListener(e -> mostraDialogEliminaProfilo());
+
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottomPanel.add(toggleButton);
+        bottomPanel.add(btnEliminaProfilo);
+        add(bottomPanel, BorderLayout.SOUTH);
 
         // Registrazione come osservatore
         ObserverManagerProdotto.registraOsservatore(this);
@@ -109,6 +115,28 @@ public class PannelloCuratore extends JPanel
         // Carica iniziale
         caricaElementiInAttesa();
     }
+     private void mostraDialogEliminaProfilo() {
+         int res = JOptionPane.showConfirmDialog(
+                 this,
+                 "Sei sicuro di voler eliminare il tuo profilo?\nLa richiesta sarà inviata al Gestore.",
+                 "Conferma eliminazione profilo",
+                 JOptionPane.YES_NO_OPTION,
+                 JOptionPane.WARNING_MESSAGE
+         );
+         if (res != JOptionPane.YES_OPTION) return;
+
+         eliminaController.inviaRichiestaEliminazione((ok, msg) -> {
+             SwingUtilities.invokeLater(() -> {
+                 JOptionPane.showMessageDialog(
+                         this, msg,
+                         ok ? "Richiesta inviata" : "Errore",
+                         ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
+                 );
+             });
+         });
+     }
+
+
 
     @Override
     public void notifica(Prodotto prodotto, String evento) {

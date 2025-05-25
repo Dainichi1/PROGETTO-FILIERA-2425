@@ -204,6 +204,23 @@ public class DatabaseManager {
                 stmt.executeUpdate(fasiProduzioneSql);
             }
 
+            // ** crea la tabella richieste_eliminazione_profilo se non esiste **
+            ResultSet rsEliminaProfilo = conn.getMetaData()
+                    .getTables(null, null, "RICHIESTE_ELIMINAZIONE_PROFILO", new String[]{"TABLE"});
+            if (!rsEliminaProfilo.next()) {
+                System.out.println("[DB] Creo tabella 'richieste_eliminazione_profilo'");
+                stmt.executeUpdate(
+                        """
+                                CREATE TABLE richieste_eliminazione_profilo (
+                                    id IDENTITY PRIMARY KEY,
+                                    utente_id INT NOT NULL,
+                                    stato VARCHAR(20) NOT NULL,
+                                    data_richiesta TIMESTAMP NOT NULL
+                                );
+                                """
+                );
+            }
+
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -369,6 +386,18 @@ public class DatabaseManager {
                             FOREIGN KEY (prodotto_trasformato_id) REFERENCES prodotti_trasformati(id)
                         );
                     """;
+
+            String richiesteEliminaProfiloSql = """
+                        CREATE TABLE IF NOT EXISTS richieste_eliminazione_profilo (
+                            id IDENTITY PRIMARY KEY,
+                            username VARCHAR(50) NOT NULL,
+                            stato VARCHAR(20) NOT NULL,
+                            data_richiesta TIMESTAMP NOT NULL,
+                            FOREIGN KEY (username) REFERENCES utenti(username)
+                        );
+                    """;
+            stmt.executeUpdate(richiesteEliminaProfiloSql);
+
 
             stmt.executeUpdate(prodottiTrasformatiSql);
             stmt.executeUpdate(fasiProduzioneSql);

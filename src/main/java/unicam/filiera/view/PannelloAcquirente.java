@@ -1,6 +1,7 @@
 package unicam.filiera.view;
 
 import unicam.filiera.controller.AcquirenteController;
+import unicam.filiera.controller.EliminazioneProfiloController;
 import unicam.filiera.controller.ObserverManagerItem;
 import unicam.filiera.dto.CartItemDto;
 import unicam.filiera.dto.CartTotalsDto;
@@ -16,11 +17,14 @@ import java.util.function.BiConsumer;
 
 public class PannelloAcquirente extends JPanel implements OsservatoreItem {
     private final AcquirenteController ctrl;
+    private final EliminazioneProfiloController eliminaController;
+
 
     // Marketplace
     private final JTable tabMarketplace;
     private final DefaultTableModel modelMarketplace;
     private final List<Item> itemList = new ArrayList<>();
+
 
     // Carrello
     private final JTable tabCarrello;
@@ -40,6 +44,8 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
     private final JTable tabFiere;
     private final DefaultTableModel modelFiere;
     private final JButton btnVisualizzaPrenotazioni = new JButton("Visualizza prenotazioni fiere");
+    private final JButton btnEliminaProfilo = new JButton("Elimina profilo");
+
     private final DefaultTableModel modelPrenotazioni = new DefaultTableModel(
             new Object[]{"ID", "Descrizione fiera", "Data", "Persone", "Elimina"}, 0);
     private final JTable tabPrenotazioni = new JTable(modelPrenotazioni);
@@ -47,6 +53,8 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
     public PannelloAcquirente(UtenteAutenticato utente) {
         super(new BorderLayout());
         this.ctrl = new AcquirenteController(this, utente);
+        this.eliminaController = new EliminazioneProfiloController(utente.getUsername());
+
 
         if (utente instanceof Acquirente a) {
             txtFondi.setText(String.format("%.2f", a.getFondi()));
@@ -108,6 +116,8 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
         btnAcquista.addActionListener(e -> mostraDialogPagamento());
         btnFiereDisponibili.addActionListener(e -> ctrl.visualizzaFiereDisponibili());
         btnVisualizzaPrenotazioni.addActionListener(e -> ctrl.visualizzaPrenotazioniFiere());
+        btnEliminaProfilo.addActionListener(e -> mostraDialogEliminaProfilo());
+
 
         btnAggiornaFondi.addActionListener(e -> {
             try {
@@ -139,6 +149,7 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
         top.add(btnShowMarket);
         top.add(btnFiereDisponibili);
         top.add(btnVisualizzaPrenotazioni);
+        top.add(btnEliminaProfilo);
 
         top.add(btnShowCart);
         top.add(new JLabel("   "));
@@ -504,6 +515,28 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
 
         dialog.setVisible(true);
     }
+
+    private void mostraDialogEliminaProfilo() {
+        int res = JOptionPane.showConfirmDialog(
+                this,
+                "Sei sicuro di voler eliminare il tuo profilo?\nLa richiesta sarà inviata al Gestore.",
+                "Conferma eliminazione profilo",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+        if (res != JOptionPane.YES_OPTION) return;
+
+        eliminaController.inviaRichiestaEliminazione((ok, msg) -> {
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(
+                        this, msg,
+                        ok ? "Richiesta inviata" : "Errore",
+                        ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
+                );
+            });
+        });
+    }
+
 
     public void showPrenotazioniFiere(List<PrenotazioneFiera> prenotazioni, List<Fiera> tutteLeFiere) {
         modelPrenotazioni.setRowCount(0);

@@ -1,6 +1,7 @@
 package unicam.filiera.view;
 
 import unicam.filiera.controller.TrasformatoreController;
+import unicam.filiera.controller.EliminazioneProfiloController;
 import unicam.filiera.dto.ProdottoTrasformatoDto;
 import unicam.filiera.model.*;
 import unicam.filiera.model.observer.OsservatoreProdottoTrasformato;
@@ -18,6 +19,8 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
 
     private final UtenteAutenticato utente;
     private final TrasformatoreController controller;
+    private final EliminazioneProfiloController eliminaController;
+
     private boolean editMode = false;
     private String originalName;
 
@@ -47,6 +50,7 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
     private final JButton btnInvia = new JButton("Invia Prodotto Trasformato");
     private final JButton btnVisiteDisponibili = new JButton("Visualizza visite disponibili");
     private final JButton btnVisualizzaPrenotazioniVisite = new JButton("Visualizza prenotazioni visite");
+    private final JButton btnEliminaProfilo = new JButton("Elimina profilo");
 
     private final DefaultTableModel model;
     private final JTable tabella;
@@ -57,6 +61,7 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
         super(new BorderLayout());
         this.utente = utente;
         this.controller = new TrasformatoreController(utente.getUsername());
+        this.eliminaController = new EliminazioneProfiloController(utente.getUsername());
 
         JLabel benv = new JLabel(
                 "Benvenuto " + utente.getNome() + ", " + utente.getRuolo(),
@@ -68,6 +73,7 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
         add(btnToggleForm, BorderLayout.SOUTH);
 
         btnToggleForm.addActionListener(e -> toggleForm());
+
         JPanel pannelloVisite = new JPanel(new FlowLayout(FlowLayout.LEFT));
         pannelloVisite.add(btnVisiteDisponibili);
         pannelloVisite.add(btnVisualizzaPrenotazioniVisite);
@@ -204,7 +210,6 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
             }
         });
 
-
         btnRimuoviFase.addActionListener(e -> {
             int row = tabellaFasi.getSelectedRow();
             if (row >= 0) fasiModel.removeRow(row);
@@ -282,9 +287,35 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
             }
         });
 
+        // Bottone elimina profilo in basso a destra
+        btnEliminaProfilo.addActionListener(e -> mostraDialogEliminaProfilo());
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottomPanel.add(btnEliminaProfilo);
+        add(bottomPanel, BorderLayout.PAGE_END);
+
         refreshTable();
         ProdottoTrasformatoNotifier.getInstance().registraOsservatore(this);
+    }
 
+    private void mostraDialogEliminaProfilo() {
+        int res = JOptionPane.showConfirmDialog(
+                this,
+                "Sei sicuro di voler eliminare il tuo profilo?\nLa richiesta sarà inviata al Gestore.",
+                "Conferma eliminazione profilo",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+        if (res != JOptionPane.YES_OPTION) return;
+
+        eliminaController.inviaRichiestaEliminazione((ok, msg) -> {
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(
+                        this, msg,
+                        ok ? "Richiesta inviata" : "Errore",
+                        ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
+                );
+            });
+        });
     }
 
     private void buildForm() {
@@ -401,8 +432,6 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
     }
 
     private void refreshTable() {
-        System.out.println("[VIEW] refreshTable()");
-
         model.setRowCount(0);
         for (ProdottoTrasformato p : controller.getProdottiTrasformatiCreatiDaMe()) {
             model.addRow(new Object[]{
@@ -419,8 +448,6 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
     // notifica prodotto trasformato
     @Override
     public void notifica(ProdottoTrasformato prod, String evento) {
-        System.out.println("[VIEW] Ricevuta notifica: " + evento + " su " + prod.getNome() + " creato da " + prod.getCreatoDa() + " (utente: " + utente.getUsername() + ")");
-
         if (!"APPROVATO".equals(evento) && !"RIFIUTATO".equals(evento)) return;
         if (!prod.getCreatoDa().equalsIgnoreCase(utente.getUsername())) return;
 
@@ -431,7 +458,7 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
             String msg = approved
                     ? "✔ Il tuo prodotto trasformato \"" + prod.getNome() + "\" è stato APPROVATO!"
                     : "❌ Il tuo prodotto trasformato \"" + prod.getNome() + "\" è stato RIFIUTATO."
-                    + (prod.getCommento() != null && !prod.getCommento().isBlank() ? "\nCommento: " + prod.getCommento() : "");
+                      + (prod.getCommento() != null && !prod.getCommento().isBlank() ? "\nCommento: " + prod.getCommento() : "");
             JOptionPane.showMessageDialog(this, msg, title, type);
             refreshTable();
         });
@@ -492,14 +519,14 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
     }
 
     public void showPrenotazioniVisite(List<PrenotazioneVisita> prenotazioni, List<VisitaInvito> tutteLeVisite) {
-        DefaultTableModel model = new DefaultTableModel(
+        DefaultTableModel modelPren = new DefaultTableModel(
                 new Object[]{"ID", "Descrizione visita", "Data prenotazione", "Persone", "Elimina"}, 0);
-        JTable tabPrenotazioni = new JTable(model);
+        JTable tabPrenotazioni = new JTable(modelPren);
         for (PrenotazioneVisita p : prenotazioni) {
             String desc = tutteLeVisite.stream()
                     .filter(v -> v.getId() == p.getIdVisita())
                     .findFirst().map(VisitaInvito::getDescrizione).orElse("?");
-            model.addRow(new Object[]{
+            modelPren.addRow(new Object[]{
                     p.getId(),
                     desc,
                     p.getDataPrenotazione(),
@@ -518,7 +545,7 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
                 int row = tabPrenotazioni.rowAtPoint(e.getPoint());
                 int col = tabPrenotazioni.columnAtPoint(e.getPoint());
                 if (col == 4 && row >= 0) { // Colonna "Elimina"
-                    long idPren = Long.parseLong(model.getValueAt(row, 0).toString());
+                    long idPren = Long.parseLong(modelPren.getValueAt(row, 0).toString());
                     int conferma = JOptionPane.showConfirmDialog(dialog,
                             "Sei sicuro di voler eliminare la prenotazione?",
                             "Conferma eliminazione", JOptionPane.YES_NO_OPTION);
@@ -528,7 +555,7 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
                                     ok ? "Successo" : "Errore",
                                     ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE));
                             if (ok) {
-                                model.removeRow(row);
+                                modelPren.removeRow(row);
                             }
                         });
                     }

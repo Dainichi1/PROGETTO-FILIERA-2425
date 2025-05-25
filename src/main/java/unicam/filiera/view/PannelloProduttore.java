@@ -1,6 +1,7 @@
 package unicam.filiera.view;
 
 import unicam.filiera.controller.ProduttoreController;
+import unicam.filiera.controller.EliminazioneProfiloController;
 import unicam.filiera.model.*;
 import unicam.filiera.model.observer.OsservatoreProdotto;
 import unicam.filiera.model.observer.ProdottoNotifier;
@@ -17,9 +18,9 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
 
     private final UtenteAutenticato utente;
     private final ProduttoreController controller;
+    private final EliminazioneProfiloController eliminaController;
     private boolean editMode = false;
     private String originalName;
-
 
     private final List<File> certSel = new ArrayList<>();
     private final List<File> fotoSel = new ArrayList<>();
@@ -39,7 +40,7 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
     private final JButton btnInvia = new JButton("Invia Prodotto");
     private final JButton btnVisiteDisponibili = new JButton("Visualizza visite disponibili");
     private final JButton btnVisualizzaPrenotazioniVisite = new JButton("Visualizza prenotazioni visite");
-
+    private final JButton btnEliminaProfilo = new JButton("Elimina profilo");
 
     private final DefaultTableModel model;
     private final JTable tabella;
@@ -50,6 +51,7 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
         super(new BorderLayout());
         this.utente = utente;
         this.controller = new ProduttoreController(utente.getUsername());
+        this.eliminaController = new EliminazioneProfiloController(utente.getUsername());
 
         // Header
         JLabel benv = new JLabel(
@@ -62,6 +64,8 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
         add(btnToggleForm, BorderLayout.SOUTH);
 
         btnToggleForm.addActionListener(e -> toggleForm());
+
+        // Pannello visite
         JPanel pannelloVisite = new JPanel(new FlowLayout(FlowLayout.LEFT));
         pannelloVisite.add(btnVisiteDisponibili);
         pannelloVisite.add(btnVisualizzaPrenotazioniVisite);
@@ -69,7 +73,6 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
 
         btnVisiteDisponibili.addActionListener(e -> controller.visualizzaVisiteDisponibili(this));
         btnVisualizzaPrenotazioniVisite.addActionListener(e -> controller.visualizzaPrenotazioniVisite(this));
-
 
         // Table
         String[] cols = {
@@ -89,7 +92,7 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
 
         add(new JScrollPane(tabella), BorderLayout.EAST);
 
-        // ———————————————— tabella MouseListener ————————————————
+        // MouseListener tabella
         tabella.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -102,7 +105,6 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
 
                 // COLONNA 9: Elimina
                 if (col == 9) {
-                    // posso eliminare solo IN_ATTESA o RIFIUTATO
                     if (!statoStr.equals("IN_ATTESA") && !statoStr.equals("RIFIUTATO")) {
                         JOptionPane.showMessageDialog(
                                 PannelloProduttore.this,
@@ -131,7 +133,6 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
 
                     // COLONNA 10: Modifica
                 } else if (col == 10) {
-                    // posso modificare solo se RIFIUTATO
                     if (!statoStr.equals("RIFIUTATO")) {
                         JOptionPane.showMessageDialog(
                                 PannelloProduttore.this,
@@ -141,7 +142,6 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
                         );
                         return;
                     }
-                    // recupero l’oggetto Prodotto (implementa in controller un metodo findByName)
                     Prodotto p = controller.trovaProdottoPerNome(nomeProdotto);
                     if (p != null) {
                         enterEditMode(p);
@@ -157,13 +157,11 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
             }
         });
 
-
         // File selectors
         btnCert.addActionListener(e -> chooseFiles(true));
         btnFoto.addActionListener(e -> chooseFiles(false));
 
         // Invio dati
-        // ———————————————— btnInvia Listener ————————————————
         btnInvia.addActionListener(e -> {
             int scelta = JOptionPane.showConfirmDialog(
                     this,
@@ -174,12 +172,10 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
                     JOptionPane.YES_NO_OPTION
             );
             if (scelta != JOptionPane.YES_OPTION) {
-                // se annullo in modalità edit, esco dalla edit mode
                 if (editMode) exitEditMode();
                 return;
             }
 
-            // raccolgo i dati dai campi
             Map<String, String> datiInput = Map.of(
                     "nome", nomeField.getText().trim(),
                     "descrizione", descrField.getText().trim(),
@@ -189,7 +185,6 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
             );
 
             if (editMode) {
-                // aggiorno un prodotto già creato (stato RIFIUTATO)
                 controller.gestisciModificaProdotto(
                         originalName,
                         datiInput,
@@ -208,7 +203,6 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
                         })
                 );
             } else {
-                // invio un nuovo prodotto
                 controller.gestisciInvioProdotto(
                         datiInput,
                         List.copyOf(certSel),
@@ -228,10 +222,35 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
             }
         });
 
+        // BOTTONE ELIMINA PROFILO in basso a destra
+        btnEliminaProfilo.addActionListener(e -> mostraDialogEliminaProfilo());
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottomPanel.add(btnEliminaProfilo);
+        add(bottomPanel, BorderLayout.PAGE_END);
 
         refreshTable();
         ProdottoNotifier.getInstance().registraOsservatore(this);
+    }
 
+    private void mostraDialogEliminaProfilo() {
+        int res = JOptionPane.showConfirmDialog(
+                this,
+                "Sei sicuro di voler eliminare il tuo profilo?\nLa richiesta sarà inviata al Gestore.",
+                "Conferma eliminazione profilo",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+        if (res != JOptionPane.YES_OPTION) return;
+
+        eliminaController.inviaRichiestaEliminazione((ok, msg) -> {
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(
+                        this, msg,
+                        ok ? "Richiesta inviata" : "Errore",
+                        ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
+                );
+            });
+        });
     }
 
     private void buildForm() {
@@ -357,7 +376,7 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
             String msg = approved
                     ? "✔ Il tuo prodotto \"" + prod.getNome() + "\" è stato APPROVATO!"
                     : "❌ Il tuo prodotto \"" + prod.getNome() + "\" è stato RIFIUTATO."
-                    + (prod.getCommento() != null && !prod.getCommento().isBlank() ? "\nCommento: " + prod.getCommento() : "");
+                      + (prod.getCommento() != null && !prod.getCommento().isBlank() ? "\nCommento: " + prod.getCommento() : "");
             JOptionPane.showMessageDialog(this, msg, title, type);
             refreshTable();
         });

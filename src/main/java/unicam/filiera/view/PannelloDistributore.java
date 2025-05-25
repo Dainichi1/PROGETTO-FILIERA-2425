@@ -1,6 +1,7 @@
 package unicam.filiera.view;
 
 import unicam.filiera.controller.DistributoreController;
+import unicam.filiera.controller.EliminazioneProfiloController;
 import unicam.filiera.controller.ObserverManagerPacchetto;
 import unicam.filiera.dto.PacchettoDto;
 import unicam.filiera.model.*;
@@ -47,7 +48,8 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
     private final JButton btnVisiteDisponibili = new JButton("Visualizza visite disponibili");
     private final JButton btnVisualizzaPrenotazioniVisite = new JButton("Visualizza prenotazioni visite");
 
-
+    private final EliminazioneProfiloController eliminaController;
+    private final JButton btnEliminaProfilo = new JButton("Elimina profilo");
     private final DefaultTableModel modelProdotti;
     private final JTable tabellaProdotti;
     private final DefaultTableModel modelPacchetti;
@@ -60,6 +62,7 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
         super(new BorderLayout());
         this.utente = utente;
         this.controller = new DistributoreController(utente.getUsername());
+        this.eliminaController = new EliminazioneProfiloController(utente.getUsername());
 
         // Header
         JLabel benvenuto = new JLabel(
@@ -76,7 +79,6 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
 
         btnVisiteDisponibili.addActionListener(e -> controller.visualizzaVisiteDisponibili(this));
         btnVisualizzaPrenotazioniVisite.addActionListener(e -> controller.visualizzaPrenotazioniVisite(this));
-
 
 
         // Form building
@@ -212,6 +214,33 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
 
         // Observer registration for pacchetti
         ObserverManagerPacchetto.registraOsservatore(this);
+
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottomPanel.add(btnEliminaProfilo);
+        add(bottomPanel, BorderLayout.SOUTH);
+
+        btnEliminaProfilo.addActionListener(e -> mostraDialogEliminaProfilo());
+    }
+
+    private void mostraDialogEliminaProfilo() {
+        int res = JOptionPane.showConfirmDialog(
+                this,
+                "Sei sicuro di voler eliminare il tuo profilo?\nLa richiesta sarà inviata al Gestore.",
+                "Conferma eliminazione profilo",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+        if (res != JOptionPane.YES_OPTION) return;
+
+        eliminaController.inviaRichiestaEliminazione((ok, msg) -> {
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(
+                        this, msg,
+                        ok ? "Richiesta inviata" : "Errore",
+                        ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
+                );
+            });
+        });
     }
 
     private void enterEditMode(Pacchetto p) {
@@ -540,6 +569,7 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
             }
         }
     }
+
     public void showPrenotazioniVisite(List<PrenotazioneVisita> prenotazioni, List<VisitaInvito> tutteLeVisite) {
         DefaultTableModel model = new DefaultTableModel(
                 new Object[]{"ID", "Descrizione visita", "Data prenotazione", "Persone", "Elimina"}, 0);
@@ -589,7 +619,6 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
 
         dialog.setVisible(true);
     }
-
 
 
 }

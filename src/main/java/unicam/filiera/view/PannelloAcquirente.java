@@ -36,6 +36,15 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
     private final JButton btnShowMarket = new JButton("Visualizza Marketplace");
     private final JButton btnShowCart = new JButton("Visualizza Carrello");
 
+    private final JButton btnFiereDisponibili = new JButton("Visualizza Fiere disponibili");
+    private final JTable tabFiere;
+    private final DefaultTableModel modelFiere;
+    private final JButton btnVisualizzaPrenotazioni = new JButton("Visualizza prenotazioni fiere");
+    private final DefaultTableModel modelPrenotazioni = new DefaultTableModel(
+            new Object[]{"ID", "Descrizione fiera", "Data", "Persone", "Elimina"}, 0);
+    private final JTable tabPrenotazioni = new JTable(modelPrenotazioni);
+
+
     public PannelloAcquirente(UtenteAutenticato utente) {
         super(new BorderLayout());
         this.ctrl = new AcquirenteController(this, utente);
@@ -61,6 +70,13 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
                         (c == 6) ? Integer.class : String.class;
             }
         };
+
+        modelFiere = new DefaultTableModel(
+                new Object[]{"Descrizione", "Indirizzo", "Data Inizio", "Data Fine", "Prezzo", "Min. Partecipanti", "Organizzatore"},
+                0
+        );
+        tabFiere = new JTable(modelFiere);
+
         tabMarketplace = new JTable(modelMarketplace);
         modelMarketplace.addTableModelListener(e -> {
             int col = e.getColumn(), row = e.getFirstRow();
@@ -91,6 +107,9 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
         btnShowMarket.addActionListener(e -> ctrl.visualizzaMarketplace());
         btnShowCart.addActionListener(e -> ctrl.visualizzaCarrello());
         btnAcquista.addActionListener(e -> mostraDialogPagamento());
+        btnFiereDisponibili.addActionListener(e -> ctrl.visualizzaFiereDisponibili());
+        btnVisualizzaPrenotazioni.addActionListener(e -> ctrl.visualizzaPrenotazioniFiere());
+
 
         btnAggiornaFondi.addActionListener(e -> {
             try {
@@ -125,6 +144,9 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
         // Top panel
         JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT));
         top.add(btnShowMarket);
+        top.add(btnFiereDisponibili);
+        top.add(btnVisualizzaPrenotazioni);
+
         top.add(btnShowCart);
         top.add(new JLabel("   "));
         top.add(new JLabel("Fondi:"));
@@ -300,7 +322,6 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
     }
 
 
-
     /**
      * Listener per “Aggiorna” e “Elimina” nel carrello
      */
@@ -417,6 +438,118 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
         super.removeNotify();
         ObserverManagerItem.rimuoviOsservatore(this);
     }
+
+    public void showFiereDisponibili(List<Fiera> fiere) {
+        modelFiere.setRowCount(0); // Svuota la tabella prima di riempire
+
+        for (Fiera f : fiere) {
+            modelFiere.addRow(new Object[]{
+                    f.getDescrizione(),
+                    f.getIndirizzo(),
+                    f.getDataInizio(),
+                    f.getDataFine(),
+                    f.getPrezzo(),
+                    f.getNumeroMinPartecipanti(),
+                    f.getOrganizzatore()
+            });
+        }
+
+        // Pannello con tabella + bottone Prenota ingresso
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(new JScrollPane(tabFiere), BorderLayout.CENTER);
+
+        JButton btnPrenota = new JButton("Prenota ingresso");
+        panel.add(btnPrenota, BorderLayout.SOUTH);
+
+        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Fiere disponibili", Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.setContentPane(panel);
+        dialog.setSize(800, 400);
+        dialog.setLocationRelativeTo(this);
+
+        // Listener bottone "Prenota ingresso"
+        btnPrenota.addActionListener(e -> {
+            int selectedRow = tabFiere.getSelectedRow();
+            if (selectedRow == -1) {
+                JOptionPane.showMessageDialog(dialog, "Seleziona una fiera.", "Errore", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+
+            Fiera fieraSelezionata = fiere.get(selectedRow);
+
+            String input = JOptionPane.showInputDialog(dialog, "Inserisci il numero di persone:");
+            if (input == null) return; // l'utente ha annullato
+            int numeroPersone;
+            try {
+                numeroPersone = Integer.parseInt(input);
+                if (numeroPersone <= 0) throw new NumberFormatException();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialog, "Numero di persone non valido.", "Errore", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Chiamata al controller
+            ctrl.prenotaIngressoFiera(fieraSelezionata.getId(), numeroPersone, (msg, ok) -> {
+                SwingUtilities.invokeLater(() ->
+                        JOptionPane.showMessageDialog(dialog, msg, ok ? "Successo" : "Errore",
+                                ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE)
+                );
+            });
+        });
+
+        dialog.setVisible(true);
+    }
+
+    public void showPrenotazioniFiere(List<PrenotazioneFiera> prenotazioni, List<Fiera> tutteLeFiere) {
+        modelPrenotazioni.setRowCount(0);
+        for (PrenotazioneFiera p : prenotazioni) {
+            // Cerca la fiera collegata per la descrizione (opzionale)
+            String desc = tutteLeFiere.stream()
+                    .filter(f -> f.getId() == p.getIdFiera())
+                    .findFirst().map(Fiera::getDescrizione).orElse("?");
+            modelPrenotazioni.addRow(new Object[]{
+                    p.getId(),
+                    desc,
+                    p.getDataPrenotazione(),
+                    p.getNumeroPersone(),
+                    "Elimina"
+            });
+        }
+
+        // Dialog per mostrare la tabella con bottone elimina
+        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Prenotazioni fiere", Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.setContentPane(new JScrollPane(tabPrenotazioni));
+        dialog.setSize(700, 300);
+        dialog.setLocationRelativeTo(this);
+
+        tabPrenotazioni.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                int row = tabPrenotazioni.rowAtPoint(e.getPoint());
+                int col = tabPrenotazioni.columnAtPoint(e.getPoint());
+                if (col == 4 && row >= 0) { // Colonna "Elimina"
+                    long idPren = Long.parseLong(modelPrenotazioni.getValueAt(row, 0).toString());
+                    int conferma = JOptionPane.showConfirmDialog(dialog,
+                            "Sei sicuro di voler eliminare la prenotazione?",
+                            "Conferma eliminazione", JOptionPane.YES_NO_OPTION);
+                    if (conferma == JOptionPane.YES_OPTION) {
+                        ctrl.eliminaPrenotazioneFiera(idPren, (msg, ok) -> {
+                            SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(dialog, msg,
+                                    ok ? "Successo" : "Errore",
+                                    ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE));
+                            if (ok) {
+                                modelPrenotazioni.removeRow(row);
+                            }
+                        });
+                    }
+                }
+            }
+        });
+
+        dialog.setVisible(true);
+    }
+
 
 
 }

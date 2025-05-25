@@ -22,4 +22,7 @@ public interface VisitaInvitoDAO {
     VisitaInvito findById(long id);
 
     List<VisitaInvito> findAll();
+
+    List<VisitaInvito> findByDestinatario(String username);
+
 }

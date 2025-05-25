@@ -122,6 +122,46 @@ public class DatabaseManager {
                 );
             }
 
+            // ** crea la tabella prenotazioni_fiere se non esiste **
+            ResultSet rsPrenotazioniFiere = conn.getMetaData()
+                    .getTables(null, null, "PRENOTAZIONI_FIERE", new String[]{"TABLE"});
+            if (!rsPrenotazioniFiere.next()) {
+                System.out.println("[DB] Creo tabella 'prenotazioni_fiere'");
+                stmt.executeUpdate(
+                        """
+                                CREATE TABLE prenotazioni_fiere (
+                                    id IDENTITY PRIMARY KEY,
+                                    id_fiera BIGINT NOT NULL,
+                                    username_acquirente VARCHAR(50) NOT NULL,
+                                    numero_persone INT NOT NULL,
+                                    data_prenotazione TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                    FOREIGN KEY (id_fiera) REFERENCES fiere(id),
+                                    FOREIGN KEY (username_acquirente) REFERENCES utenti(username)
+                                );
+                                """
+                );
+            }
+
+            // ** crea la tabella prenotazioni_visite se non esiste **
+            ResultSet rsPrenotazioniVisite = conn.getMetaData()
+                    .getTables(null, null, "PRENOTAZIONI_VISITE", new String[]{"TABLE"});
+            if (!rsPrenotazioniVisite.next()) {
+                System.out.println("[DB] Creo tabella 'prenotazioni_visite'");
+                stmt.executeUpdate(
+                        """
+                                CREATE TABLE prenotazioni_visite (
+                                    id IDENTITY PRIMARY KEY,
+                                    id_visita BIGINT NOT NULL,
+                                    username_venditore VARCHAR(50) NOT NULL,
+                                    numero_persone INT NOT NULL,
+                                    data_prenotazione TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                    FOREIGN KEY (id_visita) REFERENCES visite_invito(id),
+                                    FOREIGN KEY (username_venditore) REFERENCES utenti(username)
+                                );
+                                """
+                );
+            }
+
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -237,6 +277,31 @@ public class DatabaseManager {
                         );
                     """;
 
+            String prenotazioniFiereSql = """
+                        CREATE TABLE IF NOT EXISTS prenotazioni_fiere (
+                            id IDENTITY PRIMARY KEY,
+                            id_fiera BIGINT NOT NULL,
+                            username_acquirente VARCHAR(50) NOT NULL,
+                            numero_persone INT NOT NULL,
+                            data_prenotazione TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY (id_fiera) REFERENCES fiere(id),
+                            FOREIGN KEY (username_acquirente) REFERENCES utenti(username)
+                        );
+                    """;
+
+            String prenotazioniVisiteSql = """
+                        CREATE TABLE IF NOT EXISTS prenotazioni_visite (
+                            id IDENTITY PRIMARY KEY,
+                            id_visita BIGINT NOT NULL,
+                            username_venditore VARCHAR(50) NOT NULL,
+                            numero_persone INT NOT NULL,
+                            data_prenotazione TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY (id_visita) REFERENCES visite_invito(id),
+                            FOREIGN KEY (username_venditore) REFERENCES utenti(username)
+                        );
+                    """;
+            stmt.executeUpdate(prenotazioniVisiteSql);
+
 
             stmt.executeUpdate(utentiSql);
             stmt.executeUpdate(prodottiSql);
@@ -245,6 +310,9 @@ public class DatabaseManager {
             stmt.executeUpdate(visiteSql);
             stmt.executeUpdate(acquistiSql);
             stmt.executeUpdate(acquistoItemsSql);
+            stmt.executeUpdate(prenotazioniFiereSql);
+            stmt.executeUpdate(prenotazioniVisiteSql);
+
 
         } catch (SQLException e) {
             e.printStackTrace();

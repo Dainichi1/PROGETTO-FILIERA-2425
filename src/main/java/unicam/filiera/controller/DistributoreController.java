@@ -1,14 +1,15 @@
 package unicam.filiera.controller;
 
+import unicam.filiera.dao.*;
 import unicam.filiera.dto.PacchettoDto;
-import unicam.filiera.model.Pacchetto;
-import unicam.filiera.model.Prodotto;
-import unicam.filiera.model.StatoProdotto;
+import unicam.filiera.model.*;
 import unicam.filiera.service.PacchettoService;
 import unicam.filiera.service.PacchettoServiceImpl;
 import unicam.filiera.service.ProdottoService;
 import unicam.filiera.service.ProdottoServiceImpl;
-import unicam.filiera.dao.JdbcProdottoDAO;
+import unicam.filiera.util.ValidatorePrenotazioneVisita;
+import unicam.filiera.view.PannelloDistributore;
+import unicam.filiera.view.PannelloProduttore;
 
 import java.io.File;
 import java.util.List;
@@ -20,6 +21,8 @@ public class DistributoreController {
     private final String username;
     private final PacchettoService pacchettoService;
     private final ProdottoService prodottoService;
+    private final VisitaInvitoDAO visitaDAO = JdbcVisitaInvitoDAO.getInstance();
+    private final PrenotazioneVisitaDAO prenotazioneVisitaDAO = JdbcPrenotazioneVisitaDAO.getInstance();
 
     public DistributoreController(String username,
                                   PacchettoService pacchettoService,
@@ -134,4 +137,56 @@ public class DistributoreController {
                 .findFirst()
                 .orElse(null);
     }
+
+    public void visualizzaVisiteDisponibili(PannelloDistributore view) {
+        List<VisitaInvito> visite = visitaDAO.findByDestinatario(username);
+        view.showVisiteDisponibili(visite);
+    }
+
+    public void prenotaVisita(long idVisita, int numeroPersone, BiConsumer<String, Boolean> callback) {
+        VisitaInvito visita = visitaDAO.findById(idVisita);
+
+        try {
+            ValidatorePrenotazioneVisita.validaPrenotazione(
+                    idVisita, numeroPersone, visita, username, prenotazioneVisitaDAO
+            );
+
+            PrenotazioneVisita pren = new PrenotazioneVisita(
+                    idVisita, username, numeroPersone, java.time.LocalDateTime.now()
+            );
+            boolean ok = prenotazioneVisitaDAO.save(pren);
+
+            if (ok) {
+                callback.accept("Prenotazione effettuata con successo!", true);
+            } else {
+                callback.accept("Errore durante la prenotazione.", false);
+            }
+        } catch (IllegalArgumentException ex) {
+            callback.accept(ex.getMessage(), false);
+        }
+    }
+
+    public void visualizzaPrenotazioniVisite(PannelloDistributore view) {
+        List<PrenotazioneVisita> prenotazioni = prenotazioneVisitaDAO.findByUsername(username);
+        List<VisitaInvito> tutteLeVisite = visitaDAO.findAll(); // opzionale, se vuoi mostrare descrizioni etc.
+        view.showPrenotazioniVisite(prenotazioni, tutteLeVisite);
+    }
+
+    public void eliminaPrenotazioneVisita(long idPrenotazione, BiConsumer<String, Boolean> callback) {
+        PrenotazioneVisita pren = prenotazioneVisitaDAO.findById(idPrenotazione);
+        if (pren == null) {
+            callback.accept("Prenotazione non trovata.", false);
+            return;
+        }
+        // Puoi aggiungere eventuali controlli di autorizzazione (es: username == pren.getUsernameVenditore())
+
+        boolean deleted = prenotazioneVisitaDAO.delete(idPrenotazione);
+        if (deleted) {
+            // (Opzionale) Aggiornamento del numero partecipanti nella tabella delle visite, se gestisci questo campo.
+            callback.accept("Prenotazione eliminata con successo.", true);
+        } else {
+            callback.accept("Errore durante l'eliminazione della prenotazione.", false);
+        }
+    }
+
 }

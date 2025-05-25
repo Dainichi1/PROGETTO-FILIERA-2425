@@ -34,6 +34,17 @@ public class MarketplaceController {
         return out;
     }
 
+    public List<Fiera> ottieniFiereDisponibili() {
+        return fieraDAO.findByStato(StatoEvento.PUBBLICATA);
+    }
+
+    public List<VisitaInvito> ottieniVisiteDisponibili(String username) {
+        return visitaDAO.findByStato(StatoEvento.PUBBLICATA).stream()
+                .filter(v -> v.getDestinatari() != null && v.getDestinatari().contains(username))
+                .toList();
+    }
+
+
     public void registraOsservatore(Consumer<List<Object>> o) {
         osservatori.add(o);
     }

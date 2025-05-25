@@ -163,4 +163,34 @@ public class JdbcVisitaInvitoDAO implements VisitaInvitoDAO {
                 .stato(StatoEvento.valueOf(rs.getString("stato")))
                 .build();
     }
+
+    @Override
+    public List<VisitaInvito> findByDestinatario(String username) {
+        List<VisitaInvito> out = new ArrayList<>();
+        String sql = "SELECT * FROM visite_invito WHERE stato = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, StatoEvento.PUBBLICATA.name());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String destinatari = rs.getString("destinatari");
+                    if (destinatari != null) {
+                        // Split e trim
+                        List<String> listaDest = new ArrayList<>();
+                        for (String s : destinatari.split(",")) {
+                            listaDest.add(s.trim());
+                        }
+                        if (listaDest.contains(username)) {
+                            out.add(buildFromRs(rs));
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return out;
+    }
+
 }

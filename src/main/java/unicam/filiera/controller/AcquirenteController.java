@@ -11,6 +11,7 @@ import unicam.filiera.service.PagamentoService;
 import unicam.filiera.service.PagamentoServiceImpl;
 import unicam.filiera.util.ValidatoreAcquisto;
 import unicam.filiera.util.ValidatoreMarketplace;
+import unicam.filiera.util.ValidatorePrenotazioneFiera;
 import unicam.filiera.view.PannelloAcquirente;
 
 import javax.swing.*;
@@ -202,4 +203,103 @@ public class AcquirenteController {
             callback.accept("Pagamento non riuscito!", false);
         }
     }
+
+    public void visualizzaFiereDisponibili() {
+        List<Fiera> fiere = marketplaceCtrl.ottieniFiereDisponibili();
+        view.showFiereDisponibili(fiere);
+    }
+
+    // Metodo per prenotare l'ingresso a una fiera
+    public void prenotaIngressoFiera(long idFiera, int numeroPersone, BiConsumer<String, Boolean> callback) {
+        if (!(utente instanceof Acquirente a)) {
+            callback.accept("Utente non valido", false);
+            return;
+        }
+
+        FieraDAO fieraDAO = JdbcFieraDAO.getInstance();
+        Fiera fiera = fieraDAO.findById(idFiera);
+        PrenotazioneFieraDAO prenDAO = new JdbcPrenotazioneFieraDAO();
+
+        try {
+            // Controllo validità con anche i fondi disponibili
+            ValidatorePrenotazioneFiera.validaPrenotazione(
+                    idFiera, numeroPersone, fiera, a.getUsername(), prenDAO, a.getFondi()
+            );
+
+            // Calcola il costo totale della prenotazione
+            double costoTotale = fiera.getPrezzo() * numeroPersone;
+
+            // Salva la prenotazione
+            PrenotazioneFiera pren = new PrenotazioneFiera(
+                    idFiera, a.getUsername(), numeroPersone, java.time.LocalDateTime.now()
+            );
+            boolean ok = prenDAO.save(pren);
+
+            if (ok) {
+                // Scala i fondi
+                double nuoviFondi = a.getFondi() - costoTotale;
+                a.setFondi(nuoviFondi);
+                UtenteDAO dao = JdbcUtenteDAO.getInstance();
+                dao.aggiornaFondi(a.getUsername(), nuoviFondi);
+                view.aggiornaFondi(nuoviFondi);
+
+                callback.accept("Prenotazione effettuata con successo!", true);
+            } else {
+                callback.accept("Errore durante la prenotazione.", false);
+            }
+        } catch (IllegalArgumentException ex) {
+            callback.accept(ex.getMessage(), false);
+        }
+    }
+
+    public void eliminaPrenotazioneFiera(long idPrenotazione, BiConsumer<String, Boolean> callback) {
+        if (!(utente instanceof Acquirente a)) {
+            callback.accept("Utente non valido", false);
+            return;
+        }
+
+        PrenotazioneFieraDAO prenDAO = new JdbcPrenotazioneFieraDAO();
+        PrenotazioneFiera pren = prenDAO.findById(idPrenotazione);
+        if (pren == null) {
+            callback.accept("Prenotazione non trovata.", false);
+            return;
+        }
+
+        // Trova la fiera collegata per il prezzo
+        FieraDAO fieraDAO = JdbcFieraDAO.getInstance();
+        Fiera fiera = fieraDAO.findById(pren.getIdFiera());
+        if (fiera == null) {
+            callback.accept("Fiera associata non trovata.", false);
+            return;
+        }
+
+        // Cancella la prenotazione
+        boolean deleted = prenDAO.delete(idPrenotazione);
+        if (deleted) {
+            // Restituisci i fondi
+            double rimborso = fiera.getPrezzo() * pren.getNumeroPersone();
+            double nuoviFondi = a.getFondi() + rimborso;
+            a.setFondi(nuoviFondi);
+
+            UtenteDAO utenteDAO = JdbcUtenteDAO.getInstance();
+            utenteDAO.aggiornaFondi(a.getUsername(), nuoviFondi);
+            view.aggiornaFondi(nuoviFondi);
+
+
+            callback.accept("Prenotazione eliminata e fondi rimborsati: €" + String.format("%.2f", rimborso), true);
+        } else {
+            callback.accept("Errore durante l'eliminazione della prenotazione.", false);
+        }
+    }
+
+    public void visualizzaPrenotazioniFiere() {
+        if (!(utente instanceof Acquirente a)) return;
+        PrenotazioneFieraDAO prenDAO = new JdbcPrenotazioneFieraDAO();
+        List<PrenotazioneFiera> lista = prenDAO.findByUsername(a.getUsername());
+        List<Fiera> tutteLeFiere = JdbcFieraDAO.getInstance().findAll();
+        view.showPrenotazioniFiere(lista, tutteLeFiere);
+    }
+
+
+
 }

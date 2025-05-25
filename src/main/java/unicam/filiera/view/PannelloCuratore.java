@@ -2,13 +2,12 @@ package unicam.filiera.view;
 
 import unicam.filiera.controller.CuratoreController;
 import unicam.filiera.controller.ObserverManagerProdotto;
-import unicam.filiera.model.Item;
-import unicam.filiera.model.Pacchetto;
-import unicam.filiera.model.Prodotto;
-import unicam.filiera.model.UtenteAutenticato;
+import unicam.filiera.controller.ObserverManagerProdottoTrasformato;
+import unicam.filiera.model.*;
 import unicam.filiera.model.observer.OsservatorePacchetto;
 import unicam.filiera.model.observer.OsservatoreProdotto;
 import unicam.filiera.controller.ObserverManagerPacchetto;
+import unicam.filiera.model.observer.OsservatoreProdottoTrasformato;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -26,7 +25,8 @@ import java.util.stream.Collectors;
  * Contiene solo la parte grafica (preview di foto e certificati).
  */
 public class PannelloCuratore extends JPanel
-        implements OsservatoreProdotto, OsservatorePacchetto {
+        implements OsservatoreProdotto, OsservatorePacchetto, OsservatoreProdottoTrasformato
+ {
 
     private final JTable tabella;
     private final DefaultTableModel model;
@@ -103,6 +103,8 @@ public class PannelloCuratore extends JPanel
         // Registrazione come osservatore
         ObserverManagerProdotto.registraOsservatore(this);
         ObserverManagerPacchetto.registraOsservatore(this);
+        ObserverManagerProdottoTrasformato.registraOsservatore(this);
+
 
         // Carica iniziale
         caricaElementiInAttesa();
@@ -122,23 +124,59 @@ public class PannelloCuratore extends JPanel
         }
     }
 
+    @Override
+    public void notifica(ProdottoTrasformato prodotto, String evento) {
+        if ("NUOVO_PRODOTTO_TRASFORMATO".equals(evento) ||
+                "APPROVATO".equals(evento) ||
+                "RIFIUTATO".equals(evento)) {
+            SwingUtilities.invokeLater(this::caricaElementiInAttesa);
+        }
+    }
+
+
     private void caricaElementiInAttesa() {
         model.setRowCount(0);
         controller.getProdottiDaApprovare().forEach(this::aggiungiRiga);
         controller.getPacchettiDaApprovare().forEach(this::aggiungiRiga);
-
+        controller.getProdottiTrasformatiDaApprovare().forEach(this::aggiungiRiga);
     }
 
+
     private void aggiungiRiga(Item item) {
-        String nome = item instanceof Pacchetto ? "[PAC] " + item.getNome() : item.getNome();
+        String nome;
+        int qt;
+        double pr;
+        String certDir, fotoDir;
+
+        if (item instanceof Pacchetto k) {
+            nome = "[PAC] " + k.getNome();
+            qt = k.getProdotti().size();
+            pr = k.getPrezzoTotale();
+            certDir = "uploads/certificati_pacchetti/";
+            fotoDir = "uploads/foto_pacchetti/";
+        } else if (item instanceof unicam.filiera.model.ProdottoTrasformato pt) {
+            nome = "[TRASF] " + pt.getNome();
+            qt = pt.getQuantita();
+            pr = pt.getPrezzo();
+            certDir = "uploads/certificati/"; // (o se vuoi, cartelle specifiche)
+            fotoDir = "uploads/foto/";
+        } else if (item instanceof Prodotto p) {
+            nome = p.getNome();
+            qt = p.getQuantita();
+            pr = p.getPrezzo();
+            certDir = "uploads/certificati/";
+            fotoDir = "uploads/foto/";
+        } else {
+            nome = item.getNome();
+            qt = 0;
+            pr = 0;
+            certDir = "";
+            fotoDir = "";
+        }
+
         String desc = item.getDescrizione();
-        int qt = item instanceof Pacchetto k ? k.getProdotti().size() : ((Prodotto) item).getQuantita();
-        double pr = item instanceof Pacchetto k ? k.getPrezzoTotale() : ((Prodotto) item).getPrezzo();
         String ind = item.getIndirizzo();
         String cd = item.getCreatoDa();
-
-        String certDir = item instanceof Pacchetto ? "uploads/certificati_pacchetti/" : "uploads/certificati/";
-        String fotoDir = item instanceof Pacchetto ? "uploads/foto_pacchetti/" : "uploads/foto/";
 
         List<File> certFiles = item.getCertificati().stream()
                 .map(name -> new File(certDir + name))
@@ -153,7 +191,6 @@ public class PannelloCuratore extends JPanel
         btnA.addActionListener(e -> {
             int row = tabella.getEditingRow();
             if (tabella.isEditing()) tabella.getCellEditor().stopCellEditing();
-
             controller.valutaItem(item, true, null, (ok, msg) -> {
                 if (ok && row >= 0 && row < model.getRowCount()) model.removeRow(row);
                 JOptionPane.showMessageDialog(this, msg);
@@ -173,6 +210,7 @@ public class PannelloCuratore extends JPanel
 
         model.addRow(new Object[]{nome, desc, qt, pr, ind, cd, certFiles, fotoFiles, btnA, btnR, ""});
     }
+
 
 
     // Renderer/Editor per preview di file
@@ -278,5 +316,7 @@ public class PannelloCuratore extends JPanel
         super.removeNotify();
         ObserverManagerProdotto.rimuoviOsservatore(this);
         ObserverManagerPacchetto.rimuoviOsservatore(this);
+        ObserverManagerProdottoTrasformato.rimuoviOsservatore(this);
+
     }
 }

@@ -57,4 +57,7 @@ public interface ProdottoDAO {
     Prodotto findByNome(String nome);
 
     Prodotto findByNomeAndCreatore(String nome, String creatore);
+
+    List<Prodotto> findProdottiApprovatiByProduttore(String usernameProduttore);
+
 }

@@ -162,6 +162,48 @@ public class DatabaseManager {
                 );
             }
 
+            String prodottiTrasformatiSql = """
+                        CREATE TABLE prodotti_trasformati (
+                            id IDENTITY PRIMARY KEY,
+                            nome VARCHAR(100),
+                            descrizione VARCHAR(500),
+                            quantita INT,
+                            prezzo DOUBLE,
+                            indirizzo VARCHAR(255),
+                            certificati TEXT,
+                            foto TEXT,
+                            creato_da VARCHAR(50),
+                            stato VARCHAR(20) DEFAULT 'IN_ATTESA',
+                            commento VARCHAR(255) DEFAULT NULL
+                        );
+                    """;
+
+            String fasiProduzioneSql = """
+                        CREATE TABLE fasi_produzione (
+                            id IDENTITY PRIMARY KEY,
+                            prodotto_trasformato_id INT NOT NULL,
+                            descrizione VARCHAR(255),
+                            produttore VARCHAR(50),
+                            prodotto_origine VARCHAR(100),
+                            FOREIGN KEY (prodotto_trasformato_id) REFERENCES prodotti_trasformati(id)
+                        );
+                    """;
+
+
+            ResultSet rsPT = conn.getMetaData()
+                    .getTables(null, null, "PRODOTTI_TRASFORMATI", new String[]{"TABLE"});
+            if (!rsPT.next()) {
+                System.out.println("[DB] Creo tabella 'prodotti_trasformati'");
+                stmt.executeUpdate(prodottiTrasformatiSql);
+            }
+
+            ResultSet rsFP = conn.getMetaData()
+                    .getTables(null, null, "FASI_PRODUZIONE", new String[]{"TABLE"});
+            if (!rsFP.next()) {
+                System.out.println("[DB] Creo tabella 'fasi_produzione'");
+                stmt.executeUpdate(fasiProduzioneSql);
+            }
+
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -300,7 +342,36 @@ public class DatabaseManager {
                             FOREIGN KEY (username_venditore) REFERENCES utenti(username)
                         );
                     """;
-            stmt.executeUpdate(prenotazioniVisiteSql);
+
+            String prodottiTrasformatiSql = """
+                        CREATE TABLE IF NOT EXISTS prodotti_trasformati (
+                            id IDENTITY PRIMARY KEY,
+                            nome VARCHAR(100),
+                            descrizione VARCHAR(500),
+                            quantita INT,
+                            prezzo DOUBLE,
+                            indirizzo VARCHAR(255),
+                            certificati TEXT,
+                            foto TEXT,
+                            creato_da VARCHAR(50),
+                            stato VARCHAR(20) DEFAULT 'IN_ATTESA',
+                            commento VARCHAR(255) DEFAULT NULL
+                        );
+                    """;
+
+            String fasiProduzioneSql = """
+                        CREATE TABLE IF NOT EXISTS fasi_produzione (
+                            id IDENTITY PRIMARY KEY,
+                            prodotto_trasformato_id INT NOT NULL,
+                            descrizione VARCHAR(255),
+                            produttore VARCHAR(50),
+                            prodotto_origine VARCHAR(100),
+                            FOREIGN KEY (prodotto_trasformato_id) REFERENCES prodotti_trasformati(id)
+                        );
+                    """;
+
+            stmt.executeUpdate(prodottiTrasformatiSql);
+            stmt.executeUpdate(fasiProduzioneSql);
 
 
             stmt.executeUpdate(utentiSql);

@@ -1,10 +1,9 @@
 package unicam.filiera.view;
 
 import unicam.filiera.controller.ProduttoreController;
-import unicam.filiera.dto.ProdottoDto;
 import unicam.filiera.model.*;
 import unicam.filiera.model.observer.OsservatoreProdotto;
-import unicam.filiera.controller.ObserverManager;
+import unicam.filiera.model.observer.ProdottoNotifier;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -231,7 +230,8 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
 
 
         refreshTable();
-        ObserverManager.registraOsservatore(this);
+        ProdottoNotifier.getInstance().registraOsservatore(this);
+
     }
 
     private void buildForm() {
@@ -258,40 +258,51 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
     private void enterEditMode(Prodotto p) {
         editMode = true;
         originalName = p.getNome();
-        // apro la form
-        if (!formVisibile) toggleForm();
-        // popolo i campi
+        formVisibile = true;
+        formPanel.setVisible(true);
         nomeField.setText(p.getNome());
         descrField.setText(p.getDescrizione());
         quantField.setText(String.valueOf(p.getQuantita()));
         prezzoField.setText(String.valueOf(p.getPrezzo()));
         indirizzoField.setText(p.getIndirizzo());
-        // resetto le liste file: obbligo l’utente a ricaricare i file corretti
         certSel.clear();
         fotoSel.clear();
         labelCert.setText("Ricarica certificati");
         labelFoto.setText("Ricarica foto");
-        // cambio il testo del pulsante di invio
         btnInvia.setText("Aggiorna Prodotto");
         btnToggleForm.setText("Annulla modifica");
+        revalidate();
+        repaint();
     }
+
 
     private void exitEditMode() {
         editMode = false;
         originalName = null;
         resetForm();
+        formVisibile = false;
+        formPanel.setVisible(false);
         btnInvia.setText("Invia Prodotto");
-        btnToggleForm.setText(formVisibile ? "Chiudi form" : "Crea Prodotto");
+        btnToggleForm.setText("Crea Prodotto");
+        revalidate();
+        repaint();
     }
 
 
     private void toggleForm() {
-        formVisibile = !formVisibile;
-        formPanel.setVisible(formVisibile);
-        btnToggleForm.setText(formVisibile ? "Chiudi form" : "Crea Prodotto");
-        revalidate();
-        repaint();
+        if (editMode) {
+            // In modalità modifica, il bottone è "Annulla modifica"
+            exitEditMode();
+        } else {
+            // Toggle normale
+            formVisibile = !formVisibile;
+            formPanel.setVisible(formVisibile);
+            btnToggleForm.setText(formVisibile ? "Chiudi form" : "Crea Prodotto");
+            revalidate();
+            repaint();
+        }
     }
+
 
     private void chooseFiles(boolean cert) {
         JFileChooser chooser = new JFileChooser();
@@ -355,7 +366,7 @@ public class PannelloProduttore extends JPanel implements OsservatoreProdotto {
     @Override
     public void removeNotify() {
         super.removeNotify();
-        ObserverManager.rimuoviOsservatore(this);
+        ProdottoNotifier.getInstance().rimuoviOsservatore(this);
     }
 
     public void showVisiteDisponibili(List<VisitaInvito> visite) {

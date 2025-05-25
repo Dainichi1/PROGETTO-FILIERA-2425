@@ -216,6 +216,26 @@ public class JdbcProdottoDAO implements ProdottoDAO {
     }
 
     @Override
+    public List<Prodotto> findProdottiApprovatiByProduttore(String username) {
+        List<Prodotto> list = new ArrayList<>();
+        String sql = "SELECT * FROM prodotti WHERE creato_da = ? AND stato = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement st = conn.prepareStatement(sql)) {
+            st.setString(1, username);
+            st.setString(2, StatoProdotto.APPROVATO.name());
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    list.add(buildProdottoFromRs(rs));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+
+    @Override
     public List<Prodotto> findByStato(StatoProdotto stato) {
         List<Prodotto> list = new ArrayList<>();
         String sql = "SELECT * FROM prodotti WHERE stato = ?";

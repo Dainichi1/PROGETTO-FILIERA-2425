@@ -116,32 +116,15 @@ public class Prodotto extends Item {
         }
     }
 
+
+
     /* ------------------------------------------------------------------ */
-    @Override
-    public String toString() {
-        return """
-                 Prodotto:                 \s
-                     - Nome: %s                 \s
-                     - Descrizione: %s               \s
-                     - Quantità: %d                \s
-                     - Prezzo: %.2f €                \s
-                     - Certificati: %s                 \s
-                     - Foto: %s                \s
-                     - Creato da: %s                \s
-                     - Stato: %s                 \s
-                     - Commento: %s                \s
-                     - Indirizzo: %s              \s
-                \s""".formatted(
-                getNome(),
-                getDescrizione(),
-                quantita,
-                prezzo,
-                getCertificati() != null ? String.join(", ", getCertificati()) : "Nessuno",
-                getFoto() != null ? String.join(", ", getFoto()) : "Nessuna",
-                getCreatoDa(),
-                getStato() != null ? getStato().name() : "N/D",
-                getCommento() != null ? getCommento() : "N/D",
-                getIndirizzo() != null ? getIndirizzo() : "N/D"
-        );
-    }
+
+
+        @Override
+        public String toString() {
+            return getNome() + " - " + getIndirizzo();
+        }
+
+
 }

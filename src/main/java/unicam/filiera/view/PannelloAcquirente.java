@@ -44,19 +44,17 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
             new Object[]{"ID", "Descrizione fiera", "Data", "Persone", "Elimina"}, 0);
     private final JTable tabPrenotazioni = new JTable(modelPrenotazioni);
 
-
     public PannelloAcquirente(UtenteAutenticato utente) {
         super(new BorderLayout());
         this.ctrl = new AcquirenteController(this, utente);
 
-        // Imposta campo fondi iniziale
         if (utente instanceof Acquirente a) {
             txtFondi.setText(String.format("%.2f", a.getFondi()));
         }
 
         // --- Marketplace table ---
         modelMarketplace = new DefaultTableModel(
-                new Object[]{"Seleziona", "Tipo", "Nome", "Descrizione", "Prezzo", "Disponibile", "Quantità", "Certificati", "Foto", "Azione"},
+                new Object[]{"Seleziona", "Tipo", "Nome", "Descrizione", "Prezzo", "Disponibile", "Quantità", "Certificati", "Foto", "Fasi Produzione", "Azione"},
                 0
         ) {
             @Override
@@ -70,6 +68,7 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
                         (c == 6) ? Integer.class : String.class;
             }
         };
+
 
         modelFiere = new DefaultTableModel(
                 new Object[]{"Descrizione", "Indirizzo", "Data Inizio", "Data Fine", "Prezzo", "Min. Partecipanti", "Organizzatore"},
@@ -110,20 +109,15 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
         btnFiereDisponibili.addActionListener(e -> ctrl.visualizzaFiereDisponibili());
         btnVisualizzaPrenotazioni.addActionListener(e -> ctrl.visualizzaPrenotazioniFiere());
 
-
         btnAggiornaFondi.addActionListener(e -> {
             try {
-                // Leggi il valore dal campo di testo
                 double nuoviFondi = Double.parseDouble(txtFondi.getText().replace(',', '.'));
-
-                // Chiedi al controller di aggiornare i fondi
                 ctrl.aggiornaFondiAcquirente(nuoviFondi, (msg, ok) -> {
                     SwingUtilities.invokeLater(() -> {
                         JOptionPane.showMessageDialog(this, msg,
                                 ok ? "Successo" : "Errore",
                                 ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE);
                         if (ok) {
-                            // Se l’update è ok, aggiorna il campo testo (per sicurezza)
                             txtFondi.setText(String.format("%.2f", nuoviFondi));
                         }
                     });
@@ -141,7 +135,6 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
     }
 
     private void initUI() {
-        // Top panel
         JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT));
         top.add(btnShowMarket);
         top.add(btnFiereDisponibili);
@@ -157,7 +150,6 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
         top.add(btnAcquista);
         add(top, BorderLayout.NORTH);
 
-        // Split pane
         JSplitPane split = new JSplitPane(
                 JSplitPane.VERTICAL_SPLIT,
                 new JScrollPane(tabMarketplace),
@@ -166,7 +158,6 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
         split.setDividerLocation(300);
         add(split, BorderLayout.CENTER);
         btnAcquista.setEnabled(false); // Disabilita di default all’avvio
-
     }
 
     /**
@@ -178,30 +169,57 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
         for (Object o : lista) {
             if (o instanceof Item item) {
                 itemList.add(item);
-                String tipo = (item instanceof Prodotto) ? "Prodotto" : "Pacchetto";
-                double prezzo = (item instanceof Prodotto p) ? p.getPrezzo()
-                        : ((Pacchetto) item).getPrezzoTotale();
+                String tipo;
+                double prezzo;
                 Object disp;
-                if ((item instanceof Prodotto p)) {
+                String certificati = "", foto = "";
+                String fasiProduzione = "";
+
+                if (item instanceof ProdottoTrasformato pt) {
+                    tipo = "Prodotto Trasformato";
+                    prezzo = pt.getPrezzo();
+                    disp = pt.getQuantita();
+                    certificati = String.join(", ", pt.getCertificati());
+                    foto = String.join(", ", pt.getFoto());
+                    // Mostra le fasi come: "Descrizione (ProduttoreUsername, ProdottoOrigine)"
+                    fasiProduzione = pt.getFasiProduzione().stream()
+                            .map(f -> f.getDescrizioneFase() +
+                                    " (" + f.getProduttoreUsername() +
+                                    (f.getProdottoOrigine() != null && !f.getProdottoOrigine().isBlank()
+                                            ? ", " + f.getProdottoOrigine() : "") +
+                                    ")")
+                            .reduce((a, b) -> a + " → " + b).orElse("-");
+                } else if (item instanceof Prodotto p) {
+                    tipo = "Prodotto";
+                    prezzo = p.getPrezzo();
                     disp = p.getQuantita();
-                } else {
-                    Pacchetto pac = (Pacchetto) item;
+                    certificati = String.join(", ", p.getCertificati());
+                    foto = String.join(", ", p.getFoto());
+                } else if (item instanceof Pacchetto pac) {
+                    tipo = "Pacchetto";
+                    prezzo = pac.getPrezzoTotale();
                     disp = pac.getQuantita();
+                    certificati = String.join(", ", pac.getCertificati());
+                    foto = String.join(", ", pac.getFoto());
+                } else {
+                    tipo = "";
+                    prezzo = 0;
+                    disp = "";
                 }
+
                 modelMarketplace.addRow(new Object[]{
                         false, tipo, item.getNome(), item.getDescrizione(),
                         prezzo, disp, 0,
-                        (item instanceof Prodotto p) ? String.join(", ", p.getCertificati()) :
-                                (item instanceof Pacchetto pac) ? String.join(", ", pac.getCertificati()) : "",
-                        (item instanceof Prodotto p) ? String.join(", ", p.getFoto()) :
-                                (item instanceof Pacchetto pac) ? String.join(", ", pac.getFoto()) : "",
+                        certificati,
+                        foto,
+                        fasiProduzione, // colonna con le fasi
                         ""
                 });
-
             }
         }
         btnAcquista.setEnabled(false);
     }
+
 
     /**
      * Chiamato dal controller per popolare il carrello
@@ -225,7 +243,6 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
                         tot.getCostoTotale())
         );
         btnAcquista.setEnabled(!items.isEmpty());
-
     }
 
     /**
@@ -268,20 +285,25 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
                 // Click su "Certificati"
                 if (col == 7) { // Certificati
                     Item item = itemList.get(row);
-                    List<String> certs = (item instanceof Prodotto p) ? p.getCertificati()
-                            : (item instanceof Pacchetto pac) ? pac.getCertificati() : List.of();
+                    List<String> certs =
+                            (item instanceof Prodotto p) ? p.getCertificati()
+                                    : (item instanceof Pacchetto pac) ? pac.getCertificati()
+                                    : (item instanceof ProdottoTrasformato pt) ? pt.getCertificati()
+                                    : List.of();
                     mostraDialogFile("Certificati", certs, "uploads/certificati");
                     return;
                 }
 
                 if (col == 8) { // Foto
                     Item item = itemList.get(row);
-                    List<String> fotos = (item instanceof Prodotto p) ? p.getFoto()
-                            : (item instanceof Pacchetto pac) ? pac.getFoto() : List.of();
+                    List<String> fotos =
+                            (item instanceof Prodotto p) ? p.getFoto()
+                                    : (item instanceof Pacchetto pac) ? pac.getFoto()
+                                    : (item instanceof ProdottoTrasformato pt) ? pt.getFoto()
+                                    : List.of();
                     mostraDialogFile("Foto", fotos, "uploads/foto");
                     return;
                 }
-
             }
         });
     }
@@ -291,8 +313,6 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
             JOptionPane.showMessageDialog(this, "Nessun file disponibile.", titolo, JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-
-        // Usa una JList per la selezione
         JList<String> lista = new JList<>(files.toArray(new String[0]));
         lista.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
@@ -307,7 +327,6 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
             String selected = lista.getSelectedValue();
             if (selected != null && !selected.isBlank()) {
                 try {
-                    // Costruisci il percorso completo al file
                     java.io.File f = new java.io.File(cartellaBase, selected);
                     if (!f.exists()) {
                         JOptionPane.showMessageDialog(this, "File non trovato:\n" + f.getAbsolutePath(), "Errore", JOptionPane.ERROR_MESSAGE);
@@ -321,7 +340,6 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
         }
     }
 
-
     /**
      * Listener per “Aggiorna” e “Elimina” nel carrello
      */
@@ -332,7 +350,6 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
                 int viewCol = tabCarrello.columnAtPoint(e.getPoint());
                 if (viewRow < 0 || viewCol < 0) return;
 
-                // Converte in indice del modello, nel caso tu abbia usato sorter/filter
                 int modelRow = tabCarrello.convertRowIndexToModel(viewRow);
                 int modelCol = tabCarrello.convertColumnIndexToModel(viewCol);
 
@@ -345,7 +362,6 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
                     Object qObj = modelCarrello.getValueAt(modelRow, 2);
                     int q = (qObj instanceof Integer) ? (Integer) qObj : 0;
                     if (q == 0) {
-                        // se vuole zero, puoi pure chiamare delete
                         ctrl.requestDeleteCartItem(nome, showResult());
                     } else {
                         ctrl.updateCartItem(nome, q, showResult());
@@ -354,7 +370,6 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
             }
         });
     }
-
 
     public void avvisaErrore(String msg) {
         JOptionPane.showMessageDialog(
@@ -366,9 +381,7 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
         txtFondi.setText(String.format("%.2f", nuoviFondi));
     }
 
-
     private void mostraDialogPagamento() {
-        // Esempio semplice: JComboBox in JOptionPane
         String[] metodi = {"Carta", "Paypal", "Pagamento alla consegna"};
         TipoMetodoPagamento[] tipi = {
                 TipoMetodoPagamento.CARTA_DI_CREDITO,
@@ -406,7 +419,7 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
             SwingUtilities.invokeLater(() -> {
                 if (ok) {
                     JOptionPane.showMessageDialog(this, msg, "Successo", JOptionPane.INFORMATION_MESSAGE);
-                    ctrl.visualizzaCarrello(); // aggiorna la view
+                    ctrl.visualizzaCarrello();
                 } else {
                     int retry = JOptionPane.showOptionDialog(
                             this,
@@ -421,7 +434,6 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
                     if (retry == JOptionPane.YES_OPTION) {
                         mostraDialogPagamento();
                     }
-                    // Se NO, non fa nulla (torna alla schermata corrente)
                 }
             });
         });
@@ -429,7 +441,6 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
 
     @Override
     public void notificaItem(String nomeItem, String evento) {
-        // Aggiorna in tempo reale il marketplace se cambia la disponibilità di un prodotto/pacchetto
         SwingUtilities.invokeLater(ctrl::visualizzaMarketplace);
     }
 
@@ -440,8 +451,7 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
     }
 
     public void showFiereDisponibili(List<Fiera> fiere) {
-        modelFiere.setRowCount(0); // Svuota la tabella prima di riempire
-
+        modelFiere.setRowCount(0);
         for (Fiera f : fiere) {
             modelFiere.addRow(new Object[]{
                     f.getDescrizione(),
@@ -453,8 +463,6 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
                     f.getOrganizzatore()
             });
         }
-
-        // Pannello con tabella + bottone Prenota ingresso
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(new JScrollPane(tabFiere), BorderLayout.CENTER);
 
@@ -467,19 +475,16 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
         dialog.setSize(800, 400);
         dialog.setLocationRelativeTo(this);
 
-        // Listener bottone "Prenota ingresso"
         btnPrenota.addActionListener(e -> {
             int selectedRow = tabFiere.getSelectedRow();
             if (selectedRow == -1) {
                 JOptionPane.showMessageDialog(dialog, "Seleziona una fiera.", "Errore", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-
-
             Fiera fieraSelezionata = fiere.get(selectedRow);
 
             String input = JOptionPane.showInputDialog(dialog, "Inserisci il numero di persone:");
-            if (input == null) return; // l'utente ha annullato
+            if (input == null) return;
             int numeroPersone;
             try {
                 numeroPersone = Integer.parseInt(input);
@@ -489,7 +494,6 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
                 return;
             }
 
-            // Chiamata al controller
             ctrl.prenotaIngressoFiera(fieraSelezionata.getId(), numeroPersone, (msg, ok) -> {
                 SwingUtilities.invokeLater(() ->
                         JOptionPane.showMessageDialog(dialog, msg, ok ? "Successo" : "Errore",
@@ -504,7 +508,6 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
     public void showPrenotazioniFiere(List<PrenotazioneFiera> prenotazioni, List<Fiera> tutteLeFiere) {
         modelPrenotazioni.setRowCount(0);
         for (PrenotazioneFiera p : prenotazioni) {
-            // Cerca la fiera collegata per la descrizione (opzionale)
             String desc = tutteLeFiere.stream()
                     .filter(f -> f.getId() == p.getIdFiera())
                     .findFirst().map(Fiera::getDescrizione).orElse("?");
@@ -517,7 +520,6 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
             });
         }
 
-        // Dialog per mostrare la tabella con bottone elimina
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Prenotazioni fiere", Dialog.ModalityType.APPLICATION_MODAL);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dialog.setContentPane(new JScrollPane(tabPrenotazioni));
@@ -549,7 +551,4 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
 
         dialog.setVisible(true);
     }
-
-
-
 }

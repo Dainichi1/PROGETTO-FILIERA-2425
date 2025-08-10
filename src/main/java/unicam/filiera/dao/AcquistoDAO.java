@@ -1,6 +1,10 @@
 package unicam.filiera.dao;
 
+import unicam.filiera.dto.AcquistoItemDto;
+import unicam.filiera.dto.AcquistoListaDto;
 import unicam.filiera.dto.DatiAcquistoDto;
+
+import java.util.List;
 
 public interface AcquistoDAO {
     /**
@@ -10,6 +14,7 @@ public interface AcquistoDAO {
      * @return l'ID generato dell'acquisto (o -1 se errore)
      */
     int salvaAcquisto(DatiAcquistoDto dati);
-
+    List<AcquistoListaDto> findByUsername(String username);
+    List<AcquistoItemDto> findItemsByAcquisto(int idAcquisto);
 
 }

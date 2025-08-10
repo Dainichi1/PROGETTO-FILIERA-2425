@@ -78,6 +78,29 @@ public class DatabaseManager {
                 stmt.executeUpdate("ALTER TABLE pacchetti ADD COLUMN quantita INT DEFAULT 0");
             }
 
+            ResultSet rsSocial = conn.getMetaData()
+                    .getTables(null, null, "SOCIAL_POSTS", new String[]{"TABLE"});
+            if (!rsSocial.next()) {
+                System.out.println("[DB] Creo tabella 'social_posts'");
+                stmt.executeUpdate(
+                        """
+                                CREATE TABLE social_posts (
+                                  id IDENTITY PRIMARY KEY,
+                                  autore_username VARCHAR(50) NOT NULL,
+                                  id_acquisto INT,                      -- per tracciare l'acquisto
+                                  nome_item VARCHAR(100) NOT NULL,      -- item recensito
+                                  tipo_item VARCHAR(30) NOT NULL,       -- 'Prodotto' | 'Pacchetto' | 'Prodotto Trasformato'
+                                  titolo VARCHAR(100),
+                                  testo VARCHAR(1000) NOT NULL,         -- testo recensione
+                                
+                                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                  FOREIGN KEY (autore_username) REFERENCES utenti(username),
+                                  FOREIGN KEY (id_acquisto) REFERENCES acquisti(id)
+                                );
+                                """
+                );
+            }
+
 
             // ** crea la tabella acquisti se non esiste **
             ResultSet rsAcquisti = conn.getMetaData()
@@ -396,6 +419,24 @@ public class DatabaseManager {
                             FOREIGN KEY (username) REFERENCES utenti(username)
                         );
                     """;
+
+            String socialPostsSql = """
+                    CREATE TABLE IF NOT EXISTS social_posts (
+                      id IDENTITY PRIMARY KEY,
+                      autore_username VARCHAR(50) NOT NULL,
+                      id_acquisto INT,
+                      nome_item VARCHAR(100) NOT NULL,
+                      tipo_item VARCHAR(30) NOT NULL,
+                      titolo VARCHAR(100),
+                      testo VARCHAR(1000) NOT NULL,
+                    
+                      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                      FOREIGN KEY (autore_username) REFERENCES utenti(username),
+                      FOREIGN KEY (id_acquisto) REFERENCES acquisti(id)
+                    );
+                    """;
+            stmt.executeUpdate(socialPostsSql);
+
             stmt.executeUpdate(richiesteEliminaProfiloSql);
 
 

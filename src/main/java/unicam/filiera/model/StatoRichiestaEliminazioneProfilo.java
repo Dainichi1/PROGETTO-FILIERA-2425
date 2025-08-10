@@ -2,5 +2,6 @@ package unicam.filiera.model;
 
 public enum StatoRichiestaEliminazioneProfilo {
     IN_ATTESA,
-    APPROVATA
+    APPROVATA,
+    RIFIUTATA
 }

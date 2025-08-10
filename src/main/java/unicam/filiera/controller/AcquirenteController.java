@@ -1,9 +1,7 @@
 package unicam.filiera.controller;
 
 import unicam.filiera.dao.*;
-import unicam.filiera.dto.CartItemDto;
-import unicam.filiera.dto.CartTotalsDto;
-import unicam.filiera.dto.DatiAcquistoDto;
+import unicam.filiera.dto.*;
 import unicam.filiera.model.*;
 import unicam.filiera.service.CarrelloService;
 import unicam.filiera.service.CarrelloServiceImpl;
@@ -12,6 +10,7 @@ import unicam.filiera.service.PagamentoServiceImpl;
 import unicam.filiera.util.ValidatoreAcquisto;
 import unicam.filiera.util.ValidatoreMarketplace;
 import unicam.filiera.util.ValidatorePrenotazioneFiera;
+import unicam.filiera.util.ValidatoreRecensione;
 import unicam.filiera.view.PannelloAcquirente;
 
 import javax.swing.*;
@@ -33,54 +32,40 @@ public class AcquirenteController {
         this.marketplaceCtrl = new MarketplaceController();
     }
 
-    /**
-     * Visualizza la lista marketplace (Prodotti + Pacchetti)
-     */
+    /** Visualizza la lista marketplace (Prodotti + Pacchetti) */
     public void visualizzaMarketplace() {
         List<Object> lista = marketplaceCtrl.ottieniElementiMarketplace();
         view.showMarketplace(lista);
     }
 
-    /**
-     * Carica dal service il carrello e il totale, quindi li manda alla view
-     */
+    /** Carica dal service il carrello e il totale, quindi li manda alla view */
     public void visualizzaCarrello() {
         List<CartItemDto> items = carrelloService.getCartItems();
         CartTotalsDto tot = carrelloService.calculateTotals();
         view.showCart(items, tot);
     }
 
-    /**
-     * Aggiunge un item e richiama loadCart(); in caso di eccezione invoca callback(false).
-     */
+    /** Aggiunge un item e ricarica il carrello; in caso di eccezione invoca callback(false). */
     public void addToCart(Item item, int quantita, BiConsumer<String, Boolean> callback) {
         try {
-            // 1) validazione tipo + nome
             String tipo = (item instanceof Prodotto) ? "Prodotto" : "Pacchetto";
             ValidatoreMarketplace.validaTipo(tipo);
             ValidatoreMarketplace.validaNome(item.getNome());
-
-            // 2) validazione quantità
             ValidatoreAcquisto.validaQuantitaItem(item, quantita);
 
-            // 3) effettiva aggiunta
             carrelloService.addItem(item, quantita);
 
-            // 4) ricarico il carrello in view
             List<CartItemDto> items = carrelloService.getCartItems();
             CartTotalsDto tot = carrelloService.calculateTotals();
             view.showCart(items, tot);
 
             callback.accept(item.getNome() + " aggiunto al carrello", true);
-        } catch (RuntimeException ex) {            // prende sia IAE che tutte le altre RTE
+        } catch (RuntimeException ex) {
             callback.accept(ex.getMessage(), false);
         }
     }
 
-
-    /**
-     * Aggiorna la quantità di un item esistente; in caso di eccezione invoca callback(false).
-     */
+    /** Aggiorna la quantità di un item esistente; in caso di eccezione invoca callback(false). */
     public void updateCartItem(String nomeItem, int nuovaQta, BiConsumer<String, Boolean> callback) {
         try {
             carrelloService.updateItemQuantity(nomeItem, nuovaQta);
@@ -92,28 +77,23 @@ public class AcquirenteController {
     }
 
     public void requestDeleteCartItem(String nomeItem, BiConsumer<String, Boolean> callback) {
-        // 1) chiedo la conferma all'utente **qui**, nel controller
         int choice = JOptionPane.showConfirmDialog(
-                /* parent = */ view,
+                view,
                 "Sei sicuro di voler eliminare \"" + nomeItem + "\" dal carrello?",
                 "Conferma eliminazione",
                 JOptionPane.YES_NO_OPTION
         );
 
         if (choice == JOptionPane.YES_OPTION) {
-            // 2a) confermato: chiamo il solito delete + ricarico
             carrelloService.removeItem(nomeItem);
             visualizzaCarrello();
             callback.accept(nomeItem + " rimosso dal carrello", true);
         } else {
-            // 2b) annullato: non faccio nulla (oppure un messaggio facoltativo)
             callback.accept("Eliminazione annullata", true);
         }
     }
 
-    /**
-     * Aggiorna i fondi dell'acquirente (come prima), con callback di esito
-     */
+    /** Aggiorna i fondi dell'acquirente, con callback di esito. */
     public void aggiornaFondiAcquirente(double nuoviFondi, BiConsumer<String, Boolean> callback) {
         if (!(utente instanceof unicam.filiera.model.Acquirente a)) {
             callback.accept("L'utente non è un acquirente", false);
@@ -148,57 +128,40 @@ public class AcquirenteController {
             return;
         }
 
-
-        // Prepara DTO
         DatiAcquistoDto dto = new DatiAcquistoDto(
-                a.getUsername(),
-                items,
-                totale,
-                metodo,
-                StatoPagamento.IN_ATTESA,
-                fondiPre,
-                fondiPost
+                a.getUsername(), items, totale, metodo,
+                StatoPagamento.IN_ATTESA, fondiPre, fondiPost
         );
 
-        // Effettua il pagamento
         StatoPagamento esito = pagamentoService.effettuaPagamento(dto);
         dto.setStatoPagamento(esito);
 
         if (esito == StatoPagamento.APPROVATO) {
-            // 1. Scala fondi e aggiorna db
             a.setFondi(fondiPost);
             UtenteDAO dao = JdbcUtenteDAO.getInstance();
             dao.aggiornaFondi(a.getUsername(), fondiPost);
 
-            // 2. Aggiorna disponibilità degli item
             for (CartItemDto c : items) {
                 if ("Prodotto".equals(c.getTipo())) {
                     ProdottoDAO prodottoDAO = JdbcProdottoDAO.getInstance();
                     Prodotto prodotto = prodottoDAO.findByNome(c.getNome());
                     int nuovaQta = prodotto.getQuantita() - c.getQuantita();
                     prodottoDAO.aggiornaQuantita(prodotto.getNome(), nuovaQta);
-
                     ObserverManagerItem.notificaAggiornamento(prodotto.getNome(), "QUANTITA_AGGIORNATA");
-
                 } else if ("Pacchetto".equals(c.getTipo())) {
                     PacchettoDAO pacchettoDAO = JdbcPacchettoDAO.getInstance();
                     Pacchetto pacchetto = pacchettoDAO.findByNomeAndCreatore(c.getNome(), "");
                     int nuovaQta = pacchetto.getQuantita() - c.getQuantita();
                     pacchettoDAO.aggiornaQuantita(pacchetto.getNome(), nuovaQta);
-
                     ObserverManagerItem.notificaAggiornamento(pacchetto.getNome(), "QUANTITA_AGGIORNATA");
                 }
             }
 
-            // 3. Salva acquisto e items
             acquistoDAO.salvaAcquisto(dto);
 
-            // 4. Svuota il carrello
             carrelloService.clear();
             view.aggiornaFondi(fondiPost);
             callback.accept("Acquisto completato!", true);
-
-
         } else {
             callback.accept("Pagamento non riuscito!", false);
         }
@@ -209,7 +172,6 @@ public class AcquirenteController {
         view.showFiereDisponibili(fiere);
     }
 
-    // Metodo per prenotare l'ingresso a una fiera
     public void prenotaIngressoFiera(long idFiera, int numeroPersone, BiConsumer<String, Boolean> callback) {
         if (!(utente instanceof Acquirente a)) {
             callback.accept("Utente non valido", false);
@@ -221,28 +183,23 @@ public class AcquirenteController {
         PrenotazioneFieraDAO prenDAO = new JdbcPrenotazioneFieraDAO();
 
         try {
-            // Controllo validità con anche i fondi disponibili
             ValidatorePrenotazioneFiera.validaPrenotazione(
                     idFiera, numeroPersone, fiera, a.getUsername(), prenDAO, a.getFondi()
             );
 
-            // Calcola il costo totale della prenotazione
             double costoTotale = fiera.getPrezzo() * numeroPersone;
 
-            // Salva la prenotazione
             PrenotazioneFiera pren = new PrenotazioneFiera(
                     idFiera, a.getUsername(), numeroPersone, java.time.LocalDateTime.now()
             );
             boolean ok = prenDAO.save(pren);
 
             if (ok) {
-                // Scala i fondi
                 double nuoviFondi = a.getFondi() - costoTotale;
                 a.setFondi(nuoviFondi);
                 UtenteDAO dao = JdbcUtenteDAO.getInstance();
                 dao.aggiornaFondi(a.getUsername(), nuoviFondi);
                 view.aggiornaFondi(nuoviFondi);
-
                 callback.accept("Prenotazione effettuata con successo!", true);
             } else {
                 callback.accept("Errore durante la prenotazione.", false);
@@ -265,7 +222,6 @@ public class AcquirenteController {
             return;
         }
 
-        // Trova la fiera collegata per il prezzo
         FieraDAO fieraDAO = JdbcFieraDAO.getInstance();
         Fiera fiera = fieraDAO.findById(pren.getIdFiera());
         if (fiera == null) {
@@ -273,10 +229,8 @@ public class AcquirenteController {
             return;
         }
 
-        // Cancella la prenotazione
         boolean deleted = prenDAO.delete(idPrenotazione);
         if (deleted) {
-            // Restituisci i fondi
             double rimborso = fiera.getPrezzo() * pren.getNumeroPersone();
             double nuoviFondi = a.getFondi() + rimborso;
             a.setFondi(nuoviFondi);
@@ -284,7 +238,6 @@ public class AcquirenteController {
             UtenteDAO utenteDAO = JdbcUtenteDAO.getInstance();
             utenteDAO.aggiornaFondi(a.getUsername(), nuoviFondi);
             view.aggiornaFondi(nuoviFondi);
-
 
             callback.accept("Prenotazione eliminata e fondi rimborsati: €" + String.format("%.2f", rimborso), true);
         } else {
@@ -300,6 +253,80 @@ public class AcquirenteController {
         view.showPrenotazioniFiere(lista, tutteLeFiere);
     }
 
+    public void visualizzaAcquisti() {
+        if (!(utente instanceof Acquirente a)) {
+            JOptionPane.showMessageDialog(view, "Utente non valido", "Errore", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        List<AcquistoListaDto> lista = acquistoDAO.findByUsername(a.getUsername());
+        view.showAcquistiDialog(lista);  // la view apre la dialog master/dettaglio
+    }
 
+    /** Chiamato dalla view quando seleziona un acquisto nella tabella master */
+    public void caricaDettaglioAcquisto(int idAcquisto) {
+        List<AcquistoItemDto> items = acquistoDAO.findItemsByAcquisto(idAcquisto);
+        view.updateDettaglioAcquisto(items);
+    }
 
+    public void visualizzaSocialNetwork() {
+        try (var conn = DatabaseManager.getConnection()) {
+            var dao = new unicam.filiera.dao.JdbcSocialPostDAO(conn);
+            var posts = dao.findAllOrderByDataDesc();
+            view.showSocialNetworkDialog(posts);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(view,
+                    "Errore nel caricamento del social network",
+                    "Errore", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }
+
+    /** Step 7–11: conferma, valida difensiva e pubblicazione recensione */
+    public void lasciaRecensione(PostSocialDto post) {
+        try {
+            // fallback autore dal contesto se non valorizzato dal form
+            if (post.getAutoreUsername() == null || post.getAutoreUsername().isBlank()) {
+                post.setAutoreUsername(getUsername());
+            }
+
+            // Validazione difensiva lato controller
+            ValidatoreRecensione.valida(post);
+
+            // Step 8: conferma pubblicazione
+            int choice = JOptionPane.showConfirmDialog(
+                    view,
+                    "Sei sicuro di voler pubblicare la recensione sul Social?",
+                    "Conferma pubblicazione",
+                    JOptionPane.YES_NO_OPTION
+            );
+            if (choice != JOptionPane.YES_OPTION) {
+                // 8.a: annullato
+                return;
+            }
+
+            // Step 10: persistenza
+            try (var conn = DatabaseManager.getConnection()) {
+                var dao = new unicam.filiera.dao.JdbcSocialPostDAO(conn);
+                dao.pubblicaPost(post);
+            }
+
+            // Step 11: feedback all'utente
+            JOptionPane.showMessageDialog(view,
+                    "Recensione pubblicata con successo!",
+                    "Successo", JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(view, ex.getMessage(),
+                    "Errore di validazione", JOptionPane.WARNING_MESSAGE);
+        } catch (RuntimeException | java.sql.SQLException ex) {
+            JOptionPane.showMessageDialog(view,
+                    "Errore durante il salvataggio della recensione",
+                    "Errore", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }
+
+    public String getUsername() {
+        return (utente != null) ? utente.getUsername() : null;
+    }
 }

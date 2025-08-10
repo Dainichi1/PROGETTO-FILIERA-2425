@@ -1,12 +1,76 @@
 package unicam.filiera.dao;
 
+import unicam.filiera.dto.AcquistoItemDto;
+import unicam.filiera.dto.AcquistoListaDto;
 import unicam.filiera.dto.CartItemDto;
 import unicam.filiera.dto.DatiAcquistoDto;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class JdbcAcquistoDAO implements AcquistoDAO {
+
+    @Override
+    public List<AcquistoListaDto> findByUsername(String username) {
+        String sql = """
+                    SELECT id, username_acquirente, totale, stato_pagamento,
+                           tipo_metodo_pagamento, data_ora, elenco_item
+                    FROM acquisti
+                    WHERE username_acquirente = ?
+                    ORDER BY data_ora DESC
+                """;
+        List<AcquistoListaDto> out = new ArrayList<>();
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, username);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.add(new AcquistoListaDto(
+                            rs.getInt("id"),
+                            rs.getString("username_acquirente"),
+                            rs.getDouble("totale"),
+                            rs.getString("stato_pagamento"),
+                            rs.getString("tipo_metodo_pagamento"),
+                            rs.getTimestamp("data_ora").toLocalDateTime(),
+                            rs.getString("elenco_item")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return out;
+    }
+
+    @Override
+    public List<AcquistoItemDto> findItemsByAcquisto(int idAcquisto) {
+        String sql = """
+                    SELECT nome_item, tipo_item, quantita, prezzo_unitario, totale
+                    FROM acquisto_items
+                    WHERE id_acquisto = ?
+                    ORDER BY nome_item
+                """;
+        List<AcquistoItemDto> out = new ArrayList<>();
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, idAcquisto);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.add(new AcquistoItemDto(
+                            rs.getString("nome_item"),
+                            rs.getString("tipo_item"),
+                            rs.getInt("quantita"),
+                            rs.getDouble("prezzo_unitario"),
+                            rs.getDouble("totale")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return out;
+    }
 
     @Override
     public int salvaAcquisto(DatiAcquistoDto dati) {

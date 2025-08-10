@@ -3,10 +3,14 @@ package unicam.filiera.view;
 import unicam.filiera.controller.AcquirenteController;
 import unicam.filiera.controller.EliminazioneProfiloController;
 import unicam.filiera.controller.ObserverManagerItem;
+import unicam.filiera.dto.AcquistoItemDto;
+import unicam.filiera.dto.AcquistoListaDto;
 import unicam.filiera.dto.CartItemDto;
 import unicam.filiera.dto.CartTotalsDto;
 import unicam.filiera.model.*;
 import unicam.filiera.model.observer.OsservatoreItem;
+import unicam.filiera.dto.PostSocialDto;
+
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -19,6 +23,18 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
     private final AcquirenteController ctrl;
     private final EliminazioneProfiloController eliminaController;
 
+
+    private DefaultTableModel modelAcquisti;
+    private JTable tabAcquisti;
+    private JButton btnRecensione;
+
+    private DefaultTableModel modelAcquistoItems;
+    private JTable tabAcquistoItems;
+
+    private JDialog dlgAcquisti;   // per riuso
+
+    private final JButton btnShowSocial = new JButton("Visualizza Social Network");
+    private final JButton btnShowPurchases = new JButton("Visualizza acquisti");
 
     // Marketplace
     private final JTable tabMarketplace;
@@ -117,7 +133,8 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
         btnFiereDisponibili.addActionListener(e -> ctrl.visualizzaFiereDisponibili());
         btnVisualizzaPrenotazioni.addActionListener(e -> ctrl.visualizzaPrenotazioniFiere());
         btnEliminaProfilo.addActionListener(e -> mostraDialogEliminaProfilo());
-
+        btnShowPurchases.addActionListener(e -> ctrl.visualizzaAcquisti());
+        btnShowSocial.addActionListener(e -> ctrl.visualizzaSocialNetwork());
 
         btnAggiornaFondi.addActionListener(e -> {
             try {
@@ -150,7 +167,8 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
         top.add(btnFiereDisponibili);
         top.add(btnVisualizzaPrenotazioni);
         top.add(btnEliminaProfilo);
-
+        top.add(btnShowPurchases);
+        top.add(btnShowSocial);
         top.add(btnShowCart);
         top.add(new JLabel("   "));
         top.add(new JLabel("Fondi:"));
@@ -255,6 +273,176 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
         );
         btnAcquista.setEnabled(!items.isEmpty());
     }
+
+
+    public void showAcquistiDialog(List<AcquistoListaDto> lista) {
+        // crea dialog se non esiste
+        if (dlgAcquisti == null) {
+            dlgAcquisti = new JDialog(SwingUtilities.getWindowAncestor(this),
+                    "I miei acquisti", Dialog.ModalityType.APPLICATION_MODAL);
+            dlgAcquisti.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+            dlgAcquisti.setSize(900, 520);
+            dlgAcquisti.setLocationRelativeTo(this);
+
+            // master
+            modelAcquisti = new DefaultTableModel(
+                    new Object[]{"ID", "Data/Ora", "Totale", "Stato", "Metodo", "Elenco (preview)"}, 0) {
+                @Override
+                public boolean isCellEditable(int r, int c) {
+                    return false;
+                }
+            };
+            tabAcquisti = new JTable(modelAcquisti);
+
+            // dettaglio
+            modelAcquistoItems = new DefaultTableModel(
+                    new Object[]{"Nome", "Tipo", "Quantità", "Prezzo Unit.", "Totale"}, 0) {
+                @Override
+                public boolean isCellEditable(int r, int c) {
+                    return false;
+                }
+            };
+            tabAcquistoItems = new JTable(modelAcquistoItems);
+
+            JSplitPane split = new JSplitPane(
+                    JSplitPane.VERTICAL_SPLIT,
+                    new JScrollPane(tabAcquisti),
+                    new JScrollPane(tabAcquistoItems)
+            );
+            split.setDividerLocation(260);
+
+            // === Bottom bar con bottone Recensione ===
+            btnRecensione = new JButton("Lascia recensione");
+            JPanel bottomBar = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            bottomBar.add(btnRecensione);
+
+            // Contenitore principale
+            JPanel content = new JPanel(new BorderLayout());
+            content.add(split, BorderLayout.CENTER);
+            content.add(bottomBar, BorderLayout.SOUTH);
+            dlgAcquisti.setContentPane(content);
+
+            // Selezione riga master → carica dettaglio
+            tabAcquisti.getSelectionModel().addListSelectionListener(ev -> {
+                if (ev.getValueIsAdjusting()) return;
+                int row = tabAcquisti.getSelectedRow();
+                if (row < 0) return;
+                int id = (int) modelAcquisti.getValueAt(row, 0);
+                ctrl.caricaDettaglioAcquisto(id);
+            });
+
+            // === Listener del bottone Recensione ===
+            btnRecensione.addActionListener(e -> {
+                int rigaAcq = tabAcquisti.getSelectedRow();
+                if (rigaAcq == -1) {
+                    JOptionPane.showMessageDialog(dlgAcquisti,
+                            "Seleziona un acquisto (tabella in alto).",
+                            "Attenzione", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                int rigaItem = tabAcquistoItems.getSelectedRow();
+                if (rigaItem == -1) {
+                    JOptionPane.showMessageDialog(dlgAcquisti,
+                            "Seleziona l'item acquistato (tabella in basso).",
+                            "Attenzione", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                int idAcquisto = (int) modelAcquisti.getValueAt(rigaAcq, 0);
+                String nomeItem = (String) modelAcquistoItems.getValueAt(rigaItem, 0);
+                String tipoItem = (String) modelAcquistoItems.getValueAt(rigaItem, 1);
+
+                FormRecensioneDialog dialog = new FormRecensioneDialog(
+                        SwingUtilities.getWindowAncestor(this),
+                        idAcquisto,                // se il costruttore vuole long, fai: (long) idAcquisto
+                        nomeItem,
+                        tipoItem,
+                        ctrl.getUsername()
+                );
+                dialog.setVisible(true);
+
+                if (dialog.isConfermato()) {
+                    ctrl.lasciaRecensione(dialog.getPostSocialDto());
+                }
+            });
+        }
+
+        // popola master
+        modelAcquisti.setRowCount(0);
+        for (AcquistoListaDto a : lista) {
+            modelAcquisti.addRow(new Object[]{
+                    a.getId(),
+                    a.getDataOra(),
+                    a.getTotale(),
+                    a.getStatoPagamento(),
+                    a.getTipoMetodoPagamento(),
+                    a.getElencoItem()
+            });
+        }
+
+        // pulisci dettaglio all’apertura
+        modelAcquistoItems.setRowCount(0);
+
+        dlgAcquisti.setVisible(true);
+    }
+
+    public void updateDettaglioAcquisto(List<AcquistoItemDto> items) {
+        if (modelAcquistoItems == null) return;
+        modelAcquistoItems.setRowCount(0);
+        for (AcquistoItemDto it : items) {
+            modelAcquistoItems.addRow(new Object[]{
+                    it.getNomeItem(),
+                    it.getTipoItem(),
+                    it.getQuantita(),
+                    it.getPrezzoUnitario(),
+                    it.getTotale()
+            });
+        }
+    }
+
+    public void showSocialNetworkDialog(List<PostSocialDto> posts) {
+        JDialog dlg = new JDialog(SwingUtilities.getWindowAncestor(this),
+                "Social Network", Dialog.ModalityType.APPLICATION_MODAL);
+        dlg.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        dlg.setSize(900, 520);
+        dlg.setLocationRelativeTo(this);
+
+        String[] cols = {"Data/Ora", "Autore", "Tipo", "Nome Item", "Titolo", "Testo"};
+        DefaultTableModel model = new DefaultTableModel(cols, 0) {
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
+        };
+        JTable tab = new JTable(model);
+
+        // Popola
+        if (posts != null && !posts.isEmpty()) {
+            for (PostSocialDto p : posts) {
+                model.addRow(new Object[]{
+                        p.getCreatedAt(),
+                        p.getAutoreUsername(),
+                        p.getTipoItem(),
+                        p.getNomeItem(),
+                        p.getTitolo(),
+                        p.getTesto(),
+
+                });
+            }
+        }
+
+        JPanel north = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        north.add(new JLabel("Feed globale dei post pubblicati sui social"));
+        dlg.add(north, BorderLayout.NORTH);
+        dlg.add(new JScrollPane(tab), BorderLayout.CENTER);
+
+        if (posts == null || posts.isEmpty()) {
+            dlg.add(new JLabel("Nessun contenuto da mostrare.", SwingConstants.CENTER), BorderLayout.SOUTH);
+        }
+
+        dlg.setVisible(true);
+    }
+
 
     /**
      * Callback factory per mostrare popup di esito

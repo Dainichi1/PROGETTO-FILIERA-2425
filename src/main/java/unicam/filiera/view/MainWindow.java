@@ -17,15 +17,17 @@ public class MainWindow extends JFrame {
         setLayout(new BorderLayout());
 
         // Pannello centrale con i pulsanti
-        JPanel panel = new JPanel(new GridLayout(3, 1, 15, 15));
+        JPanel panel = new JPanel(new GridLayout(4, 1, 15, 15));
 
         JButton btnLogin = new JButton("Login");
         JButton btnRegister = new JButton("Registrati");
         JButton btnMarketplace = new JButton("Visualizza Marketplace");
+        JButton btnSocial = new JButton("Visualizza Social Network"); // NUOVO PULSANTE
 
         panel.add(btnLogin);
         panel.add(btnRegister);
         panel.add(btnMarketplace);
+        panel.add(btnSocial); // aggiungo il nuovo bottone
 
         this.homePanel = panel;
         setContentPane(homePanel);
@@ -45,6 +47,14 @@ public class MainWindow extends JFrame {
                 mp.getBtnIndietro().addActionListener(ev -> tornaAllaHome());
             }
         });
+
+        // Social Network
+        btnSocial.addActionListener(e -> {
+            SocialPanel socialPanel = new SocialPanel(this);
+            mostraPannello(socialPanel);
+            socialPanel.getBtnIndietro().addActionListener(ev -> tornaAllaHome());
+        });
+
     }
 
     public void tornaAllaHome() {

@@ -1,19 +1,18 @@
 package unicam.filiera.controller;
 
-import unicam.filiera.dao.JdbcUtenteDAO;
-import unicam.filiera.dao.UtenteDAO;
+import unicam.filiera.dao.*;
+import unicam.filiera.dto.AnnuncioEventoDto;
 import unicam.filiera.dto.FieraDto;
+import unicam.filiera.dto.PostSocialDto;
 import unicam.filiera.dto.VisitaInvitoDto;
-import unicam.filiera.model.Fiera;
-import unicam.filiera.model.Ruolo;
-import unicam.filiera.model.UtenteAutenticato;
-import unicam.filiera.model.VisitaInvito;
+import unicam.filiera.model.*;
 import unicam.filiera.service.FieraService;
 import unicam.filiera.service.FieraServiceImpl;
 import unicam.filiera.service.VisitaInvitoService;
 import unicam.filiera.service.VisitaInvitoServiceImpl;
-import unicam.filiera.dao.JdbcFieraDAO;
+import unicam.filiera.util.ValidatoreAnnuncioEvento;
 
+import javax.swing.*;
 import java.util.List;
 
 public class AnimatoreController {
@@ -70,6 +69,79 @@ public class AnimatoreController {
             callback.completato(false, iae.getMessage());
         } catch (Exception e) {
             callback.completato(false, "Errore inatteso: " + e.getMessage());
+        }
+    }
+
+    public List<Fiera> getFierePubblicateDaMe() {
+        return fieraService.getFiereCreateDa(organizzatore).stream()
+                .filter(f -> f.getStato() == StatoEvento.PUBBLICATA)
+                .toList();
+    }
+
+    public List<VisitaInvito> getVisitePubblicateDaMe() {
+        return visitaService.getVisiteCreateDa(organizzatore).stream()
+                .filter(v -> v.getStato() == StatoEvento.PUBBLICATA)
+                .toList();
+    }
+
+    /**
+     * Ritorna tutti i post pubblicati sul social, ordinati per data desc.
+     */
+    public List<PostSocialDto> getSocialFeed() {
+        try (var conn = DatabaseManager.getConnection()) {
+            var dao = new JdbcSocialPostDAO(conn);
+            return dao.findAllOrderByDataDesc();
+        } catch (Exception ex) {
+            throw new RuntimeException("Errore nel caricamento del social network", ex);
+        }
+    }
+
+    public void pubblicaAnnuncioEvento(JComponent parent, AnnuncioEventoDto annuncio) {
+        try {
+            // validazioni
+            ValidatoreAnnuncioEvento.validaCampiBase(annuncio);
+            ValidatoreAnnuncioEvento.validaCoerenzaEvento(
+                    annuncio,
+                    organizzatore,
+                    JdbcFieraDAO.getInstance(),
+                    JdbcVisitaInvitoDAO.getInstance()
+            );
+
+            int choice = JOptionPane.showConfirmDialog(
+                    parent,
+                    "Sei sicuro di voler pubblicare l’annuncio sul Social?",
+                    "Conferma pubblicazione",
+                    JOptionPane.YES_NO_OPTION
+            );
+            if (choice != JOptionPane.YES_OPTION) {
+                SwingUtilities.getWindowAncestor(parent).dispose();
+                return;
+            }
+
+            // mapping su PostSocialDto (idAcquisto lasciato NULL!)
+            PostSocialDto post = new PostSocialDto();
+            post.setAutoreUsername(organizzatore);
+            post.setTitolo(annuncio.getTitolo());
+            post.setTesto(annuncio.getTesto());
+            post.setTipoItem("Evento");
+            String nome = ("FIERA".equalsIgnoreCase(annuncio.getTipoEvento()) ? "Fiera" : "Visita")
+                    + " #" + annuncio.getEventoId();
+            post.setNomeItem(nome);
+
+            try (var conn = DatabaseManager.getConnection()) {
+                new JdbcSocialPostDAO(conn).pubblicaPost(post);
+            }
+
+            JOptionPane.showMessageDialog(parent, "Annuncio pubblicato con successo!",
+                    "Successo", JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(parent, ex.getMessage(),
+                    "Errore di validazione", JOptionPane.WARNING_MESSAGE);
+        } catch (RuntimeException | java.sql.SQLException ex) {
+            JOptionPane.showMessageDialog(parent, "Errore durante la pubblicazione dell’annuncio",
+                    "Errore", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
         }
     }
 

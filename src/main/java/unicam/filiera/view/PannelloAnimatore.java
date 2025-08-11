@@ -3,11 +3,13 @@ package unicam.filiera.view;
 import unicam.filiera.controller.AnimatoreController;
 import unicam.filiera.controller.EliminazioneProfiloController;
 import unicam.filiera.dto.FieraDto;
+import unicam.filiera.dto.PostSocialDto;
 import unicam.filiera.dto.VisitaInvitoDto;
 import unicam.filiera.model.Ruolo;
 import unicam.filiera.model.UtenteAutenticato;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,7 +38,8 @@ public class PannelloAnimatore extends JPanel {
     private final Map<JCheckBox, UtenteAutenticato> destinatariMap = new LinkedHashMap<>();
     private final JPanel formContainer = new JPanel(new CardLayout());
     private final JButton btnEliminaProfilo = new JButton("Elimina profilo");
-
+    private final JButton btnVisualizzaPubblicati = new JButton("Visualizza fiere/visite pubblicate");
+    private final JButton btnShowSocial = new JButton("Visualizza Social Network");
 
     public PannelloAnimatore(UtenteAutenticato utente) {
         super(new BorderLayout());
@@ -52,6 +55,8 @@ public class PannelloAnimatore extends JPanel {
         top.add(new JLabel("Tipo evento:"));
         top.add(comboTipo);
         top.add(btnEliminaProfilo);
+        top.add(btnVisualizzaPubblicati);
+        top.add(btnShowSocial);
         add(top, BorderLayout.SOUTH);
 
         formContainer.add(buildFormFiera(), "Fiera");
@@ -61,7 +66,118 @@ public class PannelloAnimatore extends JPanel {
         setupComboTipoListener();
         comboTipo.setSelectedItem("Fiera");
         btnEliminaProfilo.addActionListener(e -> mostraDialogEliminaProfilo());
+        btnShowSocial.addActionListener(e -> {
+            try {
+                var posts = controller.getSocialFeed();
+                showSocialNetworkDialog(posts);  // metodo della view (sotto)
+            } catch (RuntimeException ex) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        ex.getMessage(),
+                        "Errore",
+                        JOptionPane.ERROR_MESSAGE
+                );
+                ex.printStackTrace();
+            }
+        });
+        btnVisualizzaPubblicati.addActionListener(e -> {
+            Window owner = SwingUtilities.getWindowAncestor(this);
+            PubblicizzaEventiDialog dlg = new PubblicizzaEventiDialog(owner, controller);
 
+            // funzione locale per popolare in base al tipo scelto
+            Runnable load = () -> {
+                String tipo = dlg.getSelectedTipo();
+                if ("Fiere".equals(tipo)) {
+                    var list = controller.getFierePubblicateDaMe();
+                    var rows = list.stream()
+                            .map(f -> new Object[]{
+                                    f.getId(),
+                                    abbreviate(f.getDescrizione(), 60),
+                                    f.getDataInizio(),   // toString va bene per ora
+                                    f.getDataFine(),
+                                    f.getStato().name()
+                            })
+                            .toList();
+                    dlg.setRows(rows);
+                } else { // "Visite su invito"
+                    var list = controller.getVisitePubblicateDaMe();
+                    var rows = list.stream()
+                            .map(v -> new Object[]{
+                                    v.getId(),
+                                    abbreviate(v.getDescrizione(), 60),
+                                    v.getDataInizio(),
+                                    v.getDataFine(),
+                                    v.getStato().name()
+                            })
+                            .toList();
+                    dlg.setRows(rows);
+                }
+            };
+
+            // primo caricamento e ricarico quando cambia il tipo
+            load.run();
+            dlg.addTipoChangeListener(ev -> load.run());
+            // PannelloAnimatore.java → dentro btnVisualizzaPubblicati.addActionListener(...)
+            dlg.setOnAnnuncioPronto(annuncio -> {
+
+                controller.pubblicaAnnuncioEvento(this, annuncio);
+
+
+            });
+
+            dlg.setVisible(true);
+        });
+
+
+    }
+
+
+    private static String abbreviate(String s, int max) {
+        if (s == null) return "";
+        return s.length() <= max ? s : s.substring(0, max - 1) + "…";
+    }
+
+
+    public void showSocialNetworkDialog(List<PostSocialDto> posts) {
+        JDialog dlg = new JDialog(SwingUtilities.getWindowAncestor(this),
+                "Social Network", Dialog.ModalityType.APPLICATION_MODAL);
+        dlg.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        dlg.setSize(900, 520);
+        dlg.setLocationRelativeTo(this);
+
+        String[] cols = {"Data/Ora", "Autore", "Tipo", "Nome Item", "Titolo", "Testo"};
+        DefaultTableModel model = new DefaultTableModel(cols, 0) {
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
+        };
+        JTable tab = new JTable(model);
+
+        if (posts != null && !posts.isEmpty()) {
+            for (PostSocialDto p : posts) {
+                model.addRow(new Object[]{
+                        p.getCreatedAt(),
+                        p.getAutoreUsername(),
+                        p.getTipoItem(),
+                        p.getNomeItem(),
+                        p.getTitolo(),
+                        p.getTesto()
+                });
+            }
+        }
+
+        JPanel north = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        north.add(new JLabel("Feed globale dei post pubblicati sui social"));
+        dlg.add(north, BorderLayout.NORTH);
+        dlg.add(new JScrollPane(tab), BorderLayout.CENTER);
+
+        if (posts == null || posts.isEmpty()) {
+            dlg.add(new JLabel("Nessun contenuto da mostrare.", SwingConstants.CENTER),
+                    BorderLayout.SOUTH);
+        }
+
+        dlg.setVisible(true);
     }
 
     private void mostraDialogEliminaProfilo() {

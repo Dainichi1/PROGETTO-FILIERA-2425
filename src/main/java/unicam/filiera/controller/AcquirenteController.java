@@ -281,7 +281,7 @@ public class AcquirenteController {
         }
     }
 
-    /** Step 7–11: conferma, valida difensiva e pubblicazione recensione */
+
     public void lasciaRecensione(PostSocialDto post) {
         try {
             // fallback autore dal contesto se non valorizzato dal form
@@ -292,7 +292,7 @@ public class AcquirenteController {
             // Validazione difensiva lato controller
             ValidatoreRecensione.valida(post);
 
-            // Step 8: conferma pubblicazione
+
             int choice = JOptionPane.showConfirmDialog(
                     view,
                     "Sei sicuro di voler pubblicare la recensione sul Social?",
@@ -300,17 +300,17 @@ public class AcquirenteController {
                     JOptionPane.YES_NO_OPTION
             );
             if (choice != JOptionPane.YES_OPTION) {
-                // 8.a: annullato
+
                 return;
             }
 
-            // Step 10: persistenza
+
             try (var conn = DatabaseManager.getConnection()) {
                 var dao = new unicam.filiera.dao.JdbcSocialPostDAO(conn);
                 dao.pubblicaPost(post);
             }
 
-            // Step 11: feedback all'utente
+
             JOptionPane.showMessageDialog(view,
                     "Recensione pubblicata con successo!",
                     "Successo", JOptionPane.INFORMATION_MESSAGE);

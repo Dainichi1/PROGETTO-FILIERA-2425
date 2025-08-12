@@ -35,4 +35,6 @@ public interface PacchettoDAO {
     Pacchetto findByNomeAndCreatore(String nome, String creatore);
 
     boolean deleteByNomeAndCreatore(String nome, String creatore);
+
+    Pacchetto findByNome(String nomePacchetto);
 }

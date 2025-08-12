@@ -2,11 +2,13 @@ package unicam.filiera.controller;
 
 import unicam.filiera.dao.*;
 import unicam.filiera.dto.PacchettoDto;
+import unicam.filiera.dto.PostSocialDto;
 import unicam.filiera.model.*;
 import unicam.filiera.service.PacchettoService;
 import unicam.filiera.service.PacchettoServiceImpl;
 import unicam.filiera.service.ProdottoService;
 import unicam.filiera.service.ProdottoServiceImpl;
+import unicam.filiera.util.ValidatoreAnnuncioItem;
 import unicam.filiera.util.ValidatorePrenotazioneVisita;
 import unicam.filiera.view.PannelloDistributore;
 import unicam.filiera.view.PannelloProduttore;
@@ -188,5 +190,45 @@ public class DistributoreController {
             callback.accept("Errore durante l'eliminazione della prenotazione.", false);
         }
     }
+
+    public List<PostSocialDto> getSocialFeed() {
+        try (var conn = DatabaseManager.getConnection()) {
+            var dao = new JdbcSocialPostDAO(conn);
+            return dao.findAllOrderByDataDesc();
+        } catch (Exception ex) {
+            throw new RuntimeException("Errore nel caricamento del social network", ex);
+        }
+    }
+
+    public void pubblicaAnnuncioPacchetto(String nomePacchetto,
+                                          String titolo,
+                                          String testo,
+                                          java.util.function.BiConsumer<String, Boolean> callback) {
+        try {
+            // valida su PACCHETTI, non su prodotti
+            ValidatoreAnnuncioItem.validaPacchetto(
+                    titolo, testo, nomePacchetto, username, JdbcPacchettoDAO.getInstance()
+            );
+
+            PostSocialDto post = new PostSocialDto();
+            post.setAutoreUsername(username);
+            post.setNomeItem(nomePacchetto);
+            post.setTipoItem("Pacchetto");  // sii coerente con ciò che leggi nel feed
+            post.setTitolo(titolo);
+            post.setTesto(testo);
+
+            try (var conn = DatabaseManager.getConnection()) {
+                new JdbcSocialPostDAO(conn).pubblicaPost(post);
+            }
+            callback.accept("Annuncio pubblicato con successo!", true);
+
+        } catch (IllegalArgumentException ex) {
+            callback.accept(ex.getMessage(), false);
+        } catch (RuntimeException | java.sql.SQLException ex) {
+            ex.printStackTrace();
+            callback.accept("Errore durante la pubblicazione dell'annuncio.", false);
+        }
+    }
+
 
 }

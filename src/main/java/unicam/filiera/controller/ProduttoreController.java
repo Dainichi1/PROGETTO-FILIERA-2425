@@ -1,12 +1,15 @@
 package unicam.filiera.controller;
 
 import unicam.filiera.dao.*;
+import unicam.filiera.dto.PostSocialDto;
 import unicam.filiera.dto.ProdottoDto;
 import unicam.filiera.model.PrenotazioneVisita;
 import unicam.filiera.model.Prodotto;
+import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.model.VisitaInvito;
 import unicam.filiera.service.ProdottoService;
 import unicam.filiera.service.ProdottoServiceImpl;
+import unicam.filiera.util.ValidatoreAnnuncioItem;
 import unicam.filiera.util.ValidatorePrenotazioneVisita;
 import unicam.filiera.view.PannelloProduttore;
 
@@ -170,6 +173,50 @@ public class ProduttoreController {
             callback.accept("Errore durante l'eliminazione della prenotazione.", false);
         }
     }
+
+    public void pubblicaAnnuncioItem(String nomeProdotto,
+                                     String titolo,
+                                     String testo,
+                                     java.util.function.BiConsumer<String, Boolean> callback) {
+        try {
+            // 1) Validazione
+            ValidatoreAnnuncioItem.valida(
+                    titolo, testo, nomeProdotto, username, JdbcProdottoDAO.getInstance()
+            );
+
+            // 2) Mapping su PostSocialDto (id_acquisto = NULL)
+            PostSocialDto post = new PostSocialDto();
+            post.setAutoreUsername(username);
+            post.setNomeItem(nomeProdotto);
+            post.setTipoItem("Prodotto");
+            post.setTitolo(titolo);
+            post.setTesto(testo);
+
+            // 3) Persistenza
+            try (var conn = DatabaseManager.getConnection()) {
+                new JdbcSocialPostDAO(conn).pubblicaPost(post);
+            }
+
+            // 4) Esito OK
+            callback.accept("Annuncio pubblicato con successo!", true);
+
+        } catch (IllegalArgumentException ex) {
+            callback.accept(ex.getMessage(), false);
+        } catch (RuntimeException | java.sql.SQLException ex) {
+            ex.printStackTrace();
+            callback.accept("Errore durante la pubblicazione dell'annuncio.", false);
+        }
+    }
+
+    public List<PostSocialDto> getSocialFeed() {
+        try (var conn = DatabaseManager.getConnection()) {
+            var dao = new JdbcSocialPostDAO(conn);
+            return dao.findAllOrderByDataDesc();
+        } catch (Exception ex) {
+            throw new RuntimeException("Errore nel caricamento del social network", ex);
+        }
+    }
+
 
 
 }

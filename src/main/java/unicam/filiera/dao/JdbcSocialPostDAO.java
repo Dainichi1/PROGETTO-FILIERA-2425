@@ -25,9 +25,9 @@ public class JdbcSocialPostDAO implements SocialPostDAO {
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, post.getAutoreUsername());
             if (post.getIdAcquisto() != null) {
-                ps.setInt(2, post.getIdAcquisto());
+                ps.setLong(2, post.getIdAcquisto());
             } else {
-                ps.setNull(2, Types.INTEGER);
+                ps.setNull(2, java.sql.Types.BIGINT);
             }
             ps.setString(3, post.getNomeItem());
             ps.setString(4, post.getTipoItem());

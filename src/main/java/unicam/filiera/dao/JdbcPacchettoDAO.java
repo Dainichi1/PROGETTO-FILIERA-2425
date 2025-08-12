@@ -34,6 +34,24 @@ public class JdbcPacchettoDAO implements PacchettoDAO {
     }
 
     @Override
+    public Pacchetto findByNome(String nomePacchetto) {
+        String sql = "SELECT * FROM pacchetti WHERE nome = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement st = conn.prepareStatement(sql)) {
+            st.setString(1, nomePacchetto);
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    return buildFromRs(rs);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+    @Override
     public boolean save(Pacchetto p, List<File> certFiles, List<File> fotoFiles) {
         try (Connection conn = DatabaseManager.getConnection()) {
             // 1) inserisci i dati testuali

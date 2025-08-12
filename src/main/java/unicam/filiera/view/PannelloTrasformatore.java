@@ -2,6 +2,7 @@ package unicam.filiera.view;
 
 import unicam.filiera.controller.TrasformatoreController;
 import unicam.filiera.controller.EliminazioneProfiloController;
+import unicam.filiera.dto.PostSocialDto;
 import unicam.filiera.dto.ProdottoTrasformatoDto;
 import unicam.filiera.model.*;
 import unicam.filiera.model.observer.OsservatoreProdottoTrasformato;
@@ -51,6 +52,7 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
     private final JButton btnVisiteDisponibili = new JButton("Visualizza visite disponibili");
     private final JButton btnVisualizzaPrenotazioniVisite = new JButton("Visualizza prenotazioni visite");
     private final JButton btnEliminaProfilo = new JButton("Elimina profilo");
+    private final JButton btnShowSocial = new JButton("Visualizza Social Network");
 
     private final DefaultTableModel model;
     private final JTable tabella;
@@ -70,13 +72,38 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
         add(benv, BorderLayout.NORTH);
 
         buildForm();
-        add(btnToggleForm, BorderLayout.SOUTH);
+
+        // —— Barra inferiore unica: sinistra form, destra elimina profilo ——
+        JPanel southBar = new JPanel(new BorderLayout());
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        left.add(btnToggleForm);
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        right.add(btnEliminaProfilo);
+        southBar.add(left, BorderLayout.WEST);
+        southBar.add(right, BorderLayout.EAST);
+        add(southBar, BorderLayout.SOUTH);
 
         btnToggleForm.addActionListener(e -> toggleForm());
+        btnEliminaProfilo.addActionListener(e -> mostraDialogEliminaProfilo());
+        btnShowSocial.addActionListener(e -> {
+            try {
+                var posts = controller.getSocialFeed();
+                showSocialNetworkDialog(posts);  // metodo della view (sotto)
+            } catch (RuntimeException ex) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        ex.getMessage(),
+                        "Errore",
+                        JOptionPane.ERROR_MESSAGE
+                );
+                ex.printStackTrace();
+            }
+        });
 
         JPanel pannelloVisite = new JPanel(new FlowLayout(FlowLayout.LEFT));
         pannelloVisite.add(btnVisiteDisponibili);
         pannelloVisite.add(btnVisualizzaPrenotazioniVisite);
+        pannelloVisite.add(btnShowSocial);
         add(pannelloVisite, BorderLayout.WEST);
 
         btnVisiteDisponibili.addActionListener(e -> controller.visualizzaVisiteDisponibili(this));
@@ -86,7 +113,7 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
         String[] cols = {
                 "Nome", "Descrizione", "Qtà", "Prezzo", "Indirizzo",
                 "Certificati", "Foto", "Stato", "Commento", "Fasi produzione",
-                "Elimina", "Modifica"
+                "Elimina", "Modifica", "Social"
         };
         model = new DefaultTableModel(cols, 0) {
             @Override
@@ -134,7 +161,7 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
                         );
                         if (ok) refreshTable();
                     }
-                } else if (col == 11) {
+                } else if (col == 11) { // Colonna 11: Modifica
                     if (!statoStr.equals("RIFIUTATO")) {
                         JOptionPane.showMessageDialog(
                                 PannelloTrasformatore.this,
@@ -155,6 +182,51 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
                                 JOptionPane.ERROR_MESSAGE
                         );
                     }
+
+
+                    // COLONNA 12: Pubblica annuncio su Social (solo APPROVATI)
+                } else if (col == 12) {
+                    if (!statoStr.equals("APPROVATO")) {
+                        JOptionPane.showMessageDialog(
+                                PannelloTrasformatore.this,
+                                "Il pulsante è disponibile solo per prodotti APPROVATI.",
+                                "Operazione non permessa",
+                                JOptionPane.WARNING_MESSAGE
+                        );
+                        return;
+                    }
+
+                    // 1) finestra titolo/testo
+                    FormAnnuncioItemDialog dlg = new FormAnnuncioItemDialog(
+                            SwingUtilities.getWindowAncestor(PannelloTrasformatore.this),
+                            nomeProdotto
+                    );
+                    dlg.setVisible(true);
+                    if (!dlg.isConfermato()) return;
+
+                    // 2) conferma finale
+                    int choice = JOptionPane.showConfirmDialog(
+                            PannelloTrasformatore.this,
+                            "Sei sicuro di voler pubblicare l’annuncio sul Social?",
+                            "Conferma pubblicazione",
+                            JOptionPane.YES_NO_OPTION
+                    );
+                    if (choice != JOptionPane.YES_OPTION) return;
+
+                    // 3) pubblicazione reale tramite controller
+                    controller.pubblicaAnnuncioProdottoTrasformato(
+                            nomeProdotto,
+                            dlg.getTitolo(),
+                            dlg.getTesto(),
+                            (msg, ok) -> SwingUtilities.invokeLater(() ->
+                                    JOptionPane.showMessageDialog(
+                                            PannelloTrasformatore.this, msg,
+                                            ok ? "Successo" : "Errore",
+                                            ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
+                                    )
+                            )
+                    );
+
                 }
             }
         });
@@ -287,14 +359,50 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
             }
         });
 
-        // Bottone elimina profilo in basso a destra
-        btnEliminaProfilo.addActionListener(e -> mostraDialogEliminaProfilo());
-        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        bottomPanel.add(btnEliminaProfilo);
-        add(bottomPanel, BorderLayout.PAGE_END);
-
         refreshTable();
         ProdottoTrasformatoNotifier.getInstance().registraOsservatore(this);
+    }
+
+    public void showSocialNetworkDialog(List<PostSocialDto> posts) {
+        JDialog dlg = new JDialog(SwingUtilities.getWindowAncestor(this),
+                "Social Network", Dialog.ModalityType.APPLICATION_MODAL);
+        dlg.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        dlg.setSize(900, 520);
+        dlg.setLocationRelativeTo(this);
+
+        String[] cols = {"Data/Ora", "Autore", "Tipo", "Nome Item", "Titolo", "Testo"};
+        DefaultTableModel model = new DefaultTableModel(cols, 0) {
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
+        };
+        JTable tab = new JTable(model);
+
+        if (posts != null && !posts.isEmpty()) {
+            for (PostSocialDto p : posts) {
+                model.addRow(new Object[]{
+                        p.getCreatedAt(),
+                        p.getAutoreUsername(),
+                        p.getTipoItem(),
+                        p.getNomeItem(),
+                        p.getTitolo(),
+                        p.getTesto()
+                });
+            }
+        }
+
+        JPanel north = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        north.add(new JLabel("Feed globale dei post pubblicati sui social"));
+        dlg.add(north, BorderLayout.NORTH);
+        dlg.add(new JScrollPane(tab), BorderLayout.CENTER);
+
+        if (posts == null || posts.isEmpty()) {
+            dlg.add(new JLabel("Nessun contenuto da mostrare.", SwingConstants.CENTER),
+                    BorderLayout.SOUTH);
+        }
+
+        dlg.setVisible(true);
     }
 
     private void mostraDialogEliminaProfilo() {
@@ -371,7 +479,8 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
         fasiModel.setRowCount(0);
         if (p.getFasiProduzione() != null) {
             for (FaseProduzione f : p.getFasiProduzione()) {
-                fasiModel.addRow(new Object[]{f.getDescrizioneFase(), f.getProduttoreUsername(), f.getProdottoOrigine()});
+                // Nota: se FaseProduzione non ha l'indirizzo, lasciamo la colonna vuota
+                fasiModel.addRow(new Object[]{f.getDescrizioneFase(), f.getProduttoreUsername(), f.getProdottoOrigine(), ""});
             }
         }
 
@@ -434,13 +543,15 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
     private void refreshTable() {
         model.setRowCount(0);
         for (ProdottoTrasformato p : controller.getProdottiTrasformatiCreatiDaMe()) {
+            boolean approvato = p.getStato() == StatoProdotto.APPROVATO;
             model.addRow(new Object[]{
                     p.getNome(), p.getDescrizione(), p.getQuantita(), p.getPrezzo(), p.getIndirizzo(),
                     String.join(", ", p.getCertificati()), String.join(", ", p.getFoto()),
                     p.getStato(), p.getCommento(),
                     p.fasiProduzioneAsString(),
                     "Elimina",
-                    p.getStato() == StatoProdotto.RIFIUTATO ? "Modifica" : ""
+                    p.getStato() == StatoProdotto.RIFIUTATO ? "Modifica" : "",
+                    p.getStato() == StatoProdotto.APPROVATO ? "Pubblica su Social" : ""
             });
         }
     }
@@ -458,7 +569,7 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
             String msg = approved
                     ? "✔ Il tuo prodotto trasformato \"" + prod.getNome() + "\" è stato APPROVATO!"
                     : "❌ Il tuo prodotto trasformato \"" + prod.getNome() + "\" è stato RIFIUTATO."
-                      + (prod.getCommento() != null && !prod.getCommento().isBlank() ? "\nCommento: " + prod.getCommento() : "");
+                    + (prod.getCommento() != null && !prod.getCommento().isBlank() ? "\nCommento: " + prod.getCommento() : "");
             JOptionPane.showMessageDialog(this, msg, title, type);
             refreshTable();
         });

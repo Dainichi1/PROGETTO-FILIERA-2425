@@ -4,6 +4,7 @@ import unicam.filiera.controller.DistributoreController;
 import unicam.filiera.controller.EliminazioneProfiloController;
 import unicam.filiera.controller.ObserverManagerPacchetto;
 import unicam.filiera.dto.PacchettoDto;
+import unicam.filiera.dto.PostSocialDto;
 import unicam.filiera.model.*;
 import unicam.filiera.model.observer.OsservatorePacchetto;
 
@@ -47,6 +48,7 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
     private final JButton btnInvia = new JButton("Invia Pacchetto");
     private final JButton btnVisiteDisponibili = new JButton("Visualizza visite disponibili");
     private final JButton btnVisualizzaPrenotazioniVisite = new JButton("Visualizza prenotazioni visite");
+    private final JButton btnShowSocial = new JButton("Visualizza Social Network");
 
     private final EliminazioneProfiloController eliminaController;
     private final JButton btnEliminaProfilo = new JButton("Elimina profilo");
@@ -75,11 +77,25 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
         JPanel pannelloVisite = new JPanel(new FlowLayout(FlowLayout.LEFT));
         pannelloVisite.add(btnVisiteDisponibili);
         pannelloVisite.add(btnVisualizzaPrenotazioniVisite);
+        pannelloVisite.add(btnShowSocial);
         add(pannelloVisite, BorderLayout.WEST);
 
         btnVisiteDisponibili.addActionListener(e -> controller.visualizzaVisiteDisponibili(this));
         btnVisualizzaPrenotazioniVisite.addActionListener(e -> controller.visualizzaPrenotazioniVisite(this));
-
+        btnShowSocial.addActionListener(e -> {
+            try {
+                var posts = controller.getSocialFeed();
+                showSocialNetworkDialog(posts);  // metodo della view (sotto)
+            } catch (RuntimeException ex) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        ex.getMessage(),
+                        "Errore",
+                        JOptionPane.ERROR_MESSAGE
+                );
+                ex.printStackTrace();
+            }
+        });
 
         // Form building
         buildForm();
@@ -99,7 +115,7 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
         String[] colPack = {
                 "Nome", "Descrizione", "Indirizzo", "Prezzo Totale", "Quantità",
                 "Prodotti", "Certificati", "Foto", "Stato", "Commento",
-                "Elimina", "Modifica"
+                "Elimina", "Modifica", "Social"
         };
 
 
@@ -120,11 +136,11 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
                 if (row < 0) return;
 
                 String nome = (String) modelPacchetti.getValueAt(row, 0);
-                String stato = modelPacchetti.getValueAt(row, 8).toString();
+                String stato = modelPacchetti.getValueAt(row, 8).toString(); // enum -> "APPROVATO", "RIFIUTATO", ...
 
                 // ——— Elimina (colonna 10) ——————————————————————
                 if (col == 10) {
-                    if (!stato.equals("IN_ATTESA") && !stato.equals("RIFIUTATO")) {
+                    if (!"IN_ATTESA".equals(stato) && !"RIFIUTATO".equals(stato)) {
                         JOptionPane.showMessageDialog(
                                 PannelloDistributore.this,
                                 "Puoi eliminare solo pacchetti in attesa o rifiutati.",
@@ -141,29 +157,20 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
                     );
                     if (conferma == JOptionPane.YES_OPTION) {
                         boolean ok = controller.eliminaPacchetto(nome);
-                        if (ok) {
-                            JOptionPane.showMessageDialog(
-                                    PannelloDistributore.this,
-                                    "Pacchetto eliminato con successo.",
-                                    "Successo",
-                                    JOptionPane.INFORMATION_MESSAGE
-                            );
-                            refreshPacchetti();
-                        } else {
-                            JOptionPane.showMessageDialog(
-                                    PannelloDistributore.this,
-                                    "Errore durante l'eliminazione.",
-                                    "Errore",
-                                    JOptionPane.ERROR_MESSAGE
-                            );
-                        }
+                        JOptionPane.showMessageDialog(
+                                PannelloDistributore.this,
+                                ok ? "Pacchetto eliminato con successo." : "Errore durante l'eliminazione.",
+                                ok ? "Successo" : "Errore",
+                                ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
+                        );
+                        if (ok) refreshPacchetti();
                     }
                     return;
                 }
 
                 // ——— Modifica (colonna 11) ——————————————————————
                 if (col == 11) {
-                    if (!stato.equals("RIFIUTATO")) {
+                    if (!"RIFIUTATO".equals(stato)) {
                         JOptionPane.showMessageDialog(
                                 PannelloDistributore.this,
                                 "Puoi modificare solo pacchetti RIFIUTATI.",
@@ -172,7 +179,6 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
                         );
                         return;
                     }
-                    // Recupera il Pacchetto dal controller
                     Pacchetto p = controller.trovaPacchettoPerNome(nome);
                     if (p == null) {
                         JOptionPane.showMessageDialog(
@@ -183,8 +189,54 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
                         );
                         return;
                     }
-                    // Entra in modalità edit
                     enterEditMode(p);
+                    return;
+                }
+
+                // ——— Pubblica annuncio su Social (colonna 12) ————————————————
+                if (col == 12) {
+                    if (!"APPROVATO".equals(stato)) {
+                        JOptionPane.showMessageDialog(
+                                PannelloDistributore.this,
+                                "Il pulsante è disponibile solo per pacchetti APPROVATI.",
+                                "Operazione non permessa",
+                                JOptionPane.WARNING_MESSAGE
+                        );
+                        return;
+                    }
+
+                    // 1) finestra titolo/testo
+                    FormAnnuncioItemDialog dlg = new FormAnnuncioItemDialog(
+                            SwingUtilities.getWindowAncestor(PannelloDistributore.this),
+                            nome
+                    );
+                    dlg.setVisible(true);
+                    if (!dlg.isConfermato()) return;
+
+                    // 2) conferma finale
+                    int choice = JOptionPane.showConfirmDialog(
+                            PannelloDistributore.this,
+                            "Sei sicuro di voler pubblicare l’annuncio sul Social?",
+                            "Conferma pubblicazione",
+                            JOptionPane.YES_NO_OPTION
+                    );
+                    if (choice != JOptionPane.YES_OPTION) return;
+
+                    // 3) pubblicazione reale tramite controller
+                    // dentro if (col == 12)
+                    controller.pubblicaAnnuncioPacchetto(
+                            nome,
+                            dlg.getTitolo(),
+                            dlg.getTesto(),
+                            (msg, ok) -> SwingUtilities.invokeLater(() ->
+                                    JOptionPane.showMessageDialog(
+                                            PannelloDistributore.this, msg,
+                                            ok ? "Successo" : "Errore",
+                                            ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
+                                    )
+                            )
+                    );
+
                 }
             }
         });
@@ -430,6 +482,48 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
         );
     }
 
+    public void showSocialNetworkDialog(List<PostSocialDto> posts) {
+        JDialog dlg = new JDialog(SwingUtilities.getWindowAncestor(this),
+                "Social Network", Dialog.ModalityType.APPLICATION_MODAL);
+        dlg.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        dlg.setSize(900, 520);
+        dlg.setLocationRelativeTo(this);
+
+        String[] cols = {"Data/Ora", "Autore", "Tipo", "Nome Item", "Titolo", "Testo"};
+        DefaultTableModel model = new DefaultTableModel(cols, 0) {
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
+        };
+        JTable tab = new JTable(model);
+
+        if (posts != null && !posts.isEmpty()) {
+            for (PostSocialDto p : posts) {
+                model.addRow(new Object[]{
+                        p.getCreatedAt(),
+                        p.getAutoreUsername(),
+                        p.getTipoItem(),
+                        p.getNomeItem(),
+                        p.getTitolo(),
+                        p.getTesto()
+                });
+            }
+        }
+
+        JPanel north = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        north.add(new JLabel("Feed globale dei post pubblicati sui social"));
+        dlg.add(north, BorderLayout.NORTH);
+        dlg.add(new JScrollPane(tab), BorderLayout.CENTER);
+
+        if (posts == null || posts.isEmpty()) {
+            dlg.add(new JLabel("Nessun contenuto da mostrare.", SwingConstants.CENTER),
+                    BorderLayout.SOUTH);
+        }
+
+        dlg.setVisible(true);
+    }
+
 
     private void refreshProdotti() {
         modelProdotti.setRowCount(0);
@@ -444,6 +538,7 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
     private void refreshPacchetti() {
         modelPacchetti.setRowCount(0);
         for (Pacchetto p : controller.getPacchettiCreatiDaMe()) {
+            boolean approvato = p.getStato() == StatoProdotto.APPROVATO;
             modelPacchetti.addRow(new Object[]{
                     p.getNome(),
                     p.getDescrizione(),
@@ -458,7 +553,8 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
                     "Elimina",                                    // colonna Azioni 1
                     p.getStato() == StatoProdotto.RIFIUTATO       // colonna Azioni 2
                             ? "Modifica"
-                            : ""
+                            : "",
+                    p.getStato() == StatoProdotto.APPROVATO ? "Pubblica su Social" : ""
             });
         }
     }

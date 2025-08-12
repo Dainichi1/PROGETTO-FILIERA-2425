@@ -1,10 +1,12 @@
 package unicam.filiera.controller;
 
 import unicam.filiera.dao.*;
+import unicam.filiera.dto.PostSocialDto;
 import unicam.filiera.dto.ProdottoTrasformatoDto;
 import unicam.filiera.model.*;
 import unicam.filiera.service.ProdottoTrasformatoService;
 import unicam.filiera.service.ProdottoTrasformatoServiceImpl;
+import unicam.filiera.util.ValidatoreAnnuncioItem;
 import unicam.filiera.util.ValidatorePrenotazioneVisita;
 import unicam.filiera.view.PannelloTrasformatore; // o la tua view
 
@@ -189,4 +191,46 @@ public class TrasformatoreController {
     public List<Prodotto> getProdottiApprovatiByProduttore(String usernameProduttore) {
         return prodottoDAO.findProdottiApprovatiByProduttore(usernameProduttore);
     }
+
+    public void pubblicaAnnuncioProdottoTrasformato(
+            String nomeProdotto,
+            String titolo,
+            String testo,
+            java.util.function.BiConsumer<String, Boolean> callback) {
+        try {
+            // Validazione corretta sui prodotti trasformati
+            ValidatoreAnnuncioItem.validaProdottoTrasformato(
+                    titolo, testo, nomeProdotto, username, JdbcProdottoTrasformatoDAO.getInstance()
+            );
+
+            PostSocialDto post = new PostSocialDto();
+            post.setAutoreUsername(username);
+            post.setNomeItem(nomeProdotto);
+            post.setTipoItem("ProdottoTrasformato"); // o "Prodotto trasformato", ma sii coerente ovunque
+            post.setTitolo(titolo);
+            post.setTesto(testo);
+
+            try (var conn = DatabaseManager.getConnection()) {
+                new JdbcSocialPostDAO(conn).pubblicaPost(post);
+            }
+
+            callback.accept("Annuncio pubblicato con successo!", true);
+        } catch (IllegalArgumentException ex) {
+            callback.accept(ex.getMessage(), false);
+        } catch (RuntimeException | java.sql.SQLException ex) {
+            ex.printStackTrace();
+            callback.accept("Errore durante la pubblicazione dell'annuncio.", false);
+        }
+    }
+    // in TrasformatoreController
+    public List<PostSocialDto> getSocialFeed() {
+        try (var conn = DatabaseManager.getConnection()) {
+            JdbcSocialPostDAO dao = new JdbcSocialPostDAO(conn);
+            return dao.findAllOrderByDataDesc(); // oppure dao.findAll() se non hai il metodo ordinato
+        } catch (Exception ex) {
+            throw new RuntimeException("Errore nel caricamento del social network", ex);
+        }
+    }
+
+
 }

@@ -4,13 +4,38 @@ import unicam.filiera.model.RichiestaEliminazioneProfilo;
 import unicam.filiera.model.StatoRichiestaEliminazioneProfilo;
 
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcRichiestaEliminazioneProfiloDAO implements RichiestaEliminazioneProfiloDAO {
 
     private static JdbcRichiestaEliminazioneProfiloDAO instance;
+
+    private static final String SQL_INSERT =
+            "INSERT INTO richieste_eliminazione_profilo (username, stato, data_richiesta) " +
+                    "VALUES (?, ?, CURRENT_TIMESTAMP)";
+
+    private static final String SQL_UPDATE_STATO =
+            "UPDATE richieste_eliminazione_profilo SET stato = ? WHERE id = ?";
+
+    private static final String SQL_FIND_BY_STATO =
+            "SELECT * FROM richieste_eliminazione_profilo WHERE stato = ?";
+
+    private static final String SQL_FIND_BY_ID =
+            "SELECT * FROM richieste_eliminazione_profilo WHERE id = ?";
+
+    private static final String SQL_FIND_ALL =
+            "SELECT * FROM richieste_eliminazione_profilo";
+
+    private static final String SQL_FIND_BY_USERNAME =
+            "SELECT * FROM richieste_eliminazione_profilo WHERE username = ?";
+
+    // richiesta pendente più recente per username
+    private static final String SQL_FIND_PENDING_BY_USERNAME =
+            "SELECT * FROM richieste_eliminazione_profilo " +
+                    "WHERE username = ? AND stato = 'IN_ATTESA' " +
+                    "ORDER BY data_richiesta DESC LIMIT 1";
 
     private JdbcRichiestaEliminazioneProfiloDAO() {}
 
@@ -21,34 +46,48 @@ public class JdbcRichiestaEliminazioneProfiloDAO implements RichiestaEliminazion
 
     @Override
     public boolean save(RichiestaEliminazioneProfilo richiesta) {
-        String sql = "INSERT INTO richieste_eliminazione_profilo (username, stato, data_richiesta) VALUES (?, ?, ?)";
         try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement ps = conn.prepareStatement(SQL_INSERT, Statement.RETURN_GENERATED_KEYS)) {
+
             ps.setString(1, richiesta.getUsername());
             ps.setString(2, richiesta.getStato().name());
-            ps.setTimestamp(3, Timestamp.valueOf(richiesta.getDataRichiesta()));
-            int affectedRows = ps.executeUpdate();
-            if (affectedRows > 0) {
+
+            int affected = ps.executeUpdate();
+            if (affected > 0) {
                 try (ResultSet rs = ps.getGeneratedKeys()) {
                     if (rs.next()) richiesta.setId(rs.getInt(1));
                 }
                 return true;
             }
-        } catch (Exception ex) {
+            return false;
+        } catch (SQLException ex) {
             ex.printStackTrace();
+            return false;
         }
-        return false;
     }
+
+    public boolean deleteById(int richiestaId) {
+        String sql = "DELETE FROM richieste_eliminazione_profilo WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, richiestaId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 
     @Override
     public boolean updateStato(int richiestaId, StatoRichiestaEliminazioneProfilo nuovoStato) {
-        String sql = "UPDATE richieste_eliminazione_profilo SET stato = ? WHERE id = ?";
         try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(SQL_UPDATE_STATO)) {
+
             ps.setString(1, nuovoStato.name());
             ps.setInt(2, richiestaId);
             return ps.executeUpdate() > 0;
-        } catch (Exception ex) {
+        } catch (SQLException ex) {
             ex.printStackTrace();
             return false;
         }
@@ -56,30 +95,30 @@ public class JdbcRichiestaEliminazioneProfiloDAO implements RichiestaEliminazion
 
     @Override
     public List<RichiestaEliminazioneProfilo> findByStato(StatoRichiestaEliminazioneProfilo stato) {
-        List<RichiestaEliminazioneProfilo> richieste = new ArrayList<>();
-        String sql = "SELECT * FROM richieste_eliminazione_profilo WHERE stato = ?";
+        List<RichiestaEliminazioneProfilo> out = new ArrayList<>();
         try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(SQL_FIND_BY_STATO)) {
+
             ps.setString(1, stato.name());
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) richieste.add(buildFromRs(rs));
+                while (rs.next()) out.add(buildFromRs(rs));
             }
-        } catch (Exception ex) {
+        } catch (SQLException ex) {
             ex.printStackTrace();
         }
-        return richieste;
+        return out;
     }
 
     @Override
     public RichiestaEliminazioneProfilo findById(int richiestaId) {
-        String sql = "SELECT * FROM richieste_eliminazione_profilo WHERE id = ?";
         try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(SQL_FIND_BY_ID)) {
+
             ps.setInt(1, richiestaId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return buildFromRs(rs);
             }
-        } catch (Exception ex) {
+        } catch (SQLException ex) {
             ex.printStackTrace();
         }
         return null;
@@ -87,35 +126,50 @@ public class JdbcRichiestaEliminazioneProfiloDAO implements RichiestaEliminazion
 
     @Override
     public List<RichiestaEliminazioneProfilo> findAll() {
-        List<RichiestaEliminazioneProfilo> richieste = new ArrayList<>();
-        String sql = "SELECT * FROM richieste_eliminazione_profilo";
+        List<RichiestaEliminazioneProfilo> out = new ArrayList<>();
         try (Connection conn = DatabaseManager.getConnection();
              Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
-            while (rs.next()) richieste.add(buildFromRs(rs));
-        } catch (Exception ex) {
+             ResultSet rs = st.executeQuery(SQL_FIND_ALL)) {
+
+            while (rs.next()) out.add(buildFromRs(rs));
+        } catch (SQLException ex) {
             ex.printStackTrace();
         }
-        return richieste;
+        return out;
     }
 
     @Override
-    public List<RichiestaEliminazioneProfilo> findByUsername(String username){
-        List<RichiestaEliminazioneProfilo> richieste = new ArrayList<>();
-        String sql = "SELECT * FROM richieste_eliminazione_profilo WHERE username = ?";
+    public List<RichiestaEliminazioneProfilo> findByUsername(String username) {
+        List<RichiestaEliminazioneProfilo> out = new ArrayList<>();
         try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(SQL_FIND_BY_USERNAME)) {
+
             ps.setString(1, username);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) richieste.add(buildFromRs(rs));
+                while (rs.next()) out.add(buildFromRs(rs));
             }
-        } catch (Exception ex) {
+        } catch (SQLException ex) {
             ex.printStackTrace();
         }
-        return richieste;
+        return out;
     }
 
-    // Helper privato per build oggetto da ResultSet
+    /** Restituisce la richiesta in attesa più recente per username, se presente. */
+    public Optional<RichiestaEliminazioneProfilo> findPendingByUsername(String username) {
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(SQL_FIND_PENDING_BY_USERNAME)) {
+
+            ps.setString(1, username);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return Optional.of(buildFromRs(rs));
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return Optional.empty();
+    }
+
+    // ---- helper ----
     private RichiestaEliminazioneProfilo buildFromRs(ResultSet rs) throws SQLException {
         return new RichiestaEliminazioneProfilo(
                 rs.getInt("id"),

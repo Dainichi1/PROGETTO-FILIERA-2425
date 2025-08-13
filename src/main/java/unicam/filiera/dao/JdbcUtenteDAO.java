@@ -111,6 +111,21 @@ public class JdbcUtenteDAO implements UtenteDAO {
     }
 
     @Override
+    public boolean deleteByUsername(String username) {
+        String sql = "DELETE FROM utenti WHERE username = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, username);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+
+
+    @Override
     public List<UtenteAutenticato> findAll() {
         List<UtenteAutenticato> list = new ArrayList<>();
         try (Connection conn = DatabaseManager.getConnection();

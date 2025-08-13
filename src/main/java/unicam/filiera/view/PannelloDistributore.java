@@ -6,6 +6,8 @@ import unicam.filiera.controller.ObserverManagerPacchetto;
 import unicam.filiera.dto.PacchettoDto;
 import unicam.filiera.dto.PostSocialDto;
 import unicam.filiera.model.*;
+import unicam.filiera.model.observer.EliminazioneProfiloNotifier;
+import unicam.filiera.model.observer.OsservatoreEliminazioneProfilo;
 import unicam.filiera.model.observer.OsservatorePacchetto;
 
 import javax.swing.*;
@@ -21,7 +23,7 @@ import java.util.function.BiConsumer;
  * View pura: mostra l’interfaccia e delega la logica
  * a {@link DistributoreController}.
  */
-public class PannelloDistributore extends JPanel implements OsservatorePacchetto {
+public class PannelloDistributore extends JPanel implements OsservatorePacchetto, OsservatoreEliminazioneProfilo {
     private final UtenteAutenticato utente;
     private final DistributoreController controller;
     private boolean editMode = false;
@@ -266,6 +268,8 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
 
         // Observer registration for pacchetti
         ObserverManagerPacchetto.registraOsservatore(this);
+        EliminazioneProfiloNotifier.getInstance()
+                .subscribe(utente.getUsername(), this);
 
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         bottomPanel.add(btnEliminaProfilo);
@@ -600,7 +604,75 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
     public void removeNotify() {
         super.removeNotify();
         ObserverManagerPacchetto.rimuoviOsservatore(this);
+        EliminazioneProfiloNotifier.getInstance()
+                .unsubscribe(utente.getUsername(), this);
     }
+
+    // ==== OsservatoreEliminazioneProfilo ====
+    @Override
+    public void onRichiestaRifiutata(String username, int richiestaId, String motivo) {
+        if (!username.equalsIgnoreCase(utente.getUsername())) return;
+        SwingUtilities.invokeLater(() ->
+                JOptionPane.showMessageDialog(
+                        this,
+                        "La tua richiesta di eliminazione (ID " + richiestaId + ") è stata RIFIUTATA.\n",
+                        "Richiesta rifiutata",
+                        JOptionPane.INFORMATION_MESSAGE
+                )
+        );
+    }
+
+    @Override
+    public void onProfiloEliminato(String username, int richiestaId) {
+        if (!username.equalsIgnoreCase(utente.getUsername())) return;
+
+        SwingUtilities.invokeLater(() -> {
+            String msg = "Il tuo profilo è stato eliminato (richiesta ID " + richiestaId + ").\n"
+                    + "Verrai riportato alla schermata iniziale...";
+            // Nessun bottone: si chiude da solo dopo 3s e fa logout
+            showAutoCloseInfoAndThen("Profilo eliminato", msg, 3000, this::logoutToHome);
+        });
+    }
+
+    /** Mostra un info dialog senza bottoni che si chiude da solo dopo 'millis' e poi esegue 'afterClose'. */
+    private void showAutoCloseInfoAndThen(String title, String message, int millis, Runnable afterClose) {
+        JOptionPane pane = new JOptionPane(
+                message,
+                JOptionPane.INFORMATION_MESSAGE,
+                JOptionPane.DEFAULT_OPTION,
+                null,
+                new Object[] {},
+                null
+        );
+        JDialog dialog = pane.createDialog(SwingUtilities.getWindowAncestor(this), title);
+        dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+        dialog.setResizable(false);
+
+        Timer t = new Timer(millis, e -> {
+            dialog.dispose();
+            if (afterClose != null) afterClose.run();
+        });
+        t.setRepeats(false);
+        t.start();
+
+        dialog.setVisible(true);
+    }
+
+    /** Ritorna alla home (riutilizza MainWindow esistente se c'è). */
+    private void logoutToHome() {
+        SwingUtilities.invokeLater(() -> {
+            Window w = SwingUtilities.getWindowAncestor(this);
+            if (w instanceof MainWindow mw) {
+                mw.tornaAllaHome();
+            } else {
+                if (w != null) w.dispose();
+                MainWindow mw2 = new MainWindow();
+                mw2.setVisible(true);
+            }
+        });
+    }
+
+
 
     private void resetForm() {
         nomeField.setText("");

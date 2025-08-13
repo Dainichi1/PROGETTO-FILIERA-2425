@@ -10,9 +10,12 @@ import java.util.List;
  * Service per la gestione delle richieste di eliminazione profilo.
  */
 public interface EliminazioneProfiloService {
+
     /**
-     * Invia una nuova richiesta di eliminazione profilo (stato IN_ATTESA).
-     * Lancia IllegalStateException se esiste già una richiesta IN_ATTESA per quell'utente.
+     * Invia una nuova richiesta di eliminazione profilo.
+     * @param dto dati della richiesta
+     * @throws IllegalStateException se esiste già una richiesta IN_ATTESA per l'utente
+     * @throws RuntimeException se si verifica un errore durante il salvataggio
      */
     void inviaRichiestaEliminazione(RichiestaEliminazioneProfiloDto dto);
 

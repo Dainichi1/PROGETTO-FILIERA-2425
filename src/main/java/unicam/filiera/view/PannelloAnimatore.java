@@ -2,11 +2,15 @@ package unicam.filiera.view;
 
 import unicam.filiera.controller.AnimatoreController;
 import unicam.filiera.controller.EliminazioneProfiloController;
+import unicam.filiera.controller.ObserverManagerItem;
 import unicam.filiera.dto.FieraDto;
 import unicam.filiera.dto.PostSocialDto;
 import unicam.filiera.dto.VisitaInvitoDto;
 import unicam.filiera.model.Ruolo;
 import unicam.filiera.model.UtenteAutenticato;
+import unicam.filiera.model.observer.EliminazioneProfiloNotifier;
+import unicam.filiera.model.observer.OsservatoreEliminazioneProfilo;
+import unicam.filiera.model.observer.OsservatoreItem;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -15,9 +19,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class PannelloAnimatore extends JPanel {
+public class PannelloAnimatore extends JPanel implements OsservatoreEliminazioneProfilo {
     private final AnimatoreController controller;
     private final EliminazioneProfiloController eliminaController;
+    private final UtenteAutenticato utente;
 
     private final JComboBox<String> comboTipo = new JComboBox<>(new String[]{"Fiera", "Visita su invito"});
 
@@ -43,6 +48,7 @@ public class PannelloAnimatore extends JPanel {
 
     public PannelloAnimatore(UtenteAutenticato utente) {
         super(new BorderLayout());
+        this.utente = utente;
         this.controller = new AnimatoreController(utente.getUsername());
         this.eliminaController = new EliminazioneProfiloController(utente.getUsername());
 
@@ -93,7 +99,7 @@ public class PannelloAnimatore extends JPanel {
                             .map(f -> new Object[]{
                                     f.getId(),
                                     abbreviate(f.getDescrizione(), 60),
-                                    f.getDataInizio(),   // toString va bene per ora
+                                    f.getDataInizio(),
                                     f.getDataFine(),
                                     f.getStato().name()
                             })
@@ -127,6 +133,10 @@ public class PannelloAnimatore extends JPanel {
 
             dlg.setVisible(true);
         });
+
+
+        EliminazioneProfiloNotifier.getInstance()
+                .subscribe(utente.getUsername(), this);
 
 
     }
@@ -356,6 +366,84 @@ public class PannelloAnimatore extends JPanel {
 
         return p;
     }
+
+    // ==== OsservatoreEliminazioneProfilo ====
+    @Override
+    public void onRichiestaRifiutata(String username, int richiestaId, String motivo) {
+        if (!username.equalsIgnoreCase(utente.getUsername())) return;
+        SwingUtilities.invokeLater(() ->
+                JOptionPane.showMessageDialog(
+                        this,
+                        "La tua richiesta di eliminazione (ID " + richiestaId + ") è stata RIFIUTATA.\n",
+                        "Richiesta rifiutata",
+                        JOptionPane.INFORMATION_MESSAGE
+                )
+        );
+    }
+
+    @Override
+    public void onProfiloEliminato(String username, int richiestaId) {
+        if (!username.equalsIgnoreCase(utente.getUsername())) return;
+
+        SwingUtilities.invokeLater(() -> {
+            String msg = "Il tuo profilo è stato eliminato (richiesta ID " + richiestaId + ").\n"
+                    + "Verrai riportato alla schermata iniziale...";
+            // Nessun bottone: si chiude da solo dopo 3s e fa logout
+            showAutoCloseInfoAndThen("Profilo eliminato", msg, 3000, this::logoutToHome);
+        });
+    }
+
+    /**
+     * Mostra un info dialog senza bottoni che si chiude da solo dopo 'millis' e poi esegue 'afterClose'.
+     */
+    private void showAutoCloseInfoAndThen(String title, String message, int millis, Runnable afterClose) {
+        JOptionPane pane = new JOptionPane(
+                message,
+                JOptionPane.INFORMATION_MESSAGE,
+                JOptionPane.DEFAULT_OPTION,
+                null,
+                new Object[]{},
+                null
+        );
+        JDialog dialog = pane.createDialog(SwingUtilities.getWindowAncestor(this), title);
+        dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+        dialog.setResizable(false);
+
+        Timer t = new Timer(millis, e -> {
+            dialog.dispose();
+            if (afterClose != null) afterClose.run();
+        });
+        t.setRepeats(false);
+        t.start();
+
+        dialog.setVisible(true);
+    }
+
+    /**
+     * Ritorna alla home (riutilizza MainWindow esistente se c'è).
+     */
+    private void logoutToHome() {
+        SwingUtilities.invokeLater(() -> {
+            Window w = SwingUtilities.getWindowAncestor(this);
+            if (w instanceof MainWindow mw) {
+                mw.tornaAllaHome();
+            } else {
+                if (w != null) w.dispose();
+                MainWindow mw2 = new MainWindow();
+                mw2.setVisible(true);
+            }
+        });
+    }
+
+    @Override
+    public void removeNotify() {
+        super.removeNotify();
+        EliminazioneProfiloNotifier.getInstance()
+                .unsubscribe(utente.getUsername(), this);
+
+
+    }
+
 
     private void aggiungiRiga(JPanel p, GridBagConstraints gbc, int row, String label, JComponent field) {
         gbc.gridy = row;

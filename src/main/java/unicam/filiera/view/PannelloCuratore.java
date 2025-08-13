@@ -2,9 +2,7 @@ package unicam.filiera.view;
 
 import unicam.filiera.controller.*;
 import unicam.filiera.model.*;
-import unicam.filiera.model.observer.OsservatorePacchetto;
-import unicam.filiera.model.observer.OsservatoreProdotto;
-import unicam.filiera.model.observer.OsservatoreProdottoTrasformato;
+import unicam.filiera.model.observer.*;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -22,7 +20,7 @@ import java.util.stream.Collectors;
  * Contiene solo la parte grafica (preview di foto e certificati).
  */
 public class PannelloCuratore extends JPanel
-        implements OsservatoreProdotto, OsservatorePacchetto, OsservatoreProdottoTrasformato
+        implements OsservatoreProdotto, OsservatorePacchetto, OsservatoreProdottoTrasformato, OsservatoreEliminazioneProfilo
  {
 
     private final JTable tabella;
@@ -32,10 +30,12 @@ public class PannelloCuratore extends JPanel
     private final CuratoreController controller = new CuratoreController();
      private final EliminazioneProfiloController eliminaController;
      private final JButton btnEliminaProfilo = new JButton("Elimina profilo");
+     private final UtenteAutenticato utente;
 
     public PannelloCuratore(UtenteAutenticato utente) {
         super(new BorderLayout());
         this.eliminaController = new EliminazioneProfiloController(utente.getUsername());
+        this.utente = utente;
 
 
         // Header
@@ -110,6 +110,8 @@ public class PannelloCuratore extends JPanel
         ObserverManagerProdotto.registraOsservatore(this);
         ObserverManagerPacchetto.registraOsservatore(this);
         ObserverManagerProdottoTrasformato.registraOsservatore(this);
+        EliminazioneProfiloNotifier.getInstance()
+                .subscribe(utente.getUsername(), this);
 
 
         // Carica iniziale
@@ -339,12 +341,79 @@ public class PannelloCuratore extends JPanel
         }
     }
 
-    @Override
+
+     @Override
+     public void onRichiestaRifiutata(String username, int richiestaId, String motivo) {
+         if (!username.equalsIgnoreCase(utente.getUsername())) return;
+         SwingUtilities.invokeLater(() ->
+                 JOptionPane.showMessageDialog(
+                         this,
+                         "La tua richiesta di eliminazione (ID " + richiestaId + ") è stata RIFIUTATA.\n",
+                         "Richiesta rifiutata",
+                         JOptionPane.INFORMATION_MESSAGE
+                 )
+         );
+     }
+
+     @Override
+     public void onProfiloEliminato(String username, int richiestaId) {
+         if (!username.equalsIgnoreCase(utente.getUsername())) return;
+
+         SwingUtilities.invokeLater(() -> {
+             String msg = "Il tuo profilo è stato eliminato (richiesta ID " + richiestaId + ").\n"
+                     + "Verrai riportato alla schermata iniziale...";
+             // Nessun bottone: si chiude da solo dopo 3s e fa logout
+             showAutoCloseInfoAndThen("Profilo eliminato", msg, 3000, this::logoutToHome);
+         });
+     }
+
+     /** Mostra un info dialog senza bottoni che si chiude da solo dopo 'millis' e poi esegue 'afterClose'. */
+     private void showAutoCloseInfoAndThen(String title, String message, int millis, Runnable afterClose) {
+         JOptionPane pane = new JOptionPane(
+                 message,
+                 JOptionPane.INFORMATION_MESSAGE,
+                 JOptionPane.DEFAULT_OPTION,
+                 null,
+                 new Object[] {},
+                 null
+         );
+         JDialog dialog = pane.createDialog(SwingUtilities.getWindowAncestor(this), title);
+         dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+         dialog.setResizable(false);
+
+         Timer t = new Timer(millis, e -> {
+             dialog.dispose();
+             if (afterClose != null) afterClose.run();
+         });
+         t.setRepeats(false);
+         t.start();
+
+         dialog.setVisible(true);
+     }
+
+     /** Ritorna alla home (riutilizza MainWindow esistente se c'è). */
+     private void logoutToHome() {
+         SwingUtilities.invokeLater(() -> {
+             Window w = SwingUtilities.getWindowAncestor(this);
+             if (w instanceof MainWindow mw) {
+                 mw.tornaAllaHome();
+             } else {
+                 if (w != null) w.dispose();
+                 MainWindow mw2 = new MainWindow();
+                 mw2.setVisible(true);
+             }
+         });
+     }
+
+
+     @Override
     public void removeNotify() {
         super.removeNotify();
         ObserverManagerProdotto.rimuoviOsservatore(this);
         ObserverManagerPacchetto.rimuoviOsservatore(this);
         ObserverManagerProdottoTrasformato.rimuoviOsservatore(this);
+        EliminazioneProfiloNotifier.getInstance()
+                .unsubscribe(utente.getUsername(), this);
 
     }
 }

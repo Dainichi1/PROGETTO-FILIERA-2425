@@ -26,6 +26,8 @@
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/aafbf01d-bf99-4684-8ac6-b80e36f85f40/console_77.sql" value="aafbf01d-bf99-4684-8ac6-b80e36f85f40" />
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/aafbf01d-bf99-4684-8ac6-b80e36f85f40/console_78.sql" value="aafbf01d-bf99-4684-8ac6-b80e36f85f40" />
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/aafbf01d-bf99-4684-8ac6-b80e36f85f40/console_79.sql" value="aafbf01d-bf99-4684-8ac6-b80e36f85f40" />
+    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/aafbf01d-bf99-4684-8ac6-b80e36f85f40/console_80.sql" value="aafbf01d-bf99-4684-8ac6-b80e36f85f40" />
+    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/aafbf01d-bf99-4684-8ac6-b80e36f85f40/console_81.sql" value="aafbf01d-bf99-4684-8ac6-b80e36f85f40" />
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/def88160-ca42-4c7d-bca6-d923b8a83266/console.sql" value="def88160-ca42-4c7d-bca6-d923b8a83266" />
   </component>
 </project>

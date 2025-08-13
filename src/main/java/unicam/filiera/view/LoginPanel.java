@@ -98,6 +98,9 @@ public class LoginPanel extends JPanel {
                             PannelloFactory.creaAcquirentePanel(dashboard, authUser));
                     case TRASFORMATORE -> dashboard.setContentPane(
                             PannelloFactory.creaTrasformatorePanel(dashboard, authUser));
+                    case GESTORE_PIATTAFORMA -> dashboard.setContentPane(
+                            PannelloFactory.creaGestorePanel(dashboard, authUser));
+
                     default -> {
                         JOptionPane.showMessageDialog(this,
                                 "Nessun pannello associato a questo ruolo.",

@@ -52,6 +52,7 @@ public final class PannelloFactory {
             case ANIMATORE -> creaAnimatorePanel(frame, utente);
             case ACQUIRENTE -> creaAcquirentePanel(frame, utente);
             case TRASFORMATORE -> creaTrasformatorePanel(frame, utente);
+            case GESTORE_PIATTAFORMA -> creaGestorePanel(frame, utente);
 
             default -> null;
         };
@@ -79,5 +80,9 @@ public final class PannelloFactory {
 
     public static JPanel creaTrasformatorePanel(JFrame frame, UtenteAutenticato utente) {
         return new PannelloTrasformatore(utente);
+    }
+
+    public static JPanel creaGestorePanel(JFrame frame, UtenteAutenticato utente) {
+        return new PannelloGestore(utente);
     }
 }

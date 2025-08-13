@@ -8,6 +8,8 @@ import unicam.filiera.dto.AcquistoListaDto;
 import unicam.filiera.dto.CartItemDto;
 import unicam.filiera.dto.CartTotalsDto;
 import unicam.filiera.model.*;
+import unicam.filiera.model.observer.EliminazioneProfiloNotifier;
+import unicam.filiera.model.observer.OsservatoreEliminazioneProfilo;
 import unicam.filiera.model.observer.OsservatoreItem;
 import unicam.filiera.dto.PostSocialDto;
 
@@ -19,9 +21,11 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.function.BiConsumer;
 
-public class PannelloAcquirente extends JPanel implements OsservatoreItem {
+public class PannelloAcquirente extends JPanel implements OsservatoreItem, OsservatoreEliminazioneProfilo {
+
     private final AcquirenteController ctrl;
     private final EliminazioneProfiloController eliminaController;
+    private final UtenteAutenticato utente;
 
 
     private DefaultTableModel modelAcquisti;
@@ -68,6 +72,7 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
 
     public PannelloAcquirente(UtenteAutenticato utente) {
         super(new BorderLayout());
+        this.utente = utente;
         this.ctrl = new AcquirenteController(this, utente);
         this.eliminaController = new EliminazioneProfiloController(utente.getUsername());
 
@@ -155,6 +160,8 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
         });
 
         ObserverManagerItem.registraOsservatore(this);
+        EliminazioneProfiloNotifier.getInstance()
+                .subscribe(utente.getUsername(), this);
 
         initUI();
         aggiungiListenerMarketplace();
@@ -647,7 +654,11 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
     public void removeNotify() {
         super.removeNotify();
         ObserverManagerItem.rimuoviOsservatore(this);
+        // unsubscribe dall’osservatore eliminazione profilo
+        EliminazioneProfiloNotifier.getInstance()
+                .unsubscribe(utente.getUsername(), this);
     }
+
 
     public void showFiereDisponibili(List<Fiera> fiere) {
         modelFiere.setRowCount(0);
@@ -722,6 +733,74 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem {
                         ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
                 );
             });
+        });
+    }
+
+    // ==== OsservatoreEliminazioneProfilo ====
+    @Override
+    public void onRichiestaRifiutata(String username, int richiestaId, String motivo) {
+        if (!username.equalsIgnoreCase(utente.getUsername())) return;
+        SwingUtilities.invokeLater(() ->
+                JOptionPane.showMessageDialog(
+                        this,
+                        "La tua richiesta di eliminazione (ID " + richiestaId + ") è stata RIFIUTATA.\n",
+                        "Richiesta rifiutata",
+                        JOptionPane.INFORMATION_MESSAGE
+                )
+        );
+    }
+
+    @Override
+    public void onProfiloEliminato(String username, int richiestaId) {
+        if (!username.equalsIgnoreCase(utente.getUsername())) return;
+
+        SwingUtilities.invokeLater(() -> {
+            String msg = "Il tuo profilo è stato eliminato (richiesta ID " + richiestaId + ").\n"
+                    + "Verrai riportato alla schermata iniziale...";
+            // Nessun bottone: si chiude da solo dopo 3s e fa logout
+            showAutoCloseInfoAndThen("Profilo eliminato", msg, 3000, this::logoutToHome);
+        });
+    }
+
+    /**
+     * Mostra un info dialog senza bottoni che si chiude da solo dopo 'millis' e poi esegue 'afterClose'.
+     */
+    private void showAutoCloseInfoAndThen(String title, String message, int millis, Runnable afterClose) {
+        JOptionPane pane = new JOptionPane(
+                message,
+                JOptionPane.INFORMATION_MESSAGE,
+                JOptionPane.DEFAULT_OPTION,
+                null,
+                new Object[]{},
+                null
+        );
+        JDialog dialog = pane.createDialog(SwingUtilities.getWindowAncestor(this), title);
+        dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+        dialog.setResizable(false);
+
+        Timer t = new Timer(millis, e -> {
+            dialog.dispose();
+            if (afterClose != null) afterClose.run();
+        });
+        t.setRepeats(false);
+        t.start();
+
+        dialog.setVisible(true);
+    }
+
+    /**
+     * Ritorna alla home (riutilizza MainWindow esistente se c'è).
+     */
+    private void logoutToHome() {
+        SwingUtilities.invokeLater(() -> {
+            Window w = SwingUtilities.getWindowAncestor(this);
+            if (w instanceof MainWindow mw) {
+                mw.tornaAllaHome();
+            } else {
+                if (w != null) w.dispose();
+                MainWindow mw2 = new MainWindow();
+                mw2.setVisible(true);
+            }
         });
     }
 

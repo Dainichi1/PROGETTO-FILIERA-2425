@@ -32,12 +32,21 @@ public class PannelloGestore extends JPanel {
 
         // Barra superiore comandi
         JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton btnContenuti = new JButton("Visualizza contenuto piattaforma");
         JButton btnRichieste = new JButton("Visualizza richieste di eliminazione in attesa");
+        topBar.add(btnContenuti);
         topBar.add(btnRichieste);
         add(topBar, BorderLayout.SOUTH);
 
         btnRichieste.addActionListener(e -> mostraRichiesteInAttesa());
-
+        btnContenuti.addActionListener(e -> {
+            JDialog dlg = new JDialog(SwingUtilities.getWindowAncestor(this),
+                    "Contenuto piattaforma", Dialog.ModalityType.APPLICATION_MODAL);
+            dlg.setContentPane(new PannelloGestoreContenuti());
+            dlg.setSize(1000, 600);
+            dlg.setLocationRelativeTo(this);
+            dlg.setVisible(true);
+        });
         // placeholder centro
         JPanel center = new JPanel(new GridBagLayout());
         center.add(new JLabel("Dashboard Gestore"));

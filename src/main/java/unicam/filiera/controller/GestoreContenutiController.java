@@ -24,7 +24,9 @@ public class GestoreContenutiController {
         );
     }
 
-    /** Carica gli elementi della categoria. */
+    /**
+     * Carica gli elementi della categoria.
+     */
     public List<ElementoPiattaformaDto> getContenutiCategoria(CategoriaContenuto cat) {
         try (Connection c = DatabaseManager.getConnection()) {
             switch (cat) {
@@ -34,9 +36,9 @@ public class GestoreContenutiController {
                          ResultSet rs = ps.executeQuery()) {
                         List<ElementoPiattaformaDto> out = new ArrayList<>();
                         while (rs.next()) {
-                            String id   = rs.getString("username");
+                            String id = rs.getString("username");
                             String nome = rs.getString("nome") + " " + rs.getString("cognome");
-                            String extra= "Fondi: " + rs.getDouble("fondi");
+                            String extra = "Fondi: " + rs.getDouble("fondi");
                             out.add(new ElementoPiattaformaDto(id, nome, "Utente",
                                     rs.getString("ruolo"), null, extra));
                         }
@@ -192,7 +194,9 @@ public class GestoreContenutiController {
         return List.of();
     }
 
-    /** Filtra/ordina in memoria la lista corrente secondo i criteri. */
+    /**
+     * Filtra/ordina in memoria la lista corrente secondo i criteri.
+     */
     public List<ElementoPiattaformaDto> filtraOrdinaLista(List<ElementoPiattaformaDto> src, CriteriRicerca c) {
         if (src == null) return List.of();
         var stream = src.stream();
@@ -229,10 +233,13 @@ public class GestoreContenutiController {
         }
     }
 
-    /** Stati disponibili per la combo, per dare un minimo di UX nei filtri. */
+    /**
+     * Stati disponibili per la combo, per dare un minimo di UX nei filtri.
+     */
     public String[] getPossibiliStati(CategoriaContenuto cat) {
         return switch (cat) {
-            case PRODOTTI, PACCHETTI, PRODOTTI_TRASFORMATI -> new String[]{"Tutti", "IN_ATTESA", "APPROVATO", "RIFIUTATO"};
+            case PRODOTTI, PACCHETTI, PRODOTTI_TRASFORMATI ->
+                    new String[]{"Tutti", "IN_ATTESA", "APPROVATO", "RIFIUTATO"};
             case FIERE, VISITE_INVITO -> new String[]{"Tutti", "IN_PREPARAZIONE", "APERTO", "CONCLUSO"};
             case ACQUISTI -> new String[]{"Tutti", "PAGATO", "FALLITO", "ANNULLATO"};
             default -> new String[]{"Tutti"};
@@ -261,7 +268,7 @@ public class GestoreContenutiController {
         }
     }
 
-    private static String trunca(String s){
+    private static String trunca(String s) {
         if (s == null) return "";
         return s.length() > 60 ? s.substring(0, 57) + "..." : s;
     }

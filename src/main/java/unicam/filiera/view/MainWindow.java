@@ -1,5 +1,6 @@
 package unicam.filiera.view;
 
+import unicam.filiera.controller.MappaController;
 import unicam.filiera.factory.PannelloFactory;
 
 import javax.swing.*;
@@ -22,12 +23,14 @@ public class MainWindow extends JFrame {
         JButton btnLogin = new JButton("Login");
         JButton btnRegister = new JButton("Registrati");
         JButton btnMarketplace = new JButton("Visualizza Marketplace");
-        JButton btnSocial = new JButton("Visualizza Social Network"); // NUOVO PULSANTE
+        JButton btnSocial = new JButton("Visualizza Social Network");
+        JButton btnMappa = new JButton("Visualizza Mappa");
 
         panel.add(btnLogin);
         panel.add(btnRegister);
         panel.add(btnMarketplace);
-        panel.add(btnSocial); // aggiungo il nuovo bottone
+        panel.add(btnSocial);
+        panel.add(btnMappa);
 
         this.homePanel = panel;
         setContentPane(homePanel);
@@ -54,6 +57,8 @@ public class MainWindow extends JFrame {
             mostraPannello(socialPanel);
             socialPanel.getBtnIndietro().addActionListener(ev -> tornaAllaHome());
         });
+
+        btnMappa.addActionListener(e -> new MappaController().mostra());
 
     }
 

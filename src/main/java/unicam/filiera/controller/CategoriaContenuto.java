@@ -13,8 +13,17 @@ public enum CategoriaContenuto {
     SOCIAL_POSTS("Post social");
 
     private final String label;
-    CategoriaContenuto(String label){ this.label = label; }
-    public String label(){ return label; }
 
-    @Override public String toString(){ return label; }
+    CategoriaContenuto(String label) {
+        this.label = label;
+    }
+
+    public String label() {
+        return label;
+    }
+
+    @Override
+    public String toString() {
+        return label;
+    }
 }

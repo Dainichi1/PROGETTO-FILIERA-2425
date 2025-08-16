@@ -20,17 +20,17 @@ import java.util.stream.Collectors;
  * Contiene solo la parte grafica (preview di foto e certificati).
  */
 public class PannelloCuratore extends JPanel
-        implements OsservatoreProdotto, OsservatorePacchetto, OsservatoreProdottoTrasformato, OsservatoreEliminazioneProfilo
- {
+        implements OsservatoreProdotto, OsservatorePacchetto, OsservatoreProdottoTrasformato, OsservatoreEliminazioneProfilo {
 
     private final JTable tabella;
     private final DefaultTableModel model;
     private final JScrollPane scrollPane;
     private final JButton toggleButton;
     private final CuratoreController controller = new CuratoreController();
-     private final EliminazioneProfiloController eliminaController;
-     private final JButton btnEliminaProfilo = new JButton("Elimina profilo");
-     private final UtenteAutenticato utente;
+    private final EliminazioneProfiloController eliminaController;
+    private final JButton btnEliminaProfilo = new JButton("Elimina profilo");
+    private final JButton btnShowMap = new JButton("Visualizza Mappa");
+    private final UtenteAutenticato utente;
 
     public PannelloCuratore(UtenteAutenticato utente) {
         super(new BorderLayout());
@@ -100,10 +100,14 @@ public class PannelloCuratore extends JPanel
             repaint();
         });
         btnEliminaProfilo.addActionListener(e -> mostraDialogEliminaProfilo());
-
+        btnShowMap.addActionListener(e -> {
+            MappaController mappaCtrl = new MappaController();
+            mappaCtrl.mostra();
+        });
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         bottomPanel.add(toggleButton);
         bottomPanel.add(btnEliminaProfilo);
+        bottomPanel.add(btnShowMap);
         add(bottomPanel, BorderLayout.SOUTH);
 
         // Registrazione come osservatore
@@ -117,27 +121,27 @@ public class PannelloCuratore extends JPanel
         // Carica iniziale
         caricaElementiInAttesa();
     }
-     private void mostraDialogEliminaProfilo() {
-         int res = JOptionPane.showConfirmDialog(
-                 this,
-                 "Sei sicuro di voler eliminare il tuo profilo?\nLa richiesta sarà inviata al Gestore.",
-                 "Conferma eliminazione profilo",
-                 JOptionPane.YES_NO_OPTION,
-                 JOptionPane.WARNING_MESSAGE
-         );
-         if (res != JOptionPane.YES_OPTION) return;
 
-         eliminaController.inviaRichiestaEliminazione((ok, msg) -> {
-             SwingUtilities.invokeLater(() -> {
-                 JOptionPane.showMessageDialog(
-                         this, msg,
-                         ok ? "Richiesta inviata" : "Errore",
-                         ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
-                 );
-             });
-         });
-     }
+    private void mostraDialogEliminaProfilo() {
+        int res = JOptionPane.showConfirmDialog(
+                this,
+                "Sei sicuro di voler eliminare il tuo profilo?\nLa richiesta sarà inviata al Gestore.",
+                "Conferma eliminazione profilo",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+        if (res != JOptionPane.YES_OPTION) return;
 
+        eliminaController.inviaRichiestaEliminazione((ok, msg) -> {
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(
+                        this, msg,
+                        ok ? "Richiesta inviata" : "Errore",
+                        ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
+                );
+            });
+        });
+    }
 
 
     @Override
@@ -188,7 +192,7 @@ public class PannelloCuratore extends JPanel
             nome = "[TRASF] " + pt.getNome();
             qt = pt.getQuantita();
             pr = pt.getPrezzo();
-            certDir = "uploads/certificati/"; // (o se vuoi, cartelle specifiche)
+            certDir = "uploads/certificati/";
             fotoDir = "uploads/foto/";
         } else if (item instanceof Prodotto p) {
             nome = p.getNome();
@@ -240,7 +244,6 @@ public class PannelloCuratore extends JPanel
 
         model.addRow(new Object[]{nome, desc, qt, pr, ind, cd, certFiles, fotoFiles, btnA, btnR, ""});
     }
-
 
 
     // Renderer/Editor per preview di file
@@ -342,71 +345,75 @@ public class PannelloCuratore extends JPanel
     }
 
 
-     @Override
-     public void onRichiestaRifiutata(String username, int richiestaId, String motivo) {
-         if (!username.equalsIgnoreCase(utente.getUsername())) return;
-         SwingUtilities.invokeLater(() ->
-                 JOptionPane.showMessageDialog(
-                         this,
-                         "La tua richiesta di eliminazione (ID " + richiestaId + ") è stata RIFIUTATA.\n",
-                         "Richiesta rifiutata",
-                         JOptionPane.INFORMATION_MESSAGE
-                 )
-         );
-     }
+    @Override
+    public void onRichiestaRifiutata(String username, int richiestaId, String motivo) {
+        if (!username.equalsIgnoreCase(utente.getUsername())) return;
+        SwingUtilities.invokeLater(() ->
+                JOptionPane.showMessageDialog(
+                        this,
+                        "La tua richiesta di eliminazione (ID " + richiestaId + ") è stata RIFIUTATA.\n",
+                        "Richiesta rifiutata",
+                        JOptionPane.INFORMATION_MESSAGE
+                )
+        );
+    }
 
-     @Override
-     public void onProfiloEliminato(String username, int richiestaId) {
-         if (!username.equalsIgnoreCase(utente.getUsername())) return;
+    @Override
+    public void onProfiloEliminato(String username, int richiestaId) {
+        if (!username.equalsIgnoreCase(utente.getUsername())) return;
 
-         SwingUtilities.invokeLater(() -> {
-             String msg = "Il tuo profilo è stato eliminato (richiesta ID " + richiestaId + ").\n"
-                     + "Verrai riportato alla schermata iniziale...";
-             // Nessun bottone: si chiude da solo dopo 3s e fa logout
-             showAutoCloseInfoAndThen("Profilo eliminato", msg, 3000, this::logoutToHome);
-         });
-     }
+        SwingUtilities.invokeLater(() -> {
+            String msg = "Il tuo profilo è stato eliminato (richiesta ID " + richiestaId + ").\n"
+                    + "Verrai riportato alla schermata iniziale...";
+            // Nessun bottone: si chiude da solo dopo 3s e fa logout
+            showAutoCloseInfoAndThen("Profilo eliminato", msg, 3000, this::logoutToHome);
+        });
+    }
 
-     /** Mostra un info dialog senza bottoni che si chiude da solo dopo 'millis' e poi esegue 'afterClose'. */
-     private void showAutoCloseInfoAndThen(String title, String message, int millis, Runnable afterClose) {
-         JOptionPane pane = new JOptionPane(
-                 message,
-                 JOptionPane.INFORMATION_MESSAGE,
-                 JOptionPane.DEFAULT_OPTION,
-                 null,
-                 new Object[] {},
-                 null
-         );
-         JDialog dialog = pane.createDialog(SwingUtilities.getWindowAncestor(this), title);
-         dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-         dialog.setResizable(false);
+    /**
+     * Mostra un info dialog senza bottoni che si chiude da solo dopo 'millis' e poi esegue 'afterClose'.
+     */
+    private void showAutoCloseInfoAndThen(String title, String message, int millis, Runnable afterClose) {
+        JOptionPane pane = new JOptionPane(
+                message,
+                JOptionPane.INFORMATION_MESSAGE,
+                JOptionPane.DEFAULT_OPTION,
+                null,
+                new Object[]{},
+                null
+        );
+        JDialog dialog = pane.createDialog(SwingUtilities.getWindowAncestor(this), title);
+        dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+        dialog.setResizable(false);
 
-         Timer t = new Timer(millis, e -> {
-             dialog.dispose();
-             if (afterClose != null) afterClose.run();
-         });
-         t.setRepeats(false);
-         t.start();
+        Timer t = new Timer(millis, e -> {
+            dialog.dispose();
+            if (afterClose != null) afterClose.run();
+        });
+        t.setRepeats(false);
+        t.start();
 
-         dialog.setVisible(true);
-     }
+        dialog.setVisible(true);
+    }
 
-     /** Ritorna alla home (riutilizza MainWindow esistente se c'è). */
-     private void logoutToHome() {
-         SwingUtilities.invokeLater(() -> {
-             Window w = SwingUtilities.getWindowAncestor(this);
-             if (w instanceof MainWindow mw) {
-                 mw.tornaAllaHome();
-             } else {
-                 if (w != null) w.dispose();
-                 MainWindow mw2 = new MainWindow();
-                 mw2.setVisible(true);
-             }
-         });
-     }
+    /**
+     * Ritorna alla home (riutilizza MainWindow esistente se c'è).
+     */
+    private void logoutToHome() {
+        SwingUtilities.invokeLater(() -> {
+            Window w = SwingUtilities.getWindowAncestor(this);
+            if (w instanceof MainWindow mw) {
+                mw.tornaAllaHome();
+            } else {
+                if (w != null) w.dispose();
+                MainWindow mw2 = new MainWindow();
+                mw2.setVisible(true);
+            }
+        });
+    }
 
 
-     @Override
+    @Override
     public void removeNotify() {
         super.removeNotify();
         ObserverManagerProdotto.rimuoviOsservatore(this);

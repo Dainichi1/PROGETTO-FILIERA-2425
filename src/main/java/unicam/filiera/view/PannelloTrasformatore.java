@@ -1,5 +1,6 @@
 package unicam.filiera.view;
 
+import unicam.filiera.controller.MappaController;
 import unicam.filiera.controller.ObserverManagerItem;
 import unicam.filiera.controller.TrasformatoreController;
 import unicam.filiera.controller.EliminazioneProfiloController;
@@ -56,6 +57,7 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
     private final JButton btnVisualizzaPrenotazioniVisite = new JButton("Visualizza prenotazioni visite");
     private final JButton btnEliminaProfilo = new JButton("Elimina profilo");
     private final JButton btnShowSocial = new JButton("Visualizza Social Network");
+    private final JButton btnShowMap = new JButton("Visualizza Mappa");
 
     private final DefaultTableModel model;
     private final JTable tabella;
@@ -82,6 +84,7 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
         left.add(btnToggleForm);
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         right.add(btnEliminaProfilo);
+        right.add(btnShowMap);
         southBar.add(left, BorderLayout.WEST);
         southBar.add(right, BorderLayout.EAST);
         add(southBar, BorderLayout.SOUTH);
@@ -101,6 +104,10 @@ public class PannelloTrasformatore extends JPanel implements OsservatoreProdotto
                 );
                 ex.printStackTrace();
             }
+        });
+        btnShowMap.addActionListener(e -> {
+            MappaController mappaCtrl = new MappaController();
+            mappaCtrl.mostra();
         });
 
         JPanel pannelloVisite = new JPanel(new FlowLayout(FlowLayout.LEFT));

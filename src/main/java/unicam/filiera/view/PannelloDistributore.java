@@ -2,6 +2,7 @@ package unicam.filiera.view;
 
 import unicam.filiera.controller.DistributoreController;
 import unicam.filiera.controller.EliminazioneProfiloController;
+import unicam.filiera.controller.MappaController;
 import unicam.filiera.controller.ObserverManagerPacchetto;
 import unicam.filiera.dto.PacchettoDto;
 import unicam.filiera.dto.PostSocialDto;
@@ -51,6 +52,7 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
     private final JButton btnVisiteDisponibili = new JButton("Visualizza visite disponibili");
     private final JButton btnVisualizzaPrenotazioniVisite = new JButton("Visualizza prenotazioni visite");
     private final JButton btnShowSocial = new JButton("Visualizza Social Network");
+    private final JButton btnShowMap = new JButton("Visualizza Mappa");
 
     private final EliminazioneProfiloController eliminaController;
     private final JButton btnEliminaProfilo = new JButton("Elimina profilo");
@@ -98,6 +100,11 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
                 ex.printStackTrace();
             }
         });
+        btnShowMap.addActionListener(e -> {
+            MappaController mappaCtrl = new MappaController();
+            mappaCtrl.mostra();
+        });
+
 
         // Form building
         buildForm();
@@ -259,6 +266,7 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
         right.add(btnSelProd, BorderLayout.SOUTH);
         add(right, BorderLayout.EAST);
 
+
         // Event wiring
         wireEvents();
 
@@ -273,6 +281,7 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
 
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         bottomPanel.add(btnEliminaProfilo);
+        bottomPanel.add(btnShowMap);
         add(bottomPanel, BorderLayout.SOUTH);
 
         btnEliminaProfilo.addActionListener(e -> mostraDialogEliminaProfilo());
@@ -634,14 +643,16 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
         });
     }
 
-    /** Mostra un info dialog senza bottoni che si chiude da solo dopo 'millis' e poi esegue 'afterClose'. */
+    /**
+     * Mostra un info dialog senza bottoni che si chiude da solo dopo 'millis' e poi esegue 'afterClose'.
+     */
     private void showAutoCloseInfoAndThen(String title, String message, int millis, Runnable afterClose) {
         JOptionPane pane = new JOptionPane(
                 message,
                 JOptionPane.INFORMATION_MESSAGE,
                 JOptionPane.DEFAULT_OPTION,
                 null,
-                new Object[] {},
+                new Object[]{},
                 null
         );
         JDialog dialog = pane.createDialog(SwingUtilities.getWindowAncestor(this), title);
@@ -658,7 +669,9 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
         dialog.setVisible(true);
     }
 
-    /** Ritorna alla home (riutilizza MainWindow esistente se c'è). */
+    /**
+     * Ritorna alla home (riutilizza MainWindow esistente se c'è).
+     */
     private void logoutToHome() {
         SwingUtilities.invokeLater(() -> {
             Window w = SwingUtilities.getWindowAncestor(this);
@@ -671,7 +684,6 @@ public class PannelloDistributore extends JPanel implements OsservatorePacchetto
             }
         });
     }
-
 
 
     private void resetForm() {

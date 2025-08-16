@@ -40,12 +40,16 @@ public class TrasformatoreController {
 
     // ———————————— SEZIONE PRODOTTI TRASFORMATI ————————————
 
-    /** Restituisce tutti i prodotti trasformati creati da questo utente. */
+    /**
+     * Restituisce tutti i prodotti trasformati creati da questo utente.
+     */
     public List<ProdottoTrasformato> getProdottiTrasformatiCreatiDaMe() {
         return service.getProdottiTrasformatiCreatiDa(username);
     }
 
-    /** Recupera un singolo prodotto trasformato per nome (per la modifica in UI). */
+    /**
+     * Recupera un singolo prodotto trasformato per nome (per la modifica in UI).
+     */
     public ProdottoTrasformato trovaProdottoTrasformatoPerNome(String nome) {
         return getProdottiTrasformatiCreatiDaMe().stream()
                 .filter(p -> p.getNome().equals(nome))
@@ -53,7 +57,9 @@ public class TrasformatoreController {
                 .orElse(null);
     }
 
-    /** Invia un nuovo prodotto trasformato al Curatore. */
+    /**
+     * Invia un nuovo prodotto trasformato al Curatore.
+     */
     public void inviaProdottoTrasformato(ProdottoTrasformatoDto dto, BiConsumer<Boolean, String> callback) {
         try {
             service.creaProdottoTrasformato(dto, username);
@@ -65,7 +71,9 @@ public class TrasformatoreController {
         }
     }
 
-    /** Gestisce la preparazione e invio del prodotto trasformato (raccolta dati UI → dto). */
+    /**
+     * Gestisce la preparazione e invio del prodotto trasformato (raccolta dati UI → dto).
+     */
     public void gestisciInvioProdottoTrasformato(Map<String, String> datiInput,
                                                  List<File> certificati,
                                                  List<File> foto,
@@ -88,7 +96,9 @@ public class TrasformatoreController {
         }
     }
 
-    /** Elimina un prodotto trasformato. */
+    /**
+     * Elimina un prodotto trasformato.
+     */
     public boolean eliminaProdottoTrasformato(String nome) {
         try {
             service.eliminaProdottoTrasformato(nome, username);
@@ -98,7 +108,9 @@ public class TrasformatoreController {
         }
     }
 
-    /** Gestisce la modifica e rinvio di un prodotto trasformato rifiutato. */
+    /**
+     * Gestisce la modifica e rinvio di un prodotto trasformato rifiutato.
+     */
     public void gestisciModificaProdottoTrasformato(String originalName,
                                                     Map<String, String> datiInput,
                                                     List<File> certificati,
@@ -128,13 +140,17 @@ public class TrasformatoreController {
 
     // ———————————— SEZIONE VISITE INVITO ————————————
 
-    /** Visualizza le visite disponibili per questo trasformatore (ad es. nella UI). */
+    /**
+     * Visualizza le visite disponibili per questo trasformatore (ad es. nella UI).
+     */
     public void visualizzaVisiteDisponibili(PannelloTrasformatore view) {
         List<VisitaInvito> visite = visitaDAO.findByDestinatario(username);
         view.showVisiteDisponibili(visite);
     }
 
-    /** Prenota una visita invito. */
+    /**
+     * Prenota una visita invito.
+     */
     public void prenotaVisita(long idVisita, int numeroPersone, BiConsumer<String, Boolean> callback) {
         VisitaInvito visita = visitaDAO.findById(idVisita);
 
@@ -158,14 +174,18 @@ public class TrasformatoreController {
         }
     }
 
-    /** Visualizza tutte le prenotazioni di visite effettuate dal trasformatore. */
+    /**
+     * Visualizza tutte le prenotazioni di visite effettuate dal trasformatore.
+     */
     public void visualizzaPrenotazioniVisite(PannelloTrasformatore view) {
         List<PrenotazioneVisita> prenotazioni = prenotazioneVisitaDAO.findByUsername(username);
         List<VisitaInvito> tutteLeVisite = visitaDAO.findAll(); // opzionale, per arricchire le info
         view.showPrenotazioniVisite(prenotazioni, tutteLeVisite);
     }
 
-    /** Elimina una prenotazione di visita. */
+    /**
+     * Elimina una prenotazione di visita.
+     */
     public void eliminaPrenotazioneVisita(long idPrenotazione, BiConsumer<String, Boolean> callback) {
         PrenotazioneVisita pren = prenotazioneVisitaDAO.findById(idPrenotazione);
         if (pren == null) {
@@ -222,6 +242,7 @@ public class TrasformatoreController {
             callback.accept("Errore durante la pubblicazione dell'annuncio.", false);
         }
     }
+
     // in TrasformatoreController
     public List<PostSocialDto> getSocialFeed() {
         try (var conn = DatabaseManager.getConnection()) {

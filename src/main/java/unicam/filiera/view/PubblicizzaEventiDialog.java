@@ -72,7 +72,6 @@ public class PubblicizzaEventiDialog extends JDialog {
             String tipoEvento = "Fiere".equals(tipoUi) ? "FIERA" : "VISITA";
 
 
-
             FormAnnuncioEventoDialog form = new FormAnnuncioEventoDialog(
                     SwingUtilities.getWindowAncestor(this), eventoId, tipoEvento
             );
@@ -87,7 +86,9 @@ public class PubblicizzaEventiDialog extends JDialog {
     }
 
     /* Metodi di popolamento che useremo al passo 2 */
-    public void clearRows() { model.setRowCount(0); }
+    public void clearRows() {
+        model.setRowCount(0);
+    }
 
     public void addRow(Object id, String titolo, String inizio, String fine, String stato) {
         model.addRow(new Object[]{id, titolo, inizio, fine, stato});
@@ -103,7 +104,6 @@ public class PubblicizzaEventiDialog extends JDialog {
             l.actionPerformed(ev);
         });
     }
-
 
 
     public void setRows(java.util.List<Object[]> rows) {

@@ -19,17 +19,23 @@ public class GestoreRichiesteEliminazioneController {
         this.service = new EliminazioneProfiloServiceImpl(JdbcRichiestaEliminazioneProfiloDAO.getInstance());
     }
 
-    /** Step 3: elenco richieste IN_ATTESA. */
+    /**
+     * Step 3: elenco richieste IN_ATTESA.
+     */
     public List<RichiestaEliminazioneProfilo> getRichiesteInAttesa() {
         return service.getRichiesteByStato(StatoRichiestaEliminazioneProfilo.IN_ATTESA);
     }
 
-    /** Step 5: dettaglio richiesta. */
+    /**
+     * Step 5: dettaglio richiesta.
+     */
     public RichiestaEliminazioneProfilo getDettaglio(int richiestaId) {
         return JdbcRichiestaEliminazioneProfiloDAO.getInstance().findById(richiestaId);
     }
 
-    /** Step 6.a.1: rifiuta richiesta + notifica utente. */
+    /**
+     * Step 6.a.1: rifiuta richiesta + notifica utente.
+     */
     public boolean rifiutaRichiesta(int richiestaId) {
         var dao = JdbcRichiestaEliminazioneProfiloDAO.getInstance();
         RichiestaEliminazioneProfilo r = dao.findById(richiestaId);

@@ -22,7 +22,10 @@ public class SocialPanel extends JPanel {
     private final DefaultTableModel model = new DefaultTableModel(
             new Object[]{"Data/Ora", "Autore", "Tipo", "Nome Item", "Titolo", "Testo"}, 0
     ) {
-        @Override public boolean isCellEditable(int r, int c) { return false; }
+        @Override
+        public boolean isCellEditable(int r, int c) {
+            return false;
+        }
     };
     private final JTable tabella = new JTable(model);
 
@@ -49,12 +52,16 @@ public class SocialPanel extends JPanel {
         caricaPost(owner);
     }
 
-    /** Espone il pulsante Indietro per essere agganciato dalla MainWindow. */
+    /**
+     * Espone il pulsante Indietro per essere agganciato dalla MainWindow.
+     */
     public JButton getBtnIndietro() {
         return btnIndietro;
     }
 
-    /** Carica e popola la tabella con tutti i post, più recenti per primi. */
+    /**
+     * Carica e popola la tabella con tutti i post, più recenti per primi.
+     */
     private void caricaPost(Window owner) {
         SwingUtilities.invokeLater(() -> {
             model.setRowCount(0);

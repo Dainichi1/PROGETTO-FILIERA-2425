@@ -8,12 +8,16 @@ import unicam.filiera.model.observer.PacchettoNotifier;
  * mantenendo separata la logica dalla vista.
  */
 public class ObserverManagerPacchetto {
-    /** Registra un osservatore che riceverà notifiche sui pacchetti. */
+    /**
+     * Registra un osservatore che riceverà notifiche sui pacchetti.
+     */
     public static void registraOsservatore(OsservatorePacchetto o) {
         PacchettoNotifier.getInstance().registraOsservatore(o);
     }
 
-    /** Rimuove un osservatore precedentemente registrato. */
+    /**
+     * Rimuove un osservatore precedentemente registrato.
+     */
     public static void rimuoviOsservatore(OsservatorePacchetto o) {
         PacchettoNotifier.getInstance().rimuoviOsservatore(o);
     }

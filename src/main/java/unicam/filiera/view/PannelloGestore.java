@@ -1,6 +1,7 @@
 package unicam.filiera.view;
 
 import unicam.filiera.controller.GestoreRichiesteEliminazioneController;
+import unicam.filiera.controller.MappaController;
 import unicam.filiera.model.RichiestaEliminazioneProfilo;
 import unicam.filiera.model.UtenteAutenticato;
 
@@ -10,6 +11,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 
 public class PannelloGestore extends JPanel {
 
@@ -34,6 +36,8 @@ public class PannelloGestore extends JPanel {
         JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton btnContenuti = new JButton("Visualizza contenuto piattaforma");
         JButton btnRichieste = new JButton("Visualizza richieste di eliminazione in attesa");
+        JButton btnShowMap = new JButton("Visualizza Mappa");
+        topBar.add(btnShowMap);
         topBar.add(btnContenuti);
         topBar.add(btnRichieste);
         add(topBar, BorderLayout.SOUTH);
@@ -47,13 +51,21 @@ public class PannelloGestore extends JPanel {
             dlg.setLocationRelativeTo(this);
             dlg.setVisible(true);
         });
+        btnShowMap.addActionListener(e -> {
+            MappaController mappaCtrl = new MappaController();
+            mappaCtrl.mostra();
+        });
+
+
         // placeholder centro
         JPanel center = new JPanel(new GridBagLayout());
         center.add(new JLabel("Dashboard Gestore"));
         add(center, BorderLayout.CENTER);
     }
 
-    /** Mostra un dialog semplice con le richieste IN_ATTESA. */
+    /**
+     * Mostra un dialog semplice con le richieste IN_ATTESA.
+     */
     private void mostraRichiesteInAttesa() {
         JDialog dlg = new JDialog(SwingUtilities.getWindowAncestor(this),
                 "Richieste di eliminazione in attesa", Dialog.ModalityType.APPLICATION_MODAL);
@@ -62,7 +74,10 @@ public class PannelloGestore extends JPanel {
         // tabella
         DefaultTableModel model = new DefaultTableModel(
                 new Object[]{"ID", "Username", "Data richiesta", "Stato"}, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
         JTable table = new JTable(model);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);

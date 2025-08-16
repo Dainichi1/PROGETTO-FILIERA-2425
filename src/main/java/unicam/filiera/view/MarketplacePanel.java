@@ -11,7 +11,6 @@ import unicam.filiera.model.observer.OsservatoreProdottoTrasformato;
 import unicam.filiera.model.observer.ProdottoTrasformatoNotifier;
 
 
-
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;

@@ -37,7 +37,8 @@ public class JdbcRichiestaEliminazioneProfiloDAO implements RichiestaEliminazion
                     "WHERE username = ? AND stato = 'IN_ATTESA' " +
                     "ORDER BY data_richiesta DESC LIMIT 1";
 
-    private JdbcRichiestaEliminazioneProfiloDAO() {}
+    private JdbcRichiestaEliminazioneProfiloDAO() {
+    }
 
     public static JdbcRichiestaEliminazioneProfiloDAO getInstance() {
         if (instance == null) instance = new JdbcRichiestaEliminazioneProfiloDAO();
@@ -154,7 +155,9 @@ public class JdbcRichiestaEliminazioneProfiloDAO implements RichiestaEliminazion
         return out;
     }
 
-    /** Restituisce la richiesta in attesa più recente per username, se presente. */
+    /**
+     * Restituisce la richiesta in attesa più recente per username, se presente.
+     */
     public Optional<RichiestaEliminazioneProfilo> findPendingByUsername(String username) {
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(SQL_FIND_PENDING_BY_USERNAME)) {

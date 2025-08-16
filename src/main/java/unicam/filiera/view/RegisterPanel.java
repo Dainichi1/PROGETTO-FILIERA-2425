@@ -15,10 +15,10 @@ public class RegisterPanel extends JPanel {
         setLayout(new GridLayout(8, 2, 10, 10));
 
         // Campi input
-        JTextField usernameField  = new JTextField();
+        JTextField usernameField = new JTextField();
         JPasswordField passwordField = new JPasswordField();
-        JTextField nomeField      = new JTextField();
-        JTextField cognomeField   = new JTextField();
+        JTextField nomeField = new JTextField();
+        JTextField cognomeField = new JTextField();
 
         JComboBox<Ruolo> ruoloComboBox = new JComboBox<>(
                 Arrays.stream(Ruolo.values())
@@ -28,15 +28,21 @@ public class RegisterPanel extends JPanel {
 
         // Pulsanti
         JButton btnRegistrati = new JButton("Registrati");
-        JButton btnIndietro   = new JButton("Indietro");
+        JButton btnIndietro = new JButton("Indietro");
 
         // Layout
-        add(new JLabel("Username:")); add(usernameField);
-        add(new JLabel("Password:")); add(passwordField);
-        add(new JLabel("Nome:"));     add(nomeField);
-        add(new JLabel("Cognome:"));  add(cognomeField);
-        add(new JLabel("Ruolo:"));    add(ruoloComboBox);
-        add(btnRegistrati);           add(btnIndietro);
+        add(new JLabel("Username:"));
+        add(usernameField);
+        add(new JLabel("Password:"));
+        add(passwordField);
+        add(new JLabel("Nome:"));
+        add(nomeField);
+        add(new JLabel("Cognome:"));
+        add(cognomeField);
+        add(new JLabel("Ruolo:"));
+        add(ruoloComboBox);
+        add(btnRegistrati);
+        add(btnIndietro);
 
         // Controller
         AutenticazioneController controller = new AutenticazioneController();
@@ -45,9 +51,9 @@ public class RegisterPanel extends JPanel {
         btnRegistrati.addActionListener(e -> {
             String username = usernameField.getText().trim();
             String password = new String(passwordField.getPassword());
-            String nome     = nomeField.getText().trim();
-            String cognome  = cognomeField.getText().trim();
-            Ruolo ruolo     = (Ruolo) ruoloComboBox.getSelectedItem();
+            String nome = nomeField.getText().trim();
+            String cognome = cognomeField.getText().trim();
+            Ruolo ruolo = (Ruolo) ruoloComboBox.getSelectedItem();
 
             try {
                 // Validazione campi
@@ -67,16 +73,14 @@ public class RegisterPanel extends JPanel {
                             mainWindow.tornaAllaHome();
                         }
                     }
-                    case USERNAME_GIA_ESISTENTE ->
-                            JOptionPane.showMessageDialog(
-                                    this, "Username già registrato. Scegli un altro.",
-                                    "Errore", JOptionPane.ERROR_MESSAGE
-                            );
-                    case PERSONA_GIA_REGISTRATA ->
-                            JOptionPane.showMessageDialog(
-                                    this, "Questa persona è già registrata con un altro ruolo!",
-                                    "Errore", JOptionPane.ERROR_MESSAGE
-                            );
+                    case USERNAME_GIA_ESISTENTE -> JOptionPane.showMessageDialog(
+                            this, "Username già registrato. Scegli un altro.",
+                            "Errore", JOptionPane.ERROR_MESSAGE
+                    );
+                    case PERSONA_GIA_REGISTRATA -> JOptionPane.showMessageDialog(
+                            this, "Questa persona è già registrata con un altro ruolo!",
+                            "Errore", JOptionPane.ERROR_MESSAGE
+                    );
                 }
 
             } catch (IllegalArgumentException ex) {

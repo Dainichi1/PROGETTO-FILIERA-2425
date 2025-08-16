@@ -2,6 +2,7 @@ package unicam.filiera.view;
 
 import unicam.filiera.controller.AcquirenteController;
 import unicam.filiera.controller.EliminazioneProfiloController;
+import unicam.filiera.controller.MappaController;
 import unicam.filiera.controller.ObserverManagerItem;
 import unicam.filiera.dto.AcquistoItemDto;
 import unicam.filiera.dto.AcquistoListaDto;
@@ -59,6 +60,8 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem, Osser
     // Controlli in alto
     private final JButton btnShowMarket = new JButton("Visualizza Marketplace");
     private final JButton btnShowCart = new JButton("Visualizza Carrello");
+    private final JButton btnShowMap = new JButton("Visualizza Mappa");
+
 
     private final JButton btnFiereDisponibili = new JButton("Visualizza Fiere disponibili");
     private final JTable tabFiere;
@@ -140,6 +143,11 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem, Osser
         btnEliminaProfilo.addActionListener(e -> mostraDialogEliminaProfilo());
         btnShowPurchases.addActionListener(e -> ctrl.visualizzaAcquisti());
         btnShowSocial.addActionListener(e -> ctrl.visualizzaSocialNetwork());
+        btnShowMap.addActionListener(e -> {
+            MappaController mappaCtrl = new MappaController();
+            mappaCtrl.mostra();
+        });
+
 
         btnAggiornaFondi.addActionListener(e -> {
             try {
@@ -177,6 +185,7 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem, Osser
         top.add(btnShowPurchases);
         top.add(btnShowSocial);
         top.add(btnShowCart);
+        top.add(btnShowMap);
         top.add(new JLabel("   "));
         top.add(new JLabel("Fondi:"));
         top.add(txtFondi);

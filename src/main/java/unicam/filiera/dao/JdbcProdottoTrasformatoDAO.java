@@ -36,10 +36,10 @@ public class JdbcProdottoTrasformatoDAO implements ProdottoTrasformatoDAO {
             conn.setAutoCommit(false);
 
             String insert = """
-                INSERT INTO prodotti_trasformati
-                  (nome, descrizione, quantita, prezzo, indirizzo, certificati, foto, creato_da, stato, commento)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """;
+                        INSERT INTO prodotti_trasformati
+                          (nome, descrizione, quantita, prezzo, indirizzo, certificati, foto, creato_da, stato, commento)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """;
             int prodottoId = -1;
             try (PreparedStatement st = conn.prepareStatement(insert, Statement.RETURN_GENERATED_KEYS)) {
                 st.setString(1, p.getNome());
@@ -64,10 +64,10 @@ public class JdbcProdottoTrasformatoDAO implements ProdottoTrasformatoDAO {
             // Inserisci fasi produzione
             for (FaseProduzione fase : p.getFasiProduzione()) {
                 String insertFase = """
-                    INSERT INTO fasi_produzione
-                        (prodotto_trasformato_id, descrizione, produttore, prodotto_origine)
-                    VALUES (?, ?, ?, ?)
-                """;
+                            INSERT INTO fasi_produzione
+                                (prodotto_trasformato_id, descrizione, produttore, prodotto_origine)
+                            VALUES (?, ?, ?, ?)
+                        """;
                 try (PreparedStatement stFase = conn.prepareStatement(insertFase)) {
                     stFase.setInt(1, prodottoId);
                     stFase.setString(2, fase.getDescrizioneFase());
@@ -99,7 +99,8 @@ public class JdbcProdottoTrasformatoDAO implements ProdottoTrasformatoDAO {
             ex.printStackTrace();
             try {
                 DatabaseManager.getConnection().rollback();
-            } catch (Exception ignore) {}
+            } catch (Exception ignore) {
+            }
             return false;
         }
     }
@@ -133,11 +134,11 @@ public class JdbcProdottoTrasformatoDAO implements ProdottoTrasformatoDAO {
 
             // Aggiorna tutti i campi principali
             String sqlUpd = """
-                    UPDATE prodotti_trasformati
-                       SET nome = ?, descrizione = ?, quantita = ?, prezzo = ?, indirizzo = ?,
-                           certificati = ?, foto = ?, stato = ?, commento = ?
-                     WHERE id = ?
-                """;
+                        UPDATE prodotti_trasformati
+                           SET nome = ?, descrizione = ?, quantita = ?, prezzo = ?, indirizzo = ?,
+                               certificati = ?, foto = ?, stato = ?, commento = ?
+                         WHERE id = ?
+                    """;
             try (PreparedStatement st = conn.prepareStatement(sqlUpd)) {
                 st.setString(1, p.getNome());
                 st.setString(2, p.getDescrizione());
@@ -160,10 +161,10 @@ public class JdbcProdottoTrasformatoDAO implements ProdottoTrasformatoDAO {
             // Reinserisce le fasi aggiornate
             for (FaseProduzione fase : p.getFasiProduzione()) {
                 String insertFase = """
-                    INSERT INTO fasi_produzione
-                        (prodotto_trasformato_id, descrizione, produttore, prodotto_origine)
-                    VALUES (?, ?, ?, ?)
-                """;
+                            INSERT INTO fasi_produzione
+                                (prodotto_trasformato_id, descrizione, produttore, prodotto_origine)
+                            VALUES (?, ?, ?, ?)
+                        """;
                 try (PreparedStatement stFase = conn.prepareStatement(insertFase)) {
                     stFase.setInt(1, prodottoId);
                     stFase.setString(2, fase.getDescrizioneFase());
@@ -178,7 +179,8 @@ public class JdbcProdottoTrasformatoDAO implements ProdottoTrasformatoDAO {
             ex.printStackTrace();
             try {
                 DatabaseManager.getConnection().rollback();
-            } catch (Exception ignore) {}
+            } catch (Exception ignore) {
+            }
             return false;
         }
     }

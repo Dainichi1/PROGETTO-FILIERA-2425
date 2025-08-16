@@ -3,7 +3,9 @@ package unicam.filiera.controller;
 import unicam.filiera.model.observer.OsservatoreVisitaInvito;
 import unicam.filiera.model.observer.VisitaInvitoNotifier;
 
-/** Helper per registrare/rimuovere gli osservatori di Visita‐Invito. */
+/**
+ * Helper per registrare/rimuovere gli osservatori di Visita‐Invito.
+ */
 public class ObserverManagerVisitaInvito {
 
     public static void registraOsservatore(OsservatoreVisitaInvito o) {

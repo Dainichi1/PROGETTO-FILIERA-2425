@@ -1,6 +1,7 @@
 package unicam.filiera.dao;
 
 import unicam.filiera.model.PrenotazioneFiera;
+
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -11,10 +12,10 @@ public class JdbcPrenotazioneFieraDAO implements PrenotazioneFieraDAO {
     @Override
     public boolean save(PrenotazioneFiera p) {
         String sql = """
-            INSERT INTO prenotazioni_fiere
-            (id_fiera, username_acquirente, numero_persone, data_prenotazione)
-            VALUES (?, ?, ?, ?)
-        """;
+                    INSERT INTO prenotazioni_fiere
+                    (id_fiera, username_acquirente, numero_persone, data_prenotazione)
+                    VALUES (?, ?, ?, ?)
+                """;
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setLong(1, p.getIdFiera());

@@ -1,5 +1,6 @@
 package unicam.filiera.view;
 
+import unicam.filiera.controller.MappaController;
 import unicam.filiera.controller.ProduttoreController;
 import unicam.filiera.controller.EliminazioneProfiloController;
 import unicam.filiera.dto.PostSocialDto;
@@ -48,6 +49,7 @@ public class PannelloProduttore extends JPanel
     private final JButton btnVisualizzaPrenotazioniVisite = new JButton("Visualizza prenotazioni visite");
     private final JButton btnEliminaProfilo = new JButton("Elimina profilo");
     private final JButton btnShowSocial = new JButton("Visualizza Social Network");
+    private final JButton btnShowMap = new JButton("Visualizza Mappa");
 
     private final DefaultTableModel model;
     private final JTable tabella;
@@ -90,6 +92,10 @@ public class PannelloProduttore extends JPanel
                 ex.printStackTrace();
             }
         });
+        btnShowMap.addActionListener(e -> {
+            MappaController mappaCtrl = new MappaController();
+            mappaCtrl.mostra();
+        });
 
         // Tabella prodotti
         String[] cols = {
@@ -98,7 +104,10 @@ public class PannelloProduttore extends JPanel
                 "Elimina", "Modifica", "Social"
         };
         model = new DefaultTableModel(cols, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
         tabella = new JTable(model);
         add(new JScrollPane(tabella), BorderLayout.EAST);
@@ -215,7 +224,10 @@ public class PannelloProduttore extends JPanel
                             JOptionPane.showMessageDialog(this, msg,
                                     successo ? "Successo" : "Errore",
                                     successo ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE);
-                            if (successo) { exitEditMode(); refreshTable(); }
+                            if (successo) {
+                                exitEditMode();
+                                refreshTable();
+                            }
                         })
                 );
             } else {
@@ -225,7 +237,10 @@ public class PannelloProduttore extends JPanel
                             JOptionPane.showMessageDialog(this, msg,
                                     successo ? "Successo" : "Errore",
                                     successo ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE);
-                            if (successo) { resetForm(); refreshTable(); }
+                            if (successo) {
+                                resetForm();
+                                refreshTable();
+                            }
                         })
                 );
             }
@@ -234,8 +249,11 @@ public class PannelloProduttore extends JPanel
         // BOTTONE ELIMINA PROFILO
         btnEliminaProfilo.addActionListener(e -> mostraDialogEliminaProfilo());
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottomPanel.add(btnToggleForm);
+        bottomPanel.add(btnShowMap);
         bottomPanel.add(btnEliminaProfilo);
-        add(bottomPanel, BorderLayout.PAGE_END);
+        add(bottomPanel, BorderLayout.SOUTH);
+
 
         // popolamento tabella + registrazione osservatori
         refreshTable();
@@ -255,7 +273,10 @@ public class PannelloProduttore extends JPanel
 
         String[] cols = {"Data/Ora", "Autore", "Tipo", "Nome Item", "Titolo", "Testo"};
         DefaultTableModel model = new DefaultTableModel(cols, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
         JTable tab = new JTable(model);
 
@@ -304,49 +325,67 @@ public class PannelloProduttore extends JPanel
     }
 
     private void buildForm() {
-        formPanel.add(new JLabel("Nome prodotto:"));   formPanel.add(nomeField);
-        formPanel.add(new JLabel("Descrizione:"));     formPanel.add(descrField);
-        formPanel.add(new JLabel("Quantità:"));        formPanel.add(quantField);
-        formPanel.add(new JLabel("Prezzo:"));          formPanel.add(prezzoField);
-        formPanel.add(new JLabel("Indirizzo:"));       formPanel.add(indirizzoField);
-        formPanel.add(btnCert);                        formPanel.add(labelCert);
-        formPanel.add(btnFoto);                        formPanel.add(labelFoto);
-        formPanel.add(new JLabel());                   formPanel.add(btnInvia);
+        formPanel.add(new JLabel("Nome prodotto:"));
+        formPanel.add(nomeField);
+        formPanel.add(new JLabel("Descrizione:"));
+        formPanel.add(descrField);
+        formPanel.add(new JLabel("Quantità:"));
+        formPanel.add(quantField);
+        formPanel.add(new JLabel("Prezzo:"));
+        formPanel.add(prezzoField);
+        formPanel.add(new JLabel("Indirizzo:"));
+        formPanel.add(indirizzoField);
+        formPanel.add(btnCert);
+        formPanel.add(labelCert);
+        formPanel.add(btnFoto);
+        formPanel.add(labelFoto);
+        formPanel.add(new JLabel());
+        formPanel.add(btnInvia);
         formPanel.setVisible(false);
         add(formPanel, BorderLayout.CENTER);
     }
 
     private void enterEditMode(Prodotto p) {
-        editMode = true; originalName = p.getNome();
-        formVisibile = true; formPanel.setVisible(true);
+        editMode = true;
+        originalName = p.getNome();
+        formVisibile = true;
+        formPanel.setVisible(true);
         nomeField.setText(p.getNome());
         descrField.setText(p.getDescrizione());
         quantField.setText(String.valueOf(p.getQuantita()));
         prezzoField.setText(String.valueOf(p.getPrezzo()));
         indirizzoField.setText(p.getIndirizzo());
-        certSel.clear(); fotoSel.clear();
+        certSel.clear();
+        fotoSel.clear();
         labelCert.setText("Ricarica certificati");
         labelFoto.setText("Ricarica foto");
         btnInvia.setText("Aggiorna Prodotto");
         btnToggleForm.setText("Annulla modifica");
-        revalidate(); repaint();
+        revalidate();
+        repaint();
     }
 
     private void exitEditMode() {
-        editMode = false; originalName = null;
-        resetForm(); formVisibile = false; formPanel.setVisible(false);
+        editMode = false;
+        originalName = null;
+        resetForm();
+        formVisibile = false;
+        formPanel.setVisible(false);
         btnInvia.setText("Invia Prodotto");
         btnToggleForm.setText("Crea Prodotto");
-        revalidate(); repaint();
+        revalidate();
+        repaint();
     }
 
     private void toggleForm() {
-        if (editMode) { exitEditMode(); }
-        else {
+        if (editMode) {
+            exitEditMode();
+        } else {
             formVisibile = !formVisibile;
             formPanel.setVisible(formVisibile);
             btnToggleForm.setText(formVisibile ? "Chiudi form" : "Crea Prodotto");
-            revalidate(); repaint();
+            revalidate();
+            repaint();
         }
     }
 
@@ -355,19 +394,24 @@ public class PannelloProduttore extends JPanel
         chooser.setMultiSelectionEnabled(true);
         if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return;
         if (cert) {
-            certSel.clear(); certSel.addAll(List.of(chooser.getSelectedFiles()));
+            certSel.clear();
+            certSel.addAll(List.of(chooser.getSelectedFiles()));
             labelCert.setText(certSel.size() + " file selezionati");
         } else {
-            fotoSel.clear(); fotoSel.addAll(List.of(chooser.getSelectedFiles()));
+            fotoSel.clear();
+            fotoSel.addAll(List.of(chooser.getSelectedFiles()));
             labelFoto.setText(fotoSel.size() + " file selezionati");
         }
     }
 
     private void resetForm() {
-        nomeField.setText(""); descrField.setText("");
-        quantField.setText(""); prezzoField.setText("");
+        nomeField.setText("");
+        descrField.setText("");
+        quantField.setText("");
+        prezzoField.setText("");
         indirizzoField.setText("");
-        certSel.clear(); fotoSel.clear();
+        certSel.clear();
+        fotoSel.clear();
         labelCert.setText("Nessun file selezionato");
         labelFoto.setText("Nessun file selezionato");
     }
@@ -412,7 +456,7 @@ public class PannelloProduttore extends JPanel
         SwingUtilities.invokeLater(() ->
                 JOptionPane.showMessageDialog(
                         this,
-                        "La tua richiesta di eliminazione (ID " + richiestaId + ") è stata RIFIUTATA.\n" ,
+                        "La tua richiesta di eliminazione (ID " + richiestaId + ") è stata RIFIUTATA.\n",
                         "Richiesta rifiutata",
                         JOptionPane.INFORMATION_MESSAGE
                 )
@@ -427,7 +471,8 @@ public class PannelloProduttore extends JPanel
             try {
                 ProdottoNotifier.getInstance().rimuoviOsservatore(this);
                 EliminazioneProfiloNotifier.getInstance().unsubscribe(utente.getUsername(), this);
-            } catch (Exception ignore) {}
+            } catch (Exception ignore) {
+            }
 
             String msg = "Il tuo profilo è stato eliminato (richiesta ID " + richiestaId + ").\n"
                     + "Verrai riportato alla schermata iniziale...";
@@ -437,7 +482,9 @@ public class PannelloProduttore extends JPanel
         });
     }
 
-    /** Mostra un info dialog senza bottoni che si chiude da solo dopo 'millis' e poi esegue 'afterClose'. */
+    /**
+     * Mostra un info dialog senza bottoni che si chiude da solo dopo 'millis' e poi esegue 'afterClose'.
+     */
     private void showAutoCloseInfoAndThen(String title, String message, int millis, Runnable afterClose) {
         // JOptionPane senza opzioni => niente bottoni
         JOptionPane pane = new JOptionPane(
@@ -445,7 +492,7 @@ public class PannelloProduttore extends JPanel
                 JOptionPane.INFORMATION_MESSAGE,
                 JOptionPane.DEFAULT_OPTION,
                 null,
-                new Object[] {},
+                new Object[]{},
                 null
         );
         JDialog dialog = pane.createDialog(SwingUtilities.getWindowAncestor(this), title);
@@ -464,7 +511,9 @@ public class PannelloProduttore extends JPanel
     }
 
 
-    /** Esegue il logout/ritorno alla home.  */
+    /**
+     * Esegue il logout/ritorno alla home.
+     */
     private void logoutToHome() {
 
         SwingUtilities.invokeLater(() -> {

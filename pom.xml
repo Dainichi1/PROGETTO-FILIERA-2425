@@ -21,6 +21,24 @@
             <artifactId>h2</artifactId>
             <version>2.2.224</version>
         </dependency>
+
+        <!-- OpenStreetMap JMapViewer -->
+        <dependency>
+            <groupId>org.openstreetmap</groupId>
+            <artifactId>jmapviewer</artifactId>
+            <version>2.24</version>
+        </dependency>
+
+
     </dependencies>
 
+    <repositories>
+        <!-- Repository ufficiale JOSM (necessario per JMapViewer) -->
+        <repository>
+            <id>josm-releases</id>
+            <url>https://josm.openstreetmap.de/nexus/content/repositories/releases/</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+    </repositories>
 </project>

@@ -32,20 +32,26 @@ public class AcquirenteController {
         this.marketplaceCtrl = new MarketplaceController();
     }
 
-    /** Visualizza la lista marketplace (Prodotti + Pacchetti) */
+    /**
+     * Visualizza la lista marketplace (Prodotti + Pacchetti)
+     */
     public void visualizzaMarketplace() {
         List<Object> lista = marketplaceCtrl.ottieniElementiMarketplace();
         view.showMarketplace(lista);
     }
 
-    /** Carica dal service il carrello e il totale, quindi li manda alla view */
+    /**
+     * Carica dal service il carrello e il totale, quindi li manda alla view
+     */
     public void visualizzaCarrello() {
         List<CartItemDto> items = carrelloService.getCartItems();
         CartTotalsDto tot = carrelloService.calculateTotals();
         view.showCart(items, tot);
     }
 
-    /** Aggiunge un item e ricarica il carrello; in caso di eccezione invoca callback(false). */
+    /**
+     * Aggiunge un item e ricarica il carrello; in caso di eccezione invoca callback(false).
+     */
     public void addToCart(Item item, int quantita, BiConsumer<String, Boolean> callback) {
         try {
             String tipo = (item instanceof Prodotto) ? "Prodotto" : "Pacchetto";
@@ -65,7 +71,9 @@ public class AcquirenteController {
         }
     }
 
-    /** Aggiorna la quantità di un item esistente; in caso di eccezione invoca callback(false). */
+    /**
+     * Aggiorna la quantità di un item esistente; in caso di eccezione invoca callback(false).
+     */
     public void updateCartItem(String nomeItem, int nuovaQta, BiConsumer<String, Boolean> callback) {
         try {
             carrelloService.updateItemQuantity(nomeItem, nuovaQta);
@@ -93,7 +101,9 @@ public class AcquirenteController {
         }
     }
 
-    /** Aggiorna i fondi dell'acquirente, con callback di esito. */
+    /**
+     * Aggiorna i fondi dell'acquirente, con callback di esito.
+     */
     public void aggiornaFondiAcquirente(double nuoviFondi, BiConsumer<String, Boolean> callback) {
         if (!(utente instanceof unicam.filiera.model.Acquirente a)) {
             callback.accept("L'utente non è un acquirente", false);
@@ -262,7 +272,9 @@ public class AcquirenteController {
         view.showAcquistiDialog(lista);  // la view apre la dialog master/dettaglio
     }
 
-    /** Chiamato dalla view quando seleziona un acquisto nella tabella master */
+    /**
+     * Chiamato dalla view quando seleziona un acquisto nella tabella master
+     */
     public void caricaDettaglioAcquisto(int idAcquisto) {
         List<AcquistoItemDto> items = acquistoDAO.findItemsByAcquisto(idAcquisto);
         view.updateDettaglioAcquisto(items);

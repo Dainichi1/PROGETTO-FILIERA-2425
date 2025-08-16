@@ -33,21 +33,25 @@ public class DettaglioRichiestaEliminazioneDialog extends JDialog {
             return;
         }
 
-        setLayout(new BorderLayout(10,10));
-        JPanel content = new JPanel(new GridLayout(0,2,8,8));
+        setLayout(new BorderLayout(10, 10));
+        JPanel content = new JPanel(new GridLayout(0, 2, 8, 8));
 
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-        content.add(new JLabel("ID:"));            content.add(new JLabel(String.valueOf(r.getId())));
-        content.add(new JLabel("Username:"));      content.add(new JLabel(r.getUsername()));
-        content.add(new JLabel("Data richiesta:"));content.add(new JLabel(r.getDataRichiesta().format(fmt)));
-        content.add(new JLabel("Stato:"));         content.add(new JLabel(r.getStato().name()));
+        content.add(new JLabel("ID:"));
+        content.add(new JLabel(String.valueOf(r.getId())));
+        content.add(new JLabel("Username:"));
+        content.add(new JLabel(r.getUsername()));
+        content.add(new JLabel("Data richiesta:"));
+        content.add(new JLabel(r.getDataRichiesta().format(fmt)));
+        content.add(new JLabel("Stato:"));
+        content.add(new JLabel(r.getStato().name()));
 
         add(content, BorderLayout.CENTER);
 
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton btnRifiuta = new JButton("Rifiuta richiesta");
         JButton btnAccetta = new JButton("Accetta richiesta");
-        JButton btnChiudi  = new JButton("Chiudi");
+        JButton btnChiudi = new JButton("Chiudi");
         buttons.add(btnRifiuta);
         buttons.add(btnAccetta);
         buttons.add(btnChiudi);

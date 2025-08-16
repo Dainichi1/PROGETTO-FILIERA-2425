@@ -14,7 +14,9 @@ public interface AcquistoDAO {
      * @return l'ID generato dell'acquisto (o -1 se errore)
      */
     int salvaAcquisto(DatiAcquistoDto dati);
+
     List<AcquistoListaDto> findByUsername(String username);
+
     List<AcquistoItemDto> findItemsByAcquisto(int idAcquisto);
 
 }

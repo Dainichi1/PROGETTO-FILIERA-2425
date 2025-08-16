@@ -9,12 +9,16 @@ import unicam.filiera.model.observer.ProdottoNotifier;
  */
 public class ObserverManagerProdotto {
 
-    /** Registra un osservatore che riceverà gli eventi sui prodotti. */
+    /**
+     * Registra un osservatore che riceverà gli eventi sui prodotti.
+     */
     public static void registraOsservatore(OsservatoreProdotto o) {
         ProdottoNotifier.getInstance().registraOsservatore(o);
     }
 
-    /** Rimuove un osservatore precedentemente registrato. */
+    /**
+     * Rimuove un osservatore precedentemente registrato.
+     */
     public static void rimuoviOsservatore(OsservatoreProdotto o) {
         ProdottoNotifier.getInstance().rimuoviOsservatore(o);
     }

@@ -27,7 +27,10 @@ public class PannelloGestoreContenuti extends JPanel {
     private final JComboBox<String> comboOrdina = new JComboBox<>(new String[]{"DATA", "NOME", "STATO"});
     private final JCheckBox chkAsc = new JCheckBox("Asc", true);
     private final DefaultTableModel tableModel = new DefaultTableModel(new Object[]{"ID", "Nome", "Tipo", "Stato", "Data", "Extra"}, 0) {
-        @Override public boolean isCellEditable(int r, int c) { return false; }
+        @Override
+        public boolean isCellEditable(int r, int c) {
+            return false;
+        }
     };
     private final JTable table = new JTable(tableModel);
 
@@ -36,7 +39,7 @@ public class PannelloGestoreContenuti extends JPanel {
 
     public PannelloGestoreContenuti() {
         super(new BorderLayout(10, 10));
-        setBorder(new EmptyBorder(10,10,10,10));
+        setBorder(new EmptyBorder(10, 10, 10, 10));
 
         // pannello sinistra
         JPanel left = new JPanel(new BorderLayout());
@@ -46,7 +49,7 @@ public class PannelloGestoreContenuti extends JPanel {
         add(left, BorderLayout.WEST);
 
         // pannello destra
-        JPanel right = new JPanel(new BorderLayout(8,8));
+        JPanel right = new JPanel(new BorderLayout(8, 8));
         lblTitolo.setFont(lblTitolo.getFont().deriveFont(Font.BOLD, 16f));
         right.add(lblTitolo, BorderLayout.NORTH);
 
@@ -183,9 +186,9 @@ public class PannelloGestoreContenuti extends JPanel {
         String id = String.valueOf(tableModel.getValueAt(modelRow, 0));
         String nome = String.valueOf(tableModel.getValueAt(modelRow, 1));
         String tipo = String.valueOf(tableModel.getValueAt(modelRow, 2));
-        String stato= String.valueOf(tableModel.getValueAt(modelRow, 3));
+        String stato = String.valueOf(tableModel.getValueAt(modelRow, 3));
         String data = String.valueOf(tableModel.getValueAt(modelRow, 4));
-        String extra= String.valueOf(tableModel.getValueAt(modelRow, 5));
+        String extra = String.valueOf(tableModel.getValueAt(modelRow, 5));
 
         JTextArea area = new JTextArea(
                 "ID: " + id + "\n" +

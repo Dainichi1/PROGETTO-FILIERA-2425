@@ -10,7 +10,9 @@ public class DatabaseManager {
         return DriverManager.getConnection(DB_URL, "sa", "");
     }
 
-    /** Verifica e migra lo schema quando serve. */
+    /**
+     * Verifica e migra lo schema quando serve.
+     */
     public static void checkAndUpdateDatabase() {
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
 
@@ -33,19 +35,19 @@ public class DatabaseManager {
             if (!rs3.next()) {
                 System.out.println("[DB] Creo tabella 'visite_invito'");
                 stmt.executeUpdate("""
-                    CREATE TABLE visite_invito (
-                      id IDENTITY PRIMARY KEY,
-                      data_inizio TIMESTAMP,
-                      data_fine   TIMESTAMP,
-                      prezzo      DOUBLE,
-                      descrizione VARCHAR(500),
-                      indirizzo   VARCHAR(255),
-                      numero_min_partecipanti INT,
-                      organizzatore VARCHAR(50),
-                      destinatari TEXT,
-                      stato VARCHAR(20) DEFAULT 'IN_PREPARAZIONE'
-                    );
-                """);
+                            CREATE TABLE visite_invito (
+                              id IDENTITY PRIMARY KEY,
+                              data_inizio TIMESTAMP,
+                              data_fine   TIMESTAMP,
+                              prezzo      DOUBLE,
+                              descrizione VARCHAR(500),
+                              indirizzo   VARCHAR(255),
+                              numero_min_partecipanti INT,
+                              organizzatore VARCHAR(50),
+                              destinatari TEXT,
+                              stato VARCHAR(20) DEFAULT 'IN_PREPARAZIONE'
+                            );
+                        """);
             }
 
             // ---- utenti.fondi ----
@@ -67,19 +69,19 @@ public class DatabaseManager {
             if (!rsSocial.next()) {
                 System.out.println("[DB] Creo tabella 'social_posts'");
                 stmt.executeUpdate("""
-                    CREATE TABLE social_posts (
-                      id IDENTITY PRIMARY KEY,
-                      autore_username VARCHAR(50) NOT NULL,
-                      id_acquisto INT,
-                      nome_item VARCHAR(100) NOT NULL,
-                      tipo_item VARCHAR(30) NOT NULL,
-                      titolo VARCHAR(100),
-                      testo VARCHAR(1000) NOT NULL,
-                      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                      FOREIGN KEY (autore_username) REFERENCES utenti(username),
-                      FOREIGN KEY (id_acquisto) REFERENCES acquisti(id)
-                    );
-                """);
+                            CREATE TABLE social_posts (
+                              id IDENTITY PRIMARY KEY,
+                              autore_username VARCHAR(50) NOT NULL,
+                              id_acquisto INT,
+                              nome_item VARCHAR(100) NOT NULL,
+                              tipo_item VARCHAR(30) NOT NULL,
+                              titolo VARCHAR(100),
+                              testo VARCHAR(1000) NOT NULL,
+                              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                              FOREIGN KEY (autore_username) REFERENCES utenti(username),
+                              FOREIGN KEY (id_acquisto) REFERENCES acquisti(id)
+                            );
+                        """);
             }
 
             // ---- acquisti (se manca) ----
@@ -87,19 +89,19 @@ public class DatabaseManager {
             if (!rsAcquisti.next()) {
                 System.out.println("[DB] Creo tabella 'acquisti'");
                 stmt.executeUpdate("""
-                    CREATE TABLE acquisti (
-                        id IDENTITY PRIMARY KEY,
-                        username_acquirente VARCHAR(50) NOT NULL,
-                        totale DOUBLE NOT NULL,
-                        stato_pagamento VARCHAR(20) NOT NULL,
-                        tipo_metodo_pagamento VARCHAR(30) NOT NULL,
-                        data_ora TIMESTAMP NOT NULL,
-                        fondi_pre_acquisto DOUBLE,
-                        fondi_post_acquisto DOUBLE,
-                        elenco_item TEXT,
-                        FOREIGN KEY (username_acquirente) REFERENCES utenti(username)
-                    );
-                """);
+                            CREATE TABLE acquisti (
+                                id IDENTITY PRIMARY KEY,
+                                username_acquirente VARCHAR(50) NOT NULL,
+                                totale DOUBLE NOT NULL,
+                                stato_pagamento VARCHAR(20) NOT NULL,
+                                tipo_metodo_pagamento VARCHAR(30) NOT NULL,
+                                data_ora TIMESTAMP NOT NULL,
+                                fondi_pre_acquisto DOUBLE,
+                                fondi_post_acquisto DOUBLE,
+                                elenco_item TEXT,
+                                FOREIGN KEY (username_acquirente) REFERENCES utenti(username)
+                            );
+                        """);
             }
 
             // ---- acquisto_items (se manca) ----
@@ -107,16 +109,16 @@ public class DatabaseManager {
             if (!rsAcquistoItems.next()) {
                 System.out.println("[DB] Creo tabella 'acquisto_items'");
                 stmt.executeUpdate("""
-                    CREATE TABLE acquisto_items (
-                        id_acquisto INT,
-                        nome_item VARCHAR(100),
-                        tipo_item VARCHAR(30),
-                        quantita INT,
-                        prezzo_unitario DOUBLE,
-                        totale DOUBLE,
-                        FOREIGN KEY (id_acquisto) REFERENCES acquisti(id)
-                    );
-                """);
+                            CREATE TABLE acquisto_items (
+                                id_acquisto INT,
+                                nome_item VARCHAR(100),
+                                tipo_item VARCHAR(30),
+                                quantita INT,
+                                prezzo_unitario DOUBLE,
+                                totale DOUBLE,
+                                FOREIGN KEY (id_acquisto) REFERENCES acquisti(id)
+                            );
+                        """);
             }
 
             // ---- prenotazioni_fiere (se manca) ----
@@ -124,16 +126,16 @@ public class DatabaseManager {
             if (!rsPrenFiere.next()) {
                 System.out.println("[DB] Creo tabella 'prenotazioni_fiere'");
                 stmt.executeUpdate("""
-                    CREATE TABLE prenotazioni_fiere (
-                        id IDENTITY PRIMARY KEY,
-                        id_fiera BIGINT NOT NULL,
-                        username_acquirente VARCHAR(50) NOT NULL,
-                        numero_persone INT NOT NULL,
-                        data_prenotazione TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (id_fiera) REFERENCES fiere(id),
-                        FOREIGN KEY (username_acquirente) REFERENCES utenti(username)
-                    );
-                """);
+                            CREATE TABLE prenotazioni_fiere (
+                                id IDENTITY PRIMARY KEY,
+                                id_fiera BIGINT NOT NULL,
+                                username_acquirente VARCHAR(50) NOT NULL,
+                                numero_persone INT NOT NULL,
+                                data_prenotazione TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                FOREIGN KEY (id_fiera) REFERENCES fiere(id),
+                                FOREIGN KEY (username_acquirente) REFERENCES utenti(username)
+                            );
+                        """);
             }
 
             // ---- prenotazioni_visite (se manca) ----
@@ -141,16 +143,16 @@ public class DatabaseManager {
             if (!rsPrenVisite.next()) {
                 System.out.println("[DB] Creo tabella 'prenotazioni_visite'");
                 stmt.executeUpdate("""
-                    CREATE TABLE prenotazioni_visite (
-                        id IDENTITY PRIMARY KEY,
-                        id_visita BIGINT NOT NULL,
-                        username_venditore VARCHAR(50) NOT NULL,
-                        numero_persone INT NOT NULL,
-                        data_prenotazione TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (id_visita) REFERENCES visite_invito(id),
-                        FOREIGN KEY (username_venditore) REFERENCES utenti(username)
-                    );
-                """);
+                            CREATE TABLE prenotazioni_visite (
+                                id IDENTITY PRIMARY KEY,
+                                id_visita BIGINT NOT NULL,
+                                username_venditore VARCHAR(50) NOT NULL,
+                                numero_persone INT NOT NULL,
+                                data_prenotazione TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                FOREIGN KEY (id_visita) REFERENCES visite_invito(id),
+                                FOREIGN KEY (username_venditore) REFERENCES utenti(username)
+                            );
+                        """);
             }
 
             // ---- prodotti_trasformati (se manca) ----
@@ -158,20 +160,20 @@ public class DatabaseManager {
             if (!rsPT.next()) {
                 System.out.println("[DB] Creo tabella 'prodotti_trasformati'");
                 stmt.executeUpdate("""
-                    CREATE TABLE prodotti_trasformati (
-                        id IDENTITY PRIMARY KEY,
-                        nome VARCHAR(100),
-                        descrizione VARCHAR(500),
-                        quantita INT,
-                        prezzo DOUBLE,
-                        indirizzo VARCHAR(255),
-                        certificati TEXT,
-                        foto TEXT,
-                        creato_da VARCHAR(50),
-                        stato VARCHAR(20) DEFAULT 'IN_ATTESA',
-                        commento VARCHAR(255) DEFAULT NULL
-                    );
-                """);
+                            CREATE TABLE prodotti_trasformati (
+                                id IDENTITY PRIMARY KEY,
+                                nome VARCHAR(100),
+                                descrizione VARCHAR(500),
+                                quantita INT,
+                                prezzo DOUBLE,
+                                indirizzo VARCHAR(255),
+                                certificati TEXT,
+                                foto TEXT,
+                                creato_da VARCHAR(50),
+                                stato VARCHAR(20) DEFAULT 'IN_ATTESA',
+                                commento VARCHAR(255) DEFAULT NULL
+                            );
+                        """);
             }
 
             // ---- fasi_produzione (se manca) ----
@@ -179,15 +181,15 @@ public class DatabaseManager {
             if (!rsFP.next()) {
                 System.out.println("[DB] Creo tabella 'fasi_produzione'");
                 stmt.executeUpdate("""
-                    CREATE TABLE fasi_produzione (
-                        id IDENTITY PRIMARY KEY,
-                        prodotto_trasformato_id INT NOT NULL,
-                        descrizione VARCHAR(255),
-                        produttore VARCHAR(50),
-                        prodotto_origine VARCHAR(100),
-                        FOREIGN KEY (prodotto_trasformato_id) REFERENCES prodotti_trasformati(id)
-                    );
-                """);
+                            CREATE TABLE fasi_produzione (
+                                id IDENTITY PRIMARY KEY,
+                                prodotto_trasformato_id INT NOT NULL,
+                                descrizione VARCHAR(255),
+                                produttore VARCHAR(50),
+                                prodotto_origine VARCHAR(100),
+                                FOREIGN KEY (prodotto_trasformato_id) REFERENCES prodotti_trasformati(id)
+                            );
+                        """);
             }
 
             // ===== richieste_eliminazione_profilo (storico, senza FK) =====
@@ -196,13 +198,13 @@ public class DatabaseManager {
             if (!rsREP.next()) {
                 System.out.println("[DB] Creo tabella 'richieste_eliminazione_profilo' (senza FK)");
                 stmt.executeUpdate("""
-                    CREATE TABLE richieste_eliminazione_profilo (
-                        id IDENTITY PRIMARY KEY,
-                        username VARCHAR(50) NOT NULL,
-                        stato VARCHAR(20) NOT NULL,
-                        data_richiesta TIMESTAMP NOT NULL
-                    );
-                """);
+                            CREATE TABLE richieste_eliminazione_profilo (
+                                id IDENTITY PRIMARY KEY,
+                                username VARCHAR(50) NOT NULL,
+                                stato VARCHAR(20) NOT NULL,
+                                data_richiesta TIMESTAMP NOT NULL
+                            );
+                        """);
             } else {
                 // Migrazione: rimuovi eventuale FK esistente sull'username
                 try (Statement s2 = conn.createStatement()) {
@@ -213,7 +215,8 @@ public class DatabaseManager {
                             try {
                                 s2.executeUpdate("ALTER TABLE richieste_eliminazione_profilo DROP CONSTRAINT " + fkName);
                                 System.out.println("[DB] Droppato vincolo " + fkName + " su richieste_eliminazione_profilo");
-                            } catch (SQLException ignore) { }
+                            } catch (SQLException ignore) {
+                            }
                         }
                     }
                 }
@@ -224,6 +227,8 @@ public class DatabaseManager {
                     System.out.println("[DB] Rimuovo colonna obsoleta 'utente_id'");
                     stmt.executeUpdate("ALTER TABLE richieste_eliminazione_profilo DROP COLUMN utente_id");
                 }
+
+
             }
 
             // Indici utili
@@ -239,185 +244,188 @@ public class DatabaseManager {
         }
     }
 
-    /** Creazione tabelle base (bootstrap). */
+    /**
+     * Creazione tabelle base (bootstrap).
+     */
     public static void initDatabase() {
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
 
             String utentiSql = """
-                CREATE TABLE IF NOT EXISTS utenti (
-                    username VARCHAR(50) PRIMARY KEY,
-                    password VARCHAR(50),
-                    nome VARCHAR(50),
-                    cognome VARCHAR(50),
-                    ruolo VARCHAR(30),
-                    fondi DOUBLE DEFAULT 0.0
-                );
-            """;
+                        CREATE TABLE IF NOT EXISTS utenti (
+                            username VARCHAR(50) PRIMARY KEY,
+                            password VARCHAR(50),
+                            nome VARCHAR(50),
+                            cognome VARCHAR(50),
+                            ruolo VARCHAR(30),
+                            fondi DOUBLE DEFAULT 0.0
+                        );
+                    """;
 
             String prodottiSql = """
-                CREATE TABLE IF NOT EXISTS prodotti (
-                    id IDENTITY PRIMARY KEY,
-                    nome VARCHAR(100),
-                    descrizione VARCHAR(500),
-                    quantita INT,
-                    prezzo DOUBLE,
-                    indirizzo VARCHAR(255),
-                    certificati TEXT,
-                    foto TEXT,
-                    creato_da VARCHAR(50),
-                    stato VARCHAR(20) DEFAULT 'IN_ATTESA',
-                    commento VARCHAR(255) DEFAULT NULL
-                );
-            """;
+                        CREATE TABLE IF NOT EXISTS prodotti (
+                            id IDENTITY PRIMARY KEY,
+                            nome VARCHAR(100),
+                            descrizione VARCHAR(500),
+                            quantita INT,
+                            prezzo DOUBLE,
+                            indirizzo VARCHAR(255),
+                            certificati TEXT,
+                            foto TEXT,
+                            creato_da VARCHAR(50),
+                            stato VARCHAR(20) DEFAULT 'IN_ATTESA',
+                            commento VARCHAR(255) DEFAULT NULL
+                        );
+                    """;
 
             String pacchettiSql = """
-                CREATE TABLE IF NOT EXISTS pacchetti (
-                    id IDENTITY PRIMARY KEY,
-                    nome VARCHAR(100),
-                    descrizione VARCHAR(500),
-                    indirizzo VARCHAR(255),
-                    prezzo_totale DOUBLE,
-                    prodotti TEXT,
-                    certificati TEXT,
-                    foto TEXT,
-                    creato_da VARCHAR(50),
-                    stato VARCHAR(20) DEFAULT 'IN_ATTESA',
-                    commento VARCHAR(255) DEFAULT NULL,
-                    quantita INT DEFAULT 0
-                );
-            """;
+                        CREATE TABLE IF NOT EXISTS pacchetti (
+                            id IDENTITY PRIMARY KEY,
+                            nome VARCHAR(100),
+                            descrizione VARCHAR(500),
+                            indirizzo VARCHAR(255),
+                            prezzo_totale DOUBLE,
+                            prodotti TEXT,
+                            certificati TEXT,
+                            foto TEXT,
+                            creato_da VARCHAR(50),
+                            stato VARCHAR(20) DEFAULT 'IN_ATTESA',
+                            commento VARCHAR(255) DEFAULT NULL,
+                            quantita INT DEFAULT 0
+                        );
+                    """;
 
             String fiereSql = """
-                CREATE TABLE IF NOT EXISTS fiere (
-                    id IDENTITY PRIMARY KEY,
-                    data_inizio TIMESTAMP,
-                    data_fine   TIMESTAMP,
-                    prezzo      DOUBLE,
-                    descrizione VARCHAR(500),
-                    indirizzo   VARCHAR(255),
-                    numero_min_partecipanti INT,
-                    organizzatore VARCHAR(50),
-                    stato VARCHAR(20) DEFAULT 'IN_PREPARAZIONE'
-                );
-            """;
+                        CREATE TABLE IF NOT EXISTS fiere (
+                            id IDENTITY PRIMARY KEY,
+                            data_inizio TIMESTAMP,
+                            data_fine   TIMESTAMP,
+                            prezzo      DOUBLE,
+                            descrizione VARCHAR(500),
+                            indirizzo   VARCHAR(255),
+                            numero_min_partecipanti INT,
+                            organizzatore VARCHAR(50),
+                            stato VARCHAR(20) DEFAULT 'IN_PREPARAZIONE'
+                        );
+                    """;
 
             String visiteSql = """
-                CREATE TABLE IF NOT EXISTS visite_invito (
-                    id IDENTITY PRIMARY KEY,
-                    data_inizio TIMESTAMP,
-                    data_fine   TIMESTAMP,
-                    prezzo      DOUBLE,
-                    descrizione VARCHAR(500),
-                    indirizzo   VARCHAR(255),
-                    numero_min_partecipanti INT,
-                    organizzatore VARCHAR(50),
-                    destinatari TEXT,
-                    stato VARCHAR(20) DEFAULT 'IN_PREPARAZIONE'
-                );
-            """;
+                        CREATE TABLE IF NOT EXISTS visite_invito (
+                            id IDENTITY PRIMARY KEY,
+                            data_inizio TIMESTAMP,
+                            data_fine   TIMESTAMP,
+                            prezzo      DOUBLE,
+                            descrizione VARCHAR(500),
+                            indirizzo   VARCHAR(255),
+                            numero_min_partecipanti INT,
+                            organizzatore VARCHAR(50),
+                            destinatari TEXT,
+                            stato VARCHAR(20) DEFAULT 'IN_PREPARAZIONE'
+                        );
+                    """;
 
             String acquistiSql = """
-                CREATE TABLE IF NOT EXISTS acquisti (
-                    id IDENTITY PRIMARY KEY,
-                    username_acquirente VARCHAR(50) NOT NULL,
-                    totale DOUBLE NOT NULL,
-                    stato_pagamento VARCHAR(20) NOT NULL,
-                    tipo_metodo_pagamento VARCHAR(30) NOT NULL,
-                    data_ora TIMESTAMP NOT NULL,
-                    fondi_pre_acquisto DOUBLE,
-                    fondi_post_acquisto DOUBLE,
-                    elenco_item TEXT,
-                    FOREIGN KEY (username_acquirente) REFERENCES utenti(username)
-                );
-            """;
+                        CREATE TABLE IF NOT EXISTS acquisti (
+                            id IDENTITY PRIMARY KEY,
+                            username_acquirente VARCHAR(50) NOT NULL,
+                            totale DOUBLE NOT NULL,
+                            stato_pagamento VARCHAR(20) NOT NULL,
+                            tipo_metodo_pagamento VARCHAR(30) NOT NULL,
+                            data_ora TIMESTAMP NOT NULL,
+                            fondi_pre_acquisto DOUBLE,
+                            fondi_post_acquisto DOUBLE,
+                            elenco_item TEXT,
+                            FOREIGN KEY (username_acquirente) REFERENCES utenti(username)
+                        );
+                    """;
 
             String acquistoItemsSql = """
-                CREATE TABLE IF NOT EXISTS acquisto_items (
-                    id_acquisto INT,
-                    nome_item VARCHAR(100),
-                    tipo_item VARCHAR(30),
-                    quantita INT,
-                    prezzo_unitario DOUBLE,
-                    totale DOUBLE,
-                    FOREIGN KEY (id_acquisto) REFERENCES acquisti(id)
-                );
-            """;
+                        CREATE TABLE IF NOT EXISTS acquisto_items (
+                            id_acquisto INT,
+                            nome_item VARCHAR(100),
+                            tipo_item VARCHAR(30),
+                            quantita INT,
+                            prezzo_unitario DOUBLE,
+                            totale DOUBLE,
+                            FOREIGN KEY (id_acquisto) REFERENCES acquisti(id)
+                        );
+                    """;
 
             String prenotazioniFiereSql = """
-                CREATE TABLE IF NOT EXISTS prenotazioni_fiere (
-                    id IDENTITY PRIMARY KEY,
-                    id_fiera BIGINT NOT NULL,
-                    username_acquirente VARCHAR(50) NOT NULL,
-                    numero_persone INT NOT NULL,
-                    data_prenotazione TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (id_fiera) REFERENCES fiere(id),
-                    FOREIGN KEY (username_acquirente) REFERENCES utenti(username)
-                );
-            """;
+                        CREATE TABLE IF NOT EXISTS prenotazioni_fiere (
+                            id IDENTITY PRIMARY KEY,
+                            id_fiera BIGINT NOT NULL,
+                            username_acquirente VARCHAR(50) NOT NULL,
+                            numero_persone INT NOT NULL,
+                            data_prenotazione TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY (id_fiera) REFERENCES fiere(id),
+                            FOREIGN KEY (username_acquirente) REFERENCES utenti(username)
+                        );
+                    """;
 
             String prenotazioniVisiteSql = """
-                CREATE TABLE IF NOT EXISTS prenotazioni_visite (
-                    id IDENTITY PRIMARY KEY,
-                    id_visita BIGINT NOT NULL,
-                    username_venditore VARCHAR(50) NOT NULL,
-                    numero_persone INT NOT NULL,
-                    data_prenotazione TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (id_visita) REFERENCES visite_invito(id),
-                    FOREIGN KEY (username_venditore) REFERENCES utenti(username)
-                );
-            """;
+                        CREATE TABLE IF NOT EXISTS prenotazioni_visite (
+                            id IDENTITY PRIMARY KEY,
+                            id_visita BIGINT NOT NULL,
+                            username_venditore VARCHAR(50) NOT NULL,
+                            numero_persone INT NOT NULL,
+                            data_prenotazione TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY (id_visita) REFERENCES visite_invito(id),
+                            FOREIGN KEY (username_venditore) REFERENCES utenti(username)
+                        );
+                    """;
 
             String prodottiTrasformatiSql = """
-                CREATE TABLE IF NOT EXISTS prodotti_trasformati (
-                    id IDENTITY PRIMARY KEY,
-                    nome VARCHAR(100),
-                    descrizione VARCHAR(500),
-                    quantita INT,
-                    prezzo DOUBLE,
-                    indirizzo VARCHAR(255),
-                    certificati TEXT,
-                    foto TEXT,
-                    creato_da VARCHAR(50),
-                    stato VARCHAR(20) DEFAULT 'IN_ATTESA',
-                    commento VARCHAR(255) DEFAULT NULL
-                );
-            """;
+                        CREATE TABLE IF NOT EXISTS prodotti_trasformati (
+                            id IDENTITY PRIMARY KEY,
+                            nome VARCHAR(100),
+                            descrizione VARCHAR(500),
+                            quantita INT,
+                            prezzo DOUBLE,
+                            indirizzo VARCHAR(255),
+                            certificati TEXT,
+                            foto TEXT,
+                            creato_da VARCHAR(50),
+                            stato VARCHAR(20) DEFAULT 'IN_ATTESA',
+                            commento VARCHAR(255) DEFAULT NULL
+                        );
+                    """;
 
             String fasiProduzioneSql = """
-                CREATE TABLE IF NOT EXISTS fasi_produzione (
-                    id IDENTITY PRIMARY KEY,
-                    prodotto_trasformato_id INT NOT NULL,
-                    descrizione VARCHAR(255),
-                    produttore VARCHAR(50),
-                    prodotto_origine VARCHAR(100),
-                    FOREIGN KEY (prodotto_trasformato_id) REFERENCES prodotti_trasformati(id)
-                );
-            """;
+                        CREATE TABLE IF NOT EXISTS fasi_produzione (
+                            id IDENTITY PRIMARY KEY,
+                            prodotto_trasformato_id INT NOT NULL,
+                            descrizione VARCHAR(255),
+                            produttore VARCHAR(50),
+                            prodotto_origine VARCHAR(100),
+                            FOREIGN KEY (prodotto_trasformato_id) REFERENCES prodotti_trasformati(id)
+                        );
+                    """;
 
             // >>> storico richieste: nessun FK su username <<<
             String richiesteEliminaProfiloSql = """
-                CREATE TABLE IF NOT EXISTS richieste_eliminazione_profilo (
-                    id IDENTITY PRIMARY KEY,
-                    username VARCHAR(50) NOT NULL,
-                    stato VARCHAR(20) NOT NULL,
-                    data_richiesta TIMESTAMP NOT NULL
-                );
-            """;
+                        CREATE TABLE IF NOT EXISTS richieste_eliminazione_profilo (
+                            id IDENTITY PRIMARY KEY,
+                            username VARCHAR(50) NOT NULL,
+                            stato VARCHAR(20) NOT NULL,
+                            data_richiesta TIMESTAMP NOT NULL
+                        );
+                    """;
 
             String socialPostsSql = """
-                CREATE TABLE IF NOT EXISTS social_posts (
-                  id IDENTITY PRIMARY KEY,
-                  autore_username VARCHAR(50) NOT NULL,
-                  id_acquisto INT,
-                  nome_item VARCHAR(100) NOT NULL,
-                  tipo_item VARCHAR(30) NOT NULL,
-                  titolo VARCHAR(100),
-                  testo VARCHAR(1000) NOT NULL,
-                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                  FOREIGN KEY (autore_username) REFERENCES utenti(username),
-                  FOREIGN KEY (id_acquisto) REFERENCES acquisti(id)
-                );
-            """;
+                        CREATE TABLE IF NOT EXISTS social_posts (
+                          id IDENTITY PRIMARY KEY,
+                          autore_username VARCHAR(50) NOT NULL,
+                          id_acquisto INT,
+                          nome_item VARCHAR(100) NOT NULL,
+                          tipo_item VARCHAR(30) NOT NULL,
+                          titolo VARCHAR(100),
+                          testo VARCHAR(1000) NOT NULL,
+                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                          FOREIGN KEY (autore_username) REFERENCES utenti(username),
+                          FOREIGN KEY (id_acquisto) REFERENCES acquisti(id)
+                        );
+                    """;
+
 
             stmt.executeUpdate(utentiSql);
             stmt.executeUpdate(prodottiSql);

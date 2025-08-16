@@ -2,6 +2,7 @@ package unicam.filiera.view;
 
 import unicam.filiera.controller.AnimatoreController;
 import unicam.filiera.controller.EliminazioneProfiloController;
+import unicam.filiera.controller.MappaController;
 import unicam.filiera.controller.ObserverManagerItem;
 import unicam.filiera.dto.FieraDto;
 import unicam.filiera.dto.PostSocialDto;
@@ -45,6 +46,7 @@ public class PannelloAnimatore extends JPanel implements OsservatoreEliminazione
     private final JButton btnEliminaProfilo = new JButton("Elimina profilo");
     private final JButton btnVisualizzaPubblicati = new JButton("Visualizza fiere/visite pubblicate");
     private final JButton btnShowSocial = new JButton("Visualizza Social Network");
+    private final JButton btnShowMap = new JButton("Visualizza Mappa");
 
     public PannelloAnimatore(UtenteAutenticato utente) {
         super(new BorderLayout());
@@ -63,6 +65,7 @@ public class PannelloAnimatore extends JPanel implements OsservatoreEliminazione
         top.add(btnEliminaProfilo);
         top.add(btnVisualizzaPubblicati);
         top.add(btnShowSocial);
+        top.add(btnShowMap);
         add(top, BorderLayout.SOUTH);
 
         formContainer.add(buildFormFiera(), "Fiera");
@@ -72,6 +75,10 @@ public class PannelloAnimatore extends JPanel implements OsservatoreEliminazione
         setupComboTipoListener();
         comboTipo.setSelectedItem("Fiera");
         btnEliminaProfilo.addActionListener(e -> mostraDialogEliminaProfilo());
+        btnShowMap.addActionListener(e -> {
+            MappaController mappaCtrl = new MappaController();
+            mappaCtrl.mostra();
+        });
         btnShowSocial.addActionListener(e -> {
             try {
                 var posts = controller.getSocialFeed();

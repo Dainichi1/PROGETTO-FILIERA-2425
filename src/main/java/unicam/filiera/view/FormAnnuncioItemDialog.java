@@ -7,11 +7,11 @@ import java.awt.event.ActionEvent;
 public class FormAnnuncioItemDialog extends JDialog {
 
     private static final int MAX_TITOLO = 100;
-    private static final int MAX_TESTO  = 1000;
+    private static final int MAX_TESTO = 1000;
 
     private final String nomeItem;
     private final JTextField txtTitolo = new JTextField(30);
-    private final JTextArea  txtTesto  = new JTextArea(6, 30);
+    private final JTextArea txtTesto = new JTextArea(6, 30);
     private boolean confermato = false;
 
     public FormAnnuncioItemDialog(Window owner, String nomeItem) {
@@ -30,16 +30,22 @@ public class FormAnnuncioItemDialog extends JDialog {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(6, 6, 6, 6);
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0;
 
         form.add(new JLabel("Titolo* (max " + MAX_TITOLO + "):"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1.0;
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
         txtTitolo.setToolTipText("Obbligatorio, massimo " + MAX_TITOLO + " caratteri");
         form.add(txtTitolo, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 0;
         form.add(new JLabel("Testo* (max " + MAX_TESTO + "):"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1.0;
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
         txtTesto.setLineWrap(true);
         txtTesto.setWrapStyleWord(true);
         txtTesto.setToolTipText("Obbligatorio, massimo " + MAX_TESTO + " caratteri");
@@ -68,7 +74,7 @@ public class FormAnnuncioItemDialog extends JDialog {
 
     private void onOk(ActionEvent e) {
         String titolo = txtTitolo.getText().trim();
-        String testo  = txtTesto.getText().trim();
+        String testo = txtTesto.getText().trim();
 
         if (titolo.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Il titolo è obbligatorio.", "Campi mancanti",
@@ -95,8 +101,19 @@ public class FormAnnuncioItemDialog extends JDialog {
         dispose();
     }
 
-    public boolean isConfermato() { return confermato; }
-    public String getTitolo()      { return txtTitolo.getText().trim(); }
-    public String getTesto()       { return txtTesto.getText().trim(); }
-    public String getNomeItem()    { return nomeItem; }
+    public boolean isConfermato() {
+        return confermato;
+    }
+
+    public String getTitolo() {
+        return txtTitolo.getText().trim();
+    }
+
+    public String getTesto() {
+        return txtTesto.getText().trim();
+    }
+
+    public String getNomeItem() {
+        return nomeItem;
+    }
 }

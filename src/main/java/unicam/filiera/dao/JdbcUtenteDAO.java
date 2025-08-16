@@ -124,7 +124,6 @@ public class JdbcUtenteDAO implements UtenteDAO {
     }
 
 
-
     @Override
     public List<UtenteAutenticato> findAll() {
         List<UtenteAutenticato> list = new ArrayList<>();

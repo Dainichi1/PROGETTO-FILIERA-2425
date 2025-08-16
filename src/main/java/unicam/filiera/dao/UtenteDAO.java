@@ -20,6 +20,7 @@ public interface UtenteDAO {
     boolean existsPersona(String nome, String cognome);
 
     boolean deleteByUsername(String username);
+
     /**
      * Nuovo: recupera tutti gli utenti che hanno uno dei ruoli indicati
      */

@@ -228,6 +228,20 @@ public class DatabaseManager {
                     stmt.executeUpdate("ALTER TABLE richieste_eliminazione_profilo DROP COLUMN utente_id");
                 }
 
+                ResultSet rsMarkers = conn.getMetaData().getTables(null, null, "MARKERS", new String[]{"TABLE"});
+                if (!rsMarkers.next()) {
+                    System.out.println("[DB] Creo tabella 'markers'");
+                    stmt.executeUpdate("""
+                                CREATE TABLE markers (
+                                    id IDENTITY PRIMARY KEY,
+                                    lat DOUBLE,
+                                    lon DOUBLE,
+                                    label VARCHAR(255),
+                                    color VARCHAR(16) -- es: #ffbb00
+                                );
+                            """);
+                }
+
 
             }
 
@@ -426,7 +440,17 @@ public class DatabaseManager {
                         );
                     """;
 
+            String markersSql = """
+                        CREATE TABLE IF NOT EXISTS markers (
+                            id IDENTITY PRIMARY KEY,
+                            lat DOUBLE,
+                            lon DOUBLE,
+                            label VARCHAR(255),
+                            color VARCHAR(16) 
+                        );
+                    """;
 
+            stmt.executeUpdate(markersSql);
             stmt.executeUpdate(utentiSql);
             stmt.executeUpdate(prodottiSql);
             stmt.executeUpdate(pacchettiSql);

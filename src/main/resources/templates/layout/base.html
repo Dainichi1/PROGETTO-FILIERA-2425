@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org"
+      th:fragment="layout (pageTitle, content)">
+<head>
+    <meta charset="UTF-8">
+    <title th:replace="${pageTitle}">Filiera Agricola</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+<header th:replace="~{layout/header :: header}"></header>
+
+<main id="content" class="main-content" th:replace="${content}">
+    <!-- Contenuto di fallback -->
+    <p>Contenuto</p>
+</main>
+
+</body>
+</html>

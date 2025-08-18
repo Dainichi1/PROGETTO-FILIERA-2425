@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout (~{::title}, ~{::section})}">
+<head>
+    <title>Login · Filiera Agricola</title>
+</head>
+
+<section>
+    <div class="hero">
+        <h1>Login</h1>
+        <p>Accedi selezionando ruolo e credenziali.</p>
+    </div>
+
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <div class="form-card">
+        <form class="form-grid" th:action="@{/login}" th:object="${dto}" method="post" novalidate>
+            <input type="hidden"
+                   th:if="${#ctx.containsVariable('_csrf')}"
+                   th:name="${_csrf.parameterName}"
+                   th:value="${_csrf.token}"/>
+
+            <div class="form-row">
+                <label for="username">Username</label>
+                <input id="username" type="text" th:field="*{username}" placeholder="Username" required>
+            </div>
+
+            <div class="form-row">
+                <label for="password">Password</label>
+                <input id="password" type="password" th:field="*{password}" placeholder="Password" required>
+            </div>
+
+            <div class="form-row">
+                <label for="ruolo">Ruolo</label>
+                <select id="ruolo" th:field="*{ruolo}">
+                    <option th:each="r : ${ruoli}" th:value="${r}" th:text="${r}"></option>
+                </select>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">Login</button>
+                <a th:href="@{/}" class="btn-ghost">Indietro</a>
+            </div>
+        </form>
+    </div>
+</section>
+</html>

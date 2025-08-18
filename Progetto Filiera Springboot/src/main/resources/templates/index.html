@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout (~{::title}, ~{::section})}">
+<head>
+    <title>Filiera Agricola — Benvenuto</title>
+</head>
+
+<section>
+    <div class="hero">
+        <h1>Benvenuto nella Filiera Agricola</h1>
+        <p>Scopri i prodotti tipici, la tracciabilità e gli eventi del territorio.</p>
+    </div>
+
+    <div class="grid menu-cards">
+        <a class="card cta" th:href="@{/login}"><h2>Login</h2>
+            <p>Accedi alla tua area personale.</p></a>
+        <a class="card cta" th:href="@{/register}"><h2>Registrati</h2>
+            <p>Crea un profilo…</p></a>
+        <a class="card" th:href="@{/marketplace}"><h2>Visualizza Marketplace</h2>
+            <p>Esplora prodotti…</p></a>
+        <a class="card" th:href="@{/social}"><h2>Visualizza Social Network</h2>
+            <p>Annunci e recensioni.</p></a>
+        <a class="card" th:href="@{/mappa}"><h2>Visualizza Mappa</h2>
+            <p>Prodotti, pacchetti, eventi e fiere su mappa.</p></a>
+    </div>
+</section>
+</html>

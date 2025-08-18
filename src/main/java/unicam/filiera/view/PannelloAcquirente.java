@@ -38,7 +38,7 @@ public class PannelloAcquirente extends JPanel implements OsservatoreItem, Osser
 
     private JDialog dlgAcquisti;   // per riuso
 
-    private final JButton btnShowSocial = new JButton("Visualizza Social Network");
+    private final JButton btnShowSocial = new JButton("Visualizza Social Network!");
     private final JButton btnShowPurchases = new JButton("Visualizza acquisti");
 
     // Marketplace

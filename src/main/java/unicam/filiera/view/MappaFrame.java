@@ -1,9 +1,7 @@
 package unicam.filiera.view;
 
-import org.openstreetmap.gui.jmapviewer.Coordinate;
-import org.openstreetmap.gui.jmapviewer.JMapViewer;
+import org.openstreetmap.gui.jmapviewer.*;
 
-import org.openstreetmap.gui.jmapviewer.MapMarkerDot;
 import unicam.filiera.model.MarkerData;
 import org.openstreetmap.gui.jmapviewer.Coordinate;
 import unicam.filiera.repository.MarkerRepository;
@@ -69,6 +67,43 @@ public class MappaFrame extends JFrame {
         map.setDisplayPosition(new Coordinate(lat, lon), zoom);
 
     }
+
+    public void setPathLine(List<Coordinate> coords, Color color) {
+        if (coords == null || coords.size() < 2) return;
+
+
+        // Disegna segmento per segmento per evitare la chiusura dell’ultimo sul primo
+        for (int i = 0; i < coords.size() - 1; i++) {
+            List<Coordinate> seg = java.util.Arrays.asList(
+                    coords.get(i),
+                    coords.get(i + 1),
+                    coords.get(i + 1) // punto duplicato per creare un "triangolo" degenerato
+            );
+            MapPolygonImpl poly = new MapPolygonImpl(seg);
+            poly.setColor(color);                         // colore del tratto
+            poly.setBackColor(new Color(0, 0, 0, 0));     // nessun riempimento
+            poly.setStroke(new BasicStroke(3.5f));
+
+            map.addMapPolygon(poly);
+        }
+        map.repaint();
+    }
+
+
+    public void showSupplyChain(List<MarkerData> markers, List<Coordinate> path) {
+        if (markers != null) {
+            for (MarkerData md : markers) {
+                addMarker(md.lat(), md.lon(), md.label(), md.color());
+            }
+        }
+        setPathLine(path, new Color(51,139,201));
+        if (path != null && !path.isEmpty()) {
+            Coordinate first = path.get(0);
+            setCenter(first.getLat(), first.getLon(), 12);
+        }
+    }
+
+
 
 
 }

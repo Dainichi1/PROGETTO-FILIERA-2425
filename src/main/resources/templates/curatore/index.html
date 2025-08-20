@@ -6,6 +6,7 @@
 </head>
 
 <section>
+    <!-- HEADER -->
     <div class="hero">
         <h1 th:text="'Benvenuto ' + ${username} + ', ' + ${ruolo}"></h1>
         <p>Questa è la tua area Curatore.</p>
@@ -13,6 +14,111 @@
 
     <div class="form-actions">
         <a th:href="@{/}" class="btn-ghost">Home</a>
+        <button id="toggle-pending" type="button" class="btn-primary" style="margin-left:.5rem;">
+            Visualizza elementi da approvare
+        </button>
     </div>
+
+    <!-- LISTA IN ATTESA (toggle) -->
+    <div id="pending-container" style="display:none; margin-top:1rem;">
+        <h2>Prodotti in attesa di approvazione</h2>
+
+        <!-- Stato vuoto -->
+        <div th:if="${#lists.isEmpty(inAttesa)}" class="empty">
+            <p>Nessun elemento in attesa.</p>
+        </div>
+
+        <!-- Tabella prodotti -->
+        <div th:if="${!#lists.isEmpty(inAttesa)}" class="table-wrapper">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Descrizione</th>
+                    <th>Quantità</th>
+                    <th>Prezzo</th>
+                    <th>Indirizzo</th>
+                    <th>Creato da</th>
+                    <th>Certificati</th>
+                    <th>Foto</th>
+                    <th style="min-width:280px;">Azione</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="p, iStat : ${inAttesa}">
+                    <td th:text="${p.nome}"></td>
+                    <td th:text="${p.descrizione}"></td>
+                    <td th:text="${p.quantita}"></td>
+                    <td th:text="${p.prezzo}"></td>
+                    <td th:text="${p.indirizzo}"></td>
+                    <td th:text="${p.creatoDa}"></td>
+
+                    <!-- CERTIFICATI -->
+                    <td>
+                        <div th:if="${p.certificati == null or #strings.isEmpty(p.certificati)}">—</div>
+                        <ul th:if="${p.certificati != null and !#strings.isEmpty(p.certificati)}" style="padding-left:16px;margin:0;">
+                            <li th:each="url : ${#strings.arraySplit(p.certificati, ',')}">
+                                <a th:href="${url}" target="_blank" rel="noopener"
+                                   th:text="${url != null ? #strings.substring(url, url.lastIndexOf('/') + 1) : 'file'}">file</a>
+                            </li>
+                        </ul>
+                    </td>
+
+                    <!-- FOTO -->
+                    <td>
+                        <div th:if="${p.foto == null or #strings.isEmpty(p.foto)}">—</div>
+                        <ul th:if="${p.foto != null and !#strings.isEmpty(p.foto)}" style="padding-left:16px;margin:0;">
+                            <li th:each="url : ${#strings.arraySplit(p.foto, ',')}">
+                                <a th:href="${url}" target="_blank" rel="noopener">
+                                    <img th:src="${url}" alt="foto" style="max-width:80px; max-height:60px; object-fit:cover; vertical-align:middle;">
+                                </a>
+                            </li>
+
+                        </ul>
+                    </td>
+
+
+
+                    <!-- AZIONI: APPROVA / RIFIUTA -->
+                    <td>
+                        <form th:action="@{'/curatore/prodotti/' + ${p.id} + '/approve'}" method="post" style="display:inline;">
+                            <button type="submit" class="btn-success">Approva</button>
+                        </form>
+
+                        <form th:action="@{'/curatore/prodotti/' + ${p.id} + '/reject'}" method="post" style="display:inline-block;margin-left:.5rem;vertical-align:middle;">
+                            <input type="text" name="commento" placeholder="Commento (opzionale)" style="min-width:180px;" />
+                            <button type="submit" class="btn-danger" style="margin-left:.25rem;">Rifiuta</button>
+                        </form>
+
+                        <div class="hint" style="font-size:.85rem;color:#666;margin-top:.25rem;">
+                            L’elemento approvato viene rimosso dalla lista.
+                            Se rifiutato, torna al produttore con stato <em>RIFIUTATO</em>.
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- FLASH MESSAGES -->
+    <div th:if="${ok}" class="alert-success" th:text="${ok}" style="margin-top:1rem;"></div>
+    <div th:if="${error}" class="alert-error" th:text="${error}" style="margin-top:1rem;"></div>
+
+    <!-- SCRIPT spostato dentro la section -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const btn = document.getElementById('toggle-pending');
+            const panel = document.getElementById('pending-container');
+            if (!btn || !panel) return;
+
+            btn.addEventListener('click', function () {
+                const shown = panel.style.display !== 'none';
+                panel.style.display = shown ? 'none' : 'block';
+                btn.textContent = shown ? 'Visualizza elementi da approvare' : 'Nascondi lista elementi';
+            });
+        });
+    </script>
 </section>
+
 </html>

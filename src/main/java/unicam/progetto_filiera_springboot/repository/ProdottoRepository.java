@@ -33,4 +33,8 @@ public interface ProdottoRepository extends JpaRepository<Prodotto, Long> {
     int updateStatoAndCommento(@Param("id") Long id,
                                @Param("stato") StatoProdotto stato,
                                @Param("commento") String commento);
+
+
+    List<Prodotto> findByStato(StatoProdotto stato);
+
 }

@@ -1,10 +1,130 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout (~{::title}, ~{::section})}">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Marketplace · Filiera Agricola</title>
 </head>
-<body>
 
-</body>
+<section>
+    <div class="hero">
+        <h1>Marketplace</h1>
+        <p>Esplora i prodotti approvati dal Curatore.</p>
+    </div>
+
+    <div class="mp-layout">
+        <!-- COLONNA SINISTRA: LISTA ITEM -->
+        <aside class="mp-list">
+            <div class="mp-list-header">Risultati</div>
+
+            <div th:if="${#lists.isEmpty(items)}" class="empty">
+                Nessun prodotto disponibile al momento.
+            </div>
+
+            <ul th:if="${!#lists.isEmpty(items)}" class="mp-ul">
+                <li th:each="it : ${items}">
+                    <a class="mp-row"
+                       th:href="@{/marketplace(id=${it.id})}"
+                       th:classappend="${selected != null and selected.id == it.id} ? ' is-active'">
+                        <div class="mp-type">PRODOTTO</div>
+                        <div class="mp-name" th:text="${it.nome}">Nome</div>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- COLONNA DESTRA: DETTAGLIO -->
+        <main class="mp-detail">
+            <div th:if="${selected == null}" class="empty">
+                Seleziona un prodotto dalla lista per visualizzare i dettagli.
+            </div>
+
+            <div th:if="${selected != null}" class="card">
+                <div class="card-body">
+                    <div class="meta">
+                        <span class="badge">PRODOTTO</span>
+                    </div>
+
+                    <h2 style="margin: .5rem 0 1rem 0; color: #0f172a;" th:text="${selected.nome}">Nome Prodotto</h2>
+
+                    <div class="grid-2">
+                        <div>
+                            <h3>Descrizione</h3>
+                            <p th:text="${selected.descrizione}">—</p>
+
+                            <h3>Prezzo</h3>
+                            <p th:text="${#numbers.formatDecimal(selected.prezzo, 1, 'DEFAULT', 2, 'DEFAULT')} + ' €'">0,00 €</p>
+
+                            <h3>Indirizzo</h3>
+                            <p th:text="${selected.indirizzo}">—</p>
+
+                            <h3>Quantità</h3>
+                            <p th:text="${selected.quantita}">0</p>
+                        </div>
+
+                        <div>
+                            <h3>Certificati</h3>
+                            <div th:if="${selected.certificati == null or #strings.isEmpty(selected.certificati)}">—</div>
+                            <ul th:if="${selected.certificati != null and !#strings.isEmpty(selected.certificati)}">
+                                <li th:each="token : ${#strings.arraySplit(selected.certificati, ',')}"
+                                    th:with="url=${#strings.contains(token,'/') ? token : '/files/prodotti/' + selected.id + '/certificati/' + token}">
+                                    <a th:href="${url}" target="_blank" rel="noopener"
+                                       th:text="${#strings.substring(url, url.lastIndexOf('/') + 1)}">file</a>
+                                </li>
+                            </ul>
+
+                            <h3 style="margin-top:1rem;">Foto</h3>
+                            <div th:if="${selected.foto == null or #strings.isEmpty(selected.foto)}">—</div>
+                            <div class="thumbs" th:if="${selected.foto != null and !#strings.isEmpty(selected.foto)}">
+                                <a class="thumb"
+                                   th:each="token : ${#strings.arraySplit(selected.foto, ',')}"
+                                   th:with="url=${#strings.contains(token,'/') ? token : '/files/prodotti/' + selected.id + '/foto/' + token}"
+                                   th:href="${url}" target="_blank" rel="noopener">
+                                    <img th:src="${url}" alt="foto">
+                                </a>
+                            </div>
+
+
+
+
+                            <h3 style="margin-top:1rem;">Foto</h3>
+                            <div th:if="${selected.foto == null or #strings.isEmpty(selected.foto)}">—</div>
+
+                            <!-- thumbnails -->
+                            <div class="thumbs" th:if="${selected.foto != null and !#strings.isEmpty(selected.foto)}">
+                                <a th:each="url : ${#strings.arraySplit(selected.foto, ',')}"
+                                   th:href="${url}" target="_blank" rel="noopener" class="thumb">
+                                    <img th:src="${url}" alt="foto">
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <style>
+        .mp-layout{display:grid;grid-template-columns:320px 1fr;gap:1rem;align-items:start}
+        @media (max-width: 960px){.mp-layout{grid-template-columns:1fr}}
+        .mp-list{border:1px solid #e5e7eb;border-radius:12px;background:#fafafa;overflow:hidden}
+        .mp-list-header{padding:.75rem 1rem; color: #0f172a; font-weight:700;background:#f3f4f6;border-bottom:1px solid #e5e7eb}
+        .mp-ul{list-style:none;margin:0;padding:0}
+        .mp-row{display:flex;gap:.6rem;padding:.7rem 1rem;border-bottom:1px solid #eee;text-decoration:none;color:#0f172a;align-items:baseline}
+        .mp-row:hover{background:#eef3ff}
+        .mp-row.is-active{background:#dde8ff}
+        .mp-type{font-size:.75rem;font-weight:700;color:#374151;min-width:88px}
+        .mp-name{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+        .mp-detail .card{border:1px solid #e5e7eb;border-radius:12px;background:#fff}
+        .card-body{padding:1rem}
+        .badge{display:inline-block;background:#e5efff;border:1px solid #94a3b8;border-radius:999px;padding:.2rem .6rem;font-size:.8rem;color:#0f172a}
+        .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+        @media (max-width: 960px){.grid-2{grid-template-columns:1fr}}
+        .thumbs{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem}
+        .thumb{display:block;width:120px;height:90px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;background:#fafafa}
+        .thumb img{width:100%;height:100%;object-fit:cover}
+        .empty{padding:1rem;border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc;color:#475569}
+        h3{margin:.75rem 0 .25rem 0;font-size:1rem; color: #0f172a}
+    </style>
+</section>
 </html>

@@ -26,22 +26,21 @@ import unicam.progetto_filiera_springboot.domain.actor.Curatore;
 import unicam.progetto_filiera_springboot.domain.actor.Animatore;
 import unicam.progetto_filiera_springboot.domain.actor.GestorePiattaforma;
 
-import unicam.progetto_filiera_springboot.factory.Attore;
-import unicam.progetto_filiera_springboot.factory.AttoreFactory;
+import unicam.progetto_filiera_springboot.domain.factory.Attore;
+import unicam.progetto_filiera_springboot.domain.factory.AttoreFactory;
 
 @Service
 public class AuthService {
 
     private final UtenteRepository repo;
+    private final EventPublisher eventPublisher;   // <--- bean Spring
 
-    // Strategy: validazioni composte per la registrazione
     private final List<ValidationStrategy<RegisterDto>> registerValidators;
-
-    // Strategy: validazione campi login
     private final ValidationStrategy<LoginDto> loginValidator = new LoginRequiredFieldsValidation();
 
-    public AuthService(UtenteRepository repo) {
+    public AuthService(UtenteRepository repo, EventPublisher eventPublisher) {
         this.repo = repo;
+        this.eventPublisher = eventPublisher;
         this.registerValidators = List.of(
                 new RegisterRequiredFieldsValidation(),
                 new PasswordStrengthValidation()
@@ -54,16 +53,16 @@ public class AuthService {
         // Strategy: validazione
         registerValidators.forEach(v -> v.validate(dto));
 
-        // Check duplicato: stesso username e stesso ruolo
+        // Check duplicato
         Ruolo ruolo = dto.getRuolo();
         if (repo.existsByUsernameAndRuolo(dto.getUsername(), ruolo)) {
             throw new ValidationException("Username già presente per il ruolo selezionato");
         }
 
-        // Factory Method: istanzia l’attore
+        // Factory Method
         Attore attore = AttoreFactory.crea(ruolo);
 
-        // Mapping DTO -> Entity (JPA)
+        // Mapping DTO -> Entity
         Utente entity = new Utente(
                 dto.getUsername(),
                 dto.getPassword(),
@@ -74,7 +73,7 @@ public class AuthService {
         Utente saved = repo.save(entity);
 
         // Observer: evento dominio post-registrazione
-        EventPublisher.getInstance().publish(new UtenteRegistrato(saved.getUsername()));
+        eventPublisher.publish(new UtenteRegistrato(saved.getUsername()));
 
         return "Registrazione completata!";
     }

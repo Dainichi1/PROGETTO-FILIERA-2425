@@ -1,18 +1,175 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{layout/base :: layout (~{::title}, ~{::section})}">
 <head>
     <title>Area Produttore · Filiera Agricola</title>
 </head>
-
+<body>
 <section>
     <div class="hero">
-        <h1 th:text="'Benvenuto ' + ${username} + ', ' + ${ruolo}"></h1>
-        <p>Questa è la tua area Produttore.</p>
+        <h1 th:text="'Benvenuto ' + ${username} + ' (' + ${ruolo} + ')'"></h1>
+        <p>Questa è la tua area riservata come Produttore.</p>
     </div>
 
-    <div class="form-actions">
-        <a th:href="@{/}" class="btn-ghost">Home</a>
+    <div class="actions" style="margin: 1rem 0; display:flex; gap:.75rem; flex-wrap:wrap;">
+        <button id="toggleFormBtn" type="button" class="btn">Crea Prodotto</button>
+        <a th:href="@{/}" class="btn btn-ghost">Torna alla Home</a>
     </div>
+
+    <!-- FORM: inizialmente nascosto -->
+    <div id="createProductCard" style="display:none;">
+        <form id="createProductForm" class="card" method="post" enctype="multipart/form-data" onsubmit="return false;">
+            <div class="card-body" style="display:grid; gap:1rem;">
+                <!-- Nome -->
+                <div class="field">
+                    <label for="nome" class="label">Nome prodotto:</label>
+                    <input id="nome" name="nome" type="text" class="input"
+                           placeholder="Es. Olio EVO 'Colline Marchigiane'">
+                </div>
+
+                <!-- Descrizione -->
+                <div class="field">
+                    <label for="descrizione" class="label">Descrizione:</label>
+                    <textarea id="descrizione" name="descrizione" class="textarea" rows="3"
+                              placeholder="Breve descrizione del prodotto."></textarea>
+                </div>
+
+                <!-- Quantità -->
+                <div class="field">
+                    <label for="quantita" class="label">Quantità:</label>
+                    <input id="quantita" name="quantita" type="number" min="0" step="1" class="input" placeholder="Es. 100">
+                </div>
+
+                <!-- Prezzo -->
+                <div class="field">
+                    <label for="prezzo" class="label">Prezzo:</label>
+                    <input id="prezzo" name="prezzo" type="number" min="0" step="0.01" class="input" placeholder="Es. 12.50">
+                </div>
+
+                <!-- Indirizzo -->
+                <div class="field">
+                    <label for="indirizzo" class="label">Indirizzo:</label>
+                    <textarea id="indirizzo" name="indirizzo" class="textarea" rows="2"
+                              placeholder="Via/Piazza, Numero civico, CAP, Comune, Provincia"></textarea>
+                </div>
+
+                <!-- Upload certificati -->
+                <div class="field" style="display:grid; grid-template-columns: 1fr auto; gap:1rem; align-items:center;">
+                    <div>
+                        <input id="certificati" name="certificati" type="file" multiple hidden>
+                        <label for="certificati" class="btn btn-primary" style="width:100%;">Seleziona certificati</label>
+                    </div>
+                    <div class="muted" id="certificatiInfo">Nessun file selezionato</div>
+                </div>
+
+                <!-- Upload foto -->
+                <div class="field" style="display:grid; grid-template-columns: 1fr auto; gap:1rem; align-items:center;">
+                    <div>
+                        <input id="foto" name="foto" type="file" accept="image/*" multiple hidden>
+                        <label for="foto" class="btn btn-primary" style="width:100%;">Seleziona foto</label>
+                    </div>
+                    <div class="muted" id="fotoInfo">Nessun file selezionato</div>
+                </div>
+
+                <!-- Invia -->
+                <div class="form-actions" style="margin-top:.5rem;">
+                    <button type="button" class="btn btn-primary" id="inviaBtn">Invia Prodotto</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Stili migliorati per contrasto/leggibilità -->
+    <style>
+        .btn{
+            padding:.75rem 1rem;
+            border:1px solid #6b7280;   /* più scuro */
+            border-radius:8px;
+            background:#e0ecff;        /* più contrasto */
+            cursor:pointer;
+            color:#0f172a;              /* testo scuro */
+            font-weight:600;
+        }
+        .btn:hover{filter:brightness(0.98)}
+        .btn-primary{background:#cfe3ff;border-color:#475569;color:#0f172a}
+        .btn-ghost{background:#cfe3ff;color:#0f172a;border-color:#94a3b8}
+
+        .card{border:1px solid #cbd5e1;border-radius:12px;background:#fafafa}
+        .card-body{padding:1rem}
+
+        .label{
+            display:block;
+            margin-bottom:.35rem;
+            font-weight:700;
+            font-size:1rem;
+            color:#111827; /* molto scuro */
+        }
+        .input,.textarea{
+            width:100%;
+            padding:.8rem .9rem;
+            border:1px solid #64748b;  /* contrasto maggiore */
+            border-radius:8px;
+            background:#fff;
+            color:#0b1324;             /* testo scuro */
+        }
+        .input:focus,.textarea:focus{
+            outline:none;
+            border-color:#2563eb;
+            box-shadow:0 0 0 3px rgba(37,99,235,.18);
+        }
+
+        /* placeholder ben visibili */
+        ::placeholder{ color:#374151; opacity:1; }
+
+        .muted{font-size:.95rem;color:#374151} /* più scuro */
+        .field{display:block}
+
+        /* Mobile spacing */
+        @media (max-width: 640px){
+            .actions{gap:.5rem}
+            .card-body{gap:.75rem}
+        }
+    </style>
+
+    <!-- JS: toggle + info file -->
+    <script>
+        (function () {
+            const toggleBtn = document.getElementById('toggleFormBtn');
+            const card = document.getElementById('createProductCard');
+            const certificati = document.getElementById('certificati');
+            const certificatiInfo = document.getElementById('certificatiInfo');
+            const foto = document.getElementById('foto');
+            const fotoInfo = document.getElementById('fotoInfo');
+            const inviaBtn = document.getElementById('inviaBtn');
+
+            function updateInfo(input, infoEl, labelSing, labelPlur) {
+                if (!input.files || input.files.length === 0) {
+                    infoEl.textContent = 'Nessun file selezionato';
+                    return;
+                }
+                const n = input.files.length;
+                infoEl.textContent = n === 1 ? `1 ${labelSing} selezionato` : `${n} ${labelPlur} selezionati`;
+            }
+
+            toggleBtn.addEventListener('click', () => {
+                const visibile = card.style.display !== 'none';
+                card.style.display = visibile ? 'none' : 'block';
+                toggleBtn.textContent = visibile ? 'Crea Prodotto' : 'Chiudi Form';
+            });
+
+            certificati.addEventListener('change', () =>
+                updateInfo(certificati, certificatiInfo, 'certificato', 'certificati')
+            );
+            foto.addEventListener('change', () =>
+                updateInfo(foto, fotoInfo, 'file', 'file')
+            );
+
+            // Solo UI: nessuna logica di submit
+            inviaBtn.addEventListener('click', () => {
+                alert('Solo UI: la logica di invio verrà aggiunta in seguito.');
+            });
+        })();
+    </script>
 </section>
+</body>
 </html>

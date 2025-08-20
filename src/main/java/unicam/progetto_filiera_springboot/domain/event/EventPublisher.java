@@ -1,27 +1,23 @@
 package unicam.progetto_filiera_springboot.domain.event;
 
-import java.util.ArrayList;
+
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * OBSERVER - Publisher Singleton
- */
+import org.springframework.stereotype.Component;
+
+@Component
 public class EventPublisher {
-    private static final EventPublisher INSTANCE = new EventPublisher();
-    private final List<EventListener<? super DomainEvent>> listeners = new ArrayList<>();
 
-    private EventPublisher() {
-    }
+    private final List<EventListener> listeners = new CopyOnWriteArrayList<>();
 
-    public static EventPublisher getInstance() {
-        return INSTANCE;
-    }
-
-    public void register(EventListener<? super DomainEvent> l) {
-        listeners.add(l);
+    public void register(EventListener listener) {
+        listeners.add(listener);
     }
 
     public void publish(DomainEvent event) {
-        for (EventListener<? super DomainEvent> l : listeners) l.onEvent(event);
+        for (EventListener l : listeners) {
+            l.onEvent(event);
+        }
     }
 }

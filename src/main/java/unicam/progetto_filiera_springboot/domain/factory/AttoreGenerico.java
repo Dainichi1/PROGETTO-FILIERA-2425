@@ -1,5 +1,5 @@
 // Implementazioni "concrete product"
-package unicam.progetto_filiera_springboot.factory;
+package unicam.progetto_filiera_springboot.domain.factory;
 
 import unicam.progetto_filiera_springboot.domain.model.Ruolo;
 

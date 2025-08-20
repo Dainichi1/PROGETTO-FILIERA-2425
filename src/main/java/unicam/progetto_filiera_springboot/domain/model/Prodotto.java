@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
                 columnNames = {"nome", "creato_da"}
         )
 )
-public class Prodotto {
+public class Prodotto implements Item{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

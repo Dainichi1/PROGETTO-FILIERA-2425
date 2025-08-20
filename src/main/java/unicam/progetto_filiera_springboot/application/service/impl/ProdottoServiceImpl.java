@@ -11,6 +11,8 @@ import unicam.progetto_filiera_springboot.application.service.ProdottoService;
 import unicam.progetto_filiera_springboot.controller.error.UploadException;
 import unicam.progetto_filiera_springboot.domain.event.EventPublisher;
 import unicam.progetto_filiera_springboot.domain.event.ProdottoInviatoAlCuratore;
+import unicam.progetto_filiera_springboot.domain.factory.ProdottoFactory;
+import unicam.progetto_filiera_springboot.domain.model.Item;
 import unicam.progetto_filiera_springboot.domain.model.Prodotto;
 import unicam.progetto_filiera_springboot.domain.model.StatoProdotto;
 import unicam.progetto_filiera_springboot.domain.model.Utente;
@@ -30,15 +32,18 @@ public class ProdottoServiceImpl implements ProdottoService {
     private final UtenteRepository utenteRepository;
     private final FileStorageStrategy storage;
     private final EventPublisher eventPublisher;
+    private final ProdottoFactory prodottoFactory; // <-- Factory
 
     public ProdottoServiceImpl(ProdottoRepository prodottoRepository,
                                UtenteRepository utenteRepository,
                                @Qualifier("localFileStorageStrategy") FileStorageStrategy storage,
-                               EventPublisher eventPublisher) {
+                               EventPublisher eventPublisher,
+                               ProdottoFactory prodottoFactory) {
         this.prodottoRepository = prodottoRepository;
         this.utenteRepository = utenteRepository;
         this.storage = storage;
         this.eventPublisher = eventPublisher;
+        this.prodottoFactory = prodottoFactory;
     }
 
     @Override
@@ -62,21 +67,25 @@ public class ProdottoServiceImpl implements ProdottoService {
             throw new ValidationException("Esiste già un prodotto con lo stesso nome per questo utente.");
         }
 
-        // 1) Crea entità (stato IN_ATTESA impostato dal costruttore)
-        Prodotto p = new Prodotto(
+        // 1) Crea entità tramite FACTORY (ritorna Item) – stato IN_ATTESA gestito dal costruttore dell'entity
+        //    Certificati/foto verranno impostati dopo l'upload, quindi qui passiamo null.
+        Item item = prodottoFactory.creaProdotto(
                 req.getNome(),
                 req.getDescrizione(),
                 req.getQuantita(),
                 req.getPrezzo(),
                 req.getIndirizzo(),
-                creatore
+                creatore,
+                null,
+                null
         );
+        Prodotto p = (Prodotto) item; // cast sicuro: la factory concreta istanzia Prodotto
         Prodotto saved = prodottoRepository.save(p);
 
-        // 2) Carica file e salva **URL pubblici** nei campi CSV
+        // 2) Carica file e salva URL pubblici nei campi CSV
         try {
-            var fotoSaved = storage.store(foto, "prodotti/" + saved.getId() + "/foto");               // filenames
-            var certSaved = storage.store(certificati, "prodotti/" + saved.getId() + "/certificati"); // filenames
+            var fotoSaved = storage.store(foto, "prodotti/" + saved.getId() + "/foto");
+            var certSaved = storage.store(certificati, "prodotti/" + saved.getId() + "/certificati");
 
             var fotoUrls = filenamesToPublicUrls(saved.getId(), "foto", fotoSaved);
             var certUrls = filenamesToPublicUrls(saved.getId(), "certificati", certSaved);
@@ -129,7 +138,6 @@ public class ProdottoServiceImpl implements ProdottoService {
             throw new UploadException("Errore di IO durante il salvataggio dei file.", e);
         }
 
-        // Converte i nuovi filename in URL pubblici e li appende
         if (isFoto) {
             var urlsToAdd = filenamesToPublicUrls(prodottoId, "foto", savedFilenames);
             p.setFoto(appendCsv(p.getFoto(), joinCsv(urlsToAdd)));
@@ -214,5 +222,4 @@ public class ProdottoServiceImpl implements ProdottoService {
                 .map(ProdottoMapper::toResponse)
                 .toList();
     }
-
 }

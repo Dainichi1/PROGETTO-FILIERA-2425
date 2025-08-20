@@ -4,15 +4,140 @@
 <head>
     <title>Area Distributore · Filiera Agricola</title>
 </head>
-
+<body>
 <section>
     <div class="hero">
         <h1 th:text="'Benvenuto ' + ${username} + ', ' + ${ruolo}"></h1>
         <p>Questa è la tua area Distributore.</p>
     </div>
 
-    <div class="form-actions">
+    <div class="actions" style="margin:1rem 0;display:flex;gap:.75rem;flex-wrap:wrap;">
+        <button id="toggleFormBtn" type="button" class="btn">Apri Form</button>
         <a th:href="@{/}" class="btn-ghost">Home</a>
     </div>
+
+    <!-- FORM: inizialmente nascosto -->
+    <div id="createPackageCard" style="display:none;">
+        <form id="createPackageForm" class="card">
+            <div class="card-body" style="display:grid;gap:1rem;">
+
+                <!-- Nome Pacchetto -->
+                <div class="field">
+                    <label for="nome" class="label">Nome Pacchetto *</label>
+                    <input id="nome" type="text" name="nome" class="input" required>
+                </div>
+
+                <!-- Descrizione -->
+                <div class="field">
+                    <label for="descrizione" class="label">Descrizione *</label>
+                    <textarea id="descrizione" rows="3" name="descrizione" class="textarea" required></textarea>
+                </div>
+
+                <!-- Indirizzo luogo vendita -->
+                <div class="field">
+                    <label for="indirizzo" class="label">Indirizzo luogo vendita *</label>
+                    <textarea id="indirizzo" rows="2" name="indirizzo" class="textarea" required></textarea>
+                </div>
+
+                <!-- Prezzo Totale -->
+                <div class="field">
+                    <label for="prezzo" class="label">Prezzo Totale (€) *</label>
+                    <input id="prezzo" type="text" name="prezzo" placeholder="Es. 25.00" class="input" required>
+                </div>
+
+                <!-- Quantità -->
+                <div class="field">
+                    <label for="quantita" class="label">Quantità *</label>
+                    <input id="quantita" type="number" name="quantita" min="1" step="1" class="input" required>
+                </div>
+
+                <!-- Certificati -->
+                <div class="field" style="display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:center;">
+                    <div>
+                        <input id="certificati" name="certificati" type="file" multiple hidden>
+                        <label for="certificati" class="btn btn-primary" style="width:100%;">Seleziona certificati *</label>
+                    </div>
+                    <div class="muted" id="certificatiInfo">Nessun file selezionato</div>
+                </div>
+
+                <!-- Foto -->
+                <div class="field" style="display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:center;">
+                    <div>
+                        <input id="foto" name="foto" type="file" accept="image/*" multiple hidden>
+                        <label for="foto" class="btn btn-primary" style="width:100%;">Seleziona foto *</label>
+                    </div>
+                    <div class="muted" id="fotoInfo">Nessun file selezionato</div>
+                </div>
+
+                <div class="form-actions" style="margin-top:.5rem;">
+                    <button type="submit" class="btn btn-primary" id="inviaBtn">Invia Pacchetto</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Stili -->
+    <style>
+        .btn {
+            padding: .75rem 1rem;
+            border: 1px solid #6b7280;
+            border-radius: 8px;
+            background: #e0ecff;
+            cursor: pointer;
+            color: #0f172a;
+            font-weight: 600
+        }
+        .btn:hover { filter: brightness(0.98) }
+        .btn-primary {
+            background: #cfe3ff;
+            border-color: #475569;
+            color: #0f172a
+        }
+        .btn-ghost {
+            background: #cfe3ff;
+            color: #0f172a;
+            border-color: #94a3b8
+        }
+        .card { border: 1px solid #cbd5e1; border-radius: 12px; background: #fafafa }
+        .card-body { padding: 1rem }
+        .label { display: block; margin-bottom: .35rem; font-weight: 700; font-size: 1rem; color: #111827 }
+        .input, .textarea {
+            width: 100%; padding: .8rem .9rem;
+            border: 1px solid #64748b; border-radius: 8px;
+            background: #fff; color: #0b1324
+        }
+        .muted { font-size: .95rem; color: #374151 }
+    </style>
+
+    <!-- JS -->
+    <script>
+        (function () {
+            const toggleBtn = document.getElementById('toggleFormBtn');
+            const card = document.getElementById('createPackageCard');
+            const certificati = document.getElementById('certificati');
+            const certificatiInfo = document.getElementById('certificatiInfo');
+            const foto = document.getElementById('foto');
+            const fotoInfo = document.getElementById('fotoInfo');
+
+            function updateInfo(input, infoEl, sing, plur) {
+                if (!input.files || input.files.length === 0) {
+                    infoEl.textContent = 'Nessun file selezionato';
+                    return;
+                }
+                const n = input.files.length;
+                infoEl.textContent = n === 1 ? `1 ${sing} selezionato` : `${n} ${plur} selezionati`;
+            }
+
+            toggleBtn.addEventListener('click', () => {
+                const visibile = card.style.display !== 'none';
+                card.style.display = visibile ? 'none' : 'block';
+                toggleBtn.textContent = visibile ? 'Apri Form' : 'Chiudi Form';
+            });
+
+            certificati.addEventListener('change', () => updateInfo(certificati, certificatiInfo, 'certificato', 'certificati'));
+            foto.addEventListener('change', () => updateInfo(foto, fotoInfo, 'file', 'file'));
+        })();
+    </script>
 </section>
+</body>
 </html>

@@ -11,144 +11,179 @@
         <p>Questa è la tua area riservata come Produttore.</p>
     </div>
 
-    <div class="actions" style="margin: 1rem 0; display:flex; gap:.75rem; flex-wrap:wrap;">
+    <!-- flash -->
+    <div th:if="${successMsg}" class="flash flash-ok" th:text="${successMsg}"></div>
+    <div th:if="${errorMsg}"   class="flash flash-err" th:text="${errorMsg}"></div>
+
+    <div class="actions" style="margin:1rem 0;display:flex;gap:.75rem;flex-wrap:wrap;">
         <button id="toggleFormBtn" type="button" class="btn">Crea Prodotto</button>
         <a th:href="@{/}" class="btn btn-ghost">Torna alla Home</a>
     </div>
 
     <!-- FORM: inizialmente nascosto -->
     <div id="createProductCard" style="display:none;">
-        <form id="createProductForm" class="card" method="post" enctype="multipart/form-data" onsubmit="return false;">
-            <div class="card-body" style="display:grid; gap:1rem;">
+        <form id="createProductForm"
+              class="card"
+              th:action="@{/produttore/prodotti/invia}"
+              th:object="${form}"
+              method="post"
+              enctype="multipart/form-data">
+            <div class="card-body" style="display:grid;gap:1rem;">
+
+                <div th:if="${form != null and #fields.hasAnyErrors()}" class="flash flash-err">
+                    Correggi i campi evidenziati. Foto e certificati sono obbligatori.
+                </div>
+
                 <!-- Nome -->
                 <div class="field">
-                    <label for="nome" class="label">Nome prodotto:</label>
-                    <input id="nome" name="nome" type="text" class="input"
-                           placeholder="Es. Olio EVO 'Colline Marchigiane'">
+                    <label for="nome" class="label">Nome prodotto *</label>
+                    <input id="nome" type="text" th:field="*{nome}" class="input" required
+                           th:classappend="${#fields.hasErrors('nome')} ? ' field-error'">
+                    <div class="error" th:if="${#fields.hasErrors('nome')}" th:errors="*{nome}"></div>
                 </div>
 
                 <!-- Descrizione -->
                 <div class="field">
-                    <label for="descrizione" class="label">Descrizione:</label>
-                    <textarea id="descrizione" name="descrizione" class="textarea" rows="3"
-                              placeholder="Breve descrizione del prodotto."></textarea>
+                    <label for="descrizione" class="label">Descrizione *</label>
+                    <textarea id="descrizione" rows="3" th:field="*{descrizione}" class="textarea" required
+                              th:classappend="${#fields.hasErrors('descrizione')} ? ' field-error'"></textarea>
+                    <div class="error" th:if="${#fields.hasErrors('descrizione')}" th:errors="*{descrizione}"></div>
                 </div>
 
                 <!-- Quantità -->
                 <div class="field">
-                    <label for="quantita" class="label">Quantità:</label>
-                    <input id="quantita" name="quantita" type="number" min="0" step="1" class="input" placeholder="Es. 100">
+                    <label for="quantita" class="label">Quantità *</label>
+                    <input id="quantita" type="number" min="0" step="1" th:field="*{quantita}" class="input" required
+                           th:classappend="${#fields.hasErrors('quantita')} ? ' field-error'">
+                    <div class="error" th:if="${#fields.hasErrors('quantita')}" th:errors="*{quantita}"></div>
                 </div>
 
                 <!-- Prezzo -->
                 <div class="field">
-                    <label for="prezzo" class="label">Prezzo:</label>
-                    <input id="prezzo" name="prezzo" type="number" min="0" step="0.01" class="input" placeholder="Es. 12.50">
+                    <label for="prezzo" class="label">Prezzo (€) *</label>
+                    <input id="prezzo" type="text" placeholder="Es. 12.50" th:field="*{prezzo}" class="input" required
+                           th:classappend="${#fields.hasErrors('prezzo')} ? ' field-error'">
+                    <div class="error" th:if="${#fields.hasErrors('prezzo')}" th:errors="*{prezzo}"></div>
                 </div>
 
                 <!-- Indirizzo -->
                 <div class="field">
-                    <label for="indirizzo" class="label">Indirizzo:</label>
-                    <textarea id="indirizzo" name="indirizzo" class="textarea" rows="2"
-                              placeholder="Via/Piazza, Numero civico, CAP, Comune, Provincia"></textarea>
+                    <label for="indirizzo" class="label">Indirizzo *</label>
+                    <textarea id="indirizzo" rows="2" placeholder="Via, civico, cap, città, provincia" th:field="*{indirizzo}" class="textarea" required
+                              th:classappend="${#fields.hasErrors('indirizzo')} ? ' field-error'"></textarea>
+                    <div class="error" th:if="${#fields.hasErrors('indirizzo')}" th:errors="*{indirizzo}"></div>
                 </div>
 
-                <!-- Upload certificati -->
-                <div class="field" style="display:grid; grid-template-columns: 1fr auto; gap:1rem; align-items:center;">
+                <!-- Certificati (obbligatori) -->
+                <div class="field" style="display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:center;">
                     <div>
                         <input id="certificati" name="certificati" type="file" multiple hidden>
-                        <label for="certificati" class="btn btn-primary" style="width:100%;">Seleziona certificati</label>
+                        <label for="certificati" class="btn btn-primary" style="width:100%;">Seleziona certificati *</label>
                     </div>
                     <div class="muted" id="certificatiInfo">Nessun file selezionato</div>
                 </div>
 
-                <!-- Upload foto -->
-                <div class="field" style="display:grid; grid-template-columns: 1fr auto; gap:1rem; align-items:center;">
+                <!-- Foto (obbligatorie) -->
+                <div class="field" style="display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:center;">
                     <div>
                         <input id="foto" name="foto" type="file" accept="image/*" multiple hidden>
-                        <label for="foto" class="btn btn-primary" style="width:100%;">Seleziona foto</label>
+                        <label for="foto" class="btn btn-primary" style="width:100%;">Seleziona foto *</label>
                     </div>
                     <div class="muted" id="fotoInfo">Nessun file selezionato</div>
                 </div>
 
-                <!-- Invia -->
                 <div class="form-actions" style="margin-top:.5rem;">
-                    <button type="button" class="btn btn-primary" id="inviaBtn">Invia Prodotto</button>
+                    <button type="submit" class="btn btn-primary" id="inviaBtn">Invia Prodotto</button>
                 </div>
             </div>
         </form>
     </div>
 
-    <!-- Stili migliorati per contrasto/leggibilità -->
+    <!-- ================= RIEPILOGO PRODOTTI ================= -->
+    <h2 style="margin-top:2rem;">I tuoi prodotti</h2>
+
+    <div th:if="${#lists.isEmpty(prodotti)}" class="muted">Nessun prodotto creato finora.</div>
+
+    <table th:if="${!#lists.isEmpty(prodotti)}" class="table">
+        <thead>
+        <tr>
+            <th>Nome</th>
+            <th>Descrizione</th>
+            <th>Qtà</th>
+            <th>Prezzo</th>
+            <th>Indirizzo</th>
+            <th>Certificati</th>
+            <th>Foto</th>
+            <th>Stato</th>
+            <th>Commento</th>
+            <th>Azioni</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="p : ${prodotti}">
+            <td th:text="${p.nome}">-</td>
+            <td th:text="${p.descrizione}">-</td>
+            <td th:text="${p.quantita}">0</td>
+            <td th:text="${p.prezzo}">0.00</td>
+            <td th:text="${p.indirizzo}">-</td>
+            <td th:text="${p.certificati}">-</td>
+            <td th:text="${p.foto}">-</td>
+            <td th:text="${p.stato}">IN_ATTESA</td>
+            <td th:text="${p.commento}">-</td>
+            <td>
+                <!-- Bottone Modifica solo se stato == RIFIUTATO -->
+                <a th:if="${p.stato == 'RIFIUTATO'}"
+                   th:href="@{'/produttore/prodotti/' + ${p.id} + '/modifica'}"
+                   class="btn btn-ghost">Modifica</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <!-- Stili -->
     <style>
-        .btn{
-            padding:.75rem 1rem;
-            border:1px solid #6b7280;   /* più scuro */
-            border-radius:8px;
-            background:#e0ecff;        /* più contrasto */
-            cursor:pointer;
-            color:#0f172a;              /* testo scuro */
-            font-weight:600;
-        }
+        .btn{padding:.75rem 1rem;border:1px solid #6b7280;border-radius:8px;background:#e0ecff;cursor:pointer;color:#0f172a;font-weight:600}
         .btn:hover{filter:brightness(0.98)}
         .btn-primary{background:#cfe3ff;border-color:#475569;color:#0f172a}
         .btn-ghost{background:#cfe3ff;color:#0f172a;border-color:#94a3b8}
-
         .card{border:1px solid #cbd5e1;border-radius:12px;background:#fafafa}
         .card-body{padding:1rem}
-
-        .label{
-            display:block;
-            margin-bottom:.35rem;
-            font-weight:700;
-            font-size:1rem;
-            color:#111827; /* molto scuro */
-        }
-        .input,.textarea{
-            width:100%;
-            padding:.8rem .9rem;
-            border:1px solid #64748b;  /* contrasto maggiore */
-            border-radius:8px;
-            background:#fff;
-            color:#0b1324;             /* testo scuro */
-        }
-        .input:focus,.textarea:focus{
-            outline:none;
-            border-color:#2563eb;
-            box-shadow:0 0 0 3px rgba(37,99,235,.18);
-        }
-
-        /* placeholder ben visibili */
-        ::placeholder{ color:#374151; opacity:1; }
-
-        .muted{font-size:.95rem;color:#374151} /* più scuro */
+        .label{display:block;margin-bottom:.35rem;font-weight:700;font-size:1rem;color:#111827}
+        .input,.textarea{width:100%;padding:.8rem .9rem;border:1px solid #64748b;border-radius:8px;background:#fff;color:#0b1324}
+        .input:focus,.textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.18)}
+        ::placeholder{color:#374151;opacity:1}
+        .muted{font-size:.95rem;color:#374151}
         .field{display:block}
+        .error{color:#b00020;font-size:.9rem;margin-top:.25rem}
+        .field-error{border-color:#b00020}
+        .flash{padding:.75rem 1rem;border-radius:8px;margin:.75rem 0}
+        .flash-ok{background:#e7fff1;border:1px solid #7ad7a1}
+        .flash-err{background:#ffecec;border:1px solid #ff9aa2}
+        @media (max-width: 640px){.actions{gap:.5rem}.card-body{gap:.75rem}}
 
-        /* Mobile spacing */
-        @media (max-width: 640px){
-            .actions{gap:.5rem}
-            .card-body{gap:.75rem}
-        }
+        .table{width:100%; border-collapse:collapse; }
+        .table th,.table td{border:1px solid #e5e7eb; padding:.5rem .6rem; vertical-align:top; }
+        .table thead th{background:#f3f4f6; font-weight:700; color:#0f172a}
     </style>
 
-    <!-- JS: toggle + info file -->
+    <!-- JS -->
     <script>
         (function () {
             const toggleBtn = document.getElementById('toggleFormBtn');
             const card = document.getElementById('createProductCard');
+            const form = document.getElementById('createProductForm');
             const certificati = document.getElementById('certificati');
             const certificatiInfo = document.getElementById('certificatiInfo');
             const foto = document.getElementById('foto');
             const fotoInfo = document.getElementById('fotoInfo');
-            const inviaBtn = document.getElementById('inviaBtn');
 
-            function updateInfo(input, infoEl, labelSing, labelPlur) {
+            function updateInfo(input, infoEl, sing, plur) {
                 if (!input.files || input.files.length === 0) {
                     infoEl.textContent = 'Nessun file selezionato';
                     return;
                 }
                 const n = input.files.length;
-                infoEl.textContent = n === 1 ? `1 ${labelSing} selezionato` : `${n} ${labelPlur} selezionati`;
+                infoEl.textContent = n === 1 ? `1 ${sing} selezionato` : `${n} ${plur} selezionati`;
             }
 
             toggleBtn.addEventListener('click', () => {
@@ -157,16 +192,43 @@
                 toggleBtn.textContent = visibile ? 'Crea Prodotto' : 'Chiudi Form';
             });
 
-            certificati.addEventListener('change', () =>
-                updateInfo(certificati, certificatiInfo, 'certificato', 'certificati')
-            );
-            foto.addEventListener('change', () =>
-                updateInfo(foto, fotoInfo, 'file', 'file')
-            );
+            certificati.addEventListener('change', () => updateInfo(certificati, certificatiInfo, 'certificato', 'certificati'));
+            foto.addEventListener('change', () => updateInfo(foto, fotoInfo, 'file', 'file'));
 
-            // Solo UI: nessuna logica di submit
-            inviaBtn.addEventListener('click', () => {
-                alert('Solo UI: la logica di invio verrà aggiunta in seguito.');
+            form.addEventListener('submit', function (e) {
+                const nome = this.querySelector('[name="nome"]').value.trim();
+                const descr = this.querySelector('[name="descrizione"]').value.trim();
+                const qtaStr = this.querySelector('[name="quantita"]').value.trim();
+                const prezzoRaw = this.querySelector('[name="prezzo"]').value.trim();
+                const indirizzo = this.querySelector('[name="indirizzo"]').value.trim();
+
+                const prezzo = prezzoRaw.replace(',', '.');
+                const prezzoOk = /^\d+(\.\d{1,2})?$/.test(prezzo);
+
+                const qta = Number(qtaStr);
+                const qtaOk = qtaStr !== '' && Number.isFinite(qta) && qta >= 0;
+
+                const hasFoto = foto.files && foto.files.length > 0;
+                const hasCert = certificati.files && certificati.files.length > 0;
+
+                let msg = [];
+                if (!nome) msg.push('• Nome');
+                if (!descr) msg.push('• Descrizione');
+                if (!qtaOk) msg.push('• Quantità (numero ≥ 0)');
+                if (!prezzoOk) msg.push('• Prezzo (formato 1234.56 o 1234,56)');
+                if (!indirizzo) msg.push('• Indirizzo');
+                if (!hasFoto) msg.push('• Almeno 1 foto');
+                if (!hasCert) msg.push('• Almeno 1 certificato');
+
+                if (msg.length > 0) {
+                    e.preventDefault();
+                    alert('Compila correttamente i campi obbligatori:\n\n' + msg.join('\n'));
+                    return;
+                }
+
+                if (!confirm("Inviare il prodotto al Curatore per approvazione?")) {
+                    e.preventDefault();
+                }
             });
         })();
     </script>

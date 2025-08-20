@@ -5,7 +5,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import unicam.progetto_filiera_springboot.dto.auth.RegisterDto;
-import unicam.progetto_filiera_springboot.service.AuthService;
+import unicam.progetto_filiera_springboot.application.service.AuthService;
 import unicam.progetto_filiera_springboot.strategy.validation.ValidationException;
 import unicam.progetto_filiera_springboot.domain.model.Ruolo;
 

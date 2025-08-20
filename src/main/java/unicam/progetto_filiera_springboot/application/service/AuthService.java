@@ -1,4 +1,4 @@
-package unicam.progetto_filiera_springboot.service;
+package unicam.progetto_filiera_springboot.application.service;
 
 import java.util.List;
 import java.util.Optional;

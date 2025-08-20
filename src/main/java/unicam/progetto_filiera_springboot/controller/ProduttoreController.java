@@ -5,7 +5,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-
+import unicam.progetto_filiera_springboot.application.dto.ProdottoForm;
 import unicam.progetto_filiera_springboot.domain.actor.Produttore;
 
 @Controller
@@ -21,10 +21,17 @@ public class ProduttoreController {
             return "redirect:/login";
         }
 
+        // dati per header
         model.addAttribute("username", p.getUsername());
         model.addAttribute("ruolo", p.getRuolo());
 
-        // nuovo path coerente con la struttura templates/filiera/produttore/index.html
+
+        if (!model.containsAttribute("form")) {
+            ProdottoForm form = new ProdottoForm();
+
+            model.addAttribute("form", form);
+        }
+
         return "produttore/index";
     }
 }

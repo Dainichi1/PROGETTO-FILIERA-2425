@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import unicam.progetto_filiera_springboot.dto.auth.LoginDto;
 import unicam.progetto_filiera_springboot.domain.model.Ruolo;
 import unicam.progetto_filiera_springboot.domain.actor.UtenteAutenticato; // <-- attore dominio
-import unicam.progetto_filiera_springboot.service.AuthService;
+import unicam.progetto_filiera_springboot.application.service.AuthService;
 import unicam.progetto_filiera_springboot.strategy.validation.ValidationException;
 
 @Controller

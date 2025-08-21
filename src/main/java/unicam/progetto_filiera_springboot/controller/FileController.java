@@ -16,10 +16,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Set;
 
 @Controller
 @RequestMapping("/files")
 public class FileController {
+
+    private static final Set<String> SEZIONI = Set.of("prodotti", "pacchetti");
+    private static final Set<String> TIPI = Set.of("foto", "certificati");
 
     private final FileStorageStrategy storage;
 
@@ -27,20 +31,33 @@ public class FileController {
         this.storage = storage;
     }
 
-    @GetMapping("/prodotti/{id}/{tipo}/{filename:.+}")
-    public ResponseEntity<?> getFile(@PathVariable Long id,
-                                     @PathVariable String tipo,     // "foto" | "certificati"
+    /**
+     * Endpoint unico per:
+     *  - /files/prodotti/{id}/foto/{filename}
+     *  - /files/prodotti/{id}/certificati/{filename}
+     *  - /files/pacchetti/{id}/foto/{filename}
+     *  - /files/pacchetti/{id}/certificati/{filename}
+     */
+    @GetMapping("/{sezione}/{id}/{tipo}/{filename:.+}")
+    public ResponseEntity<?> getFile(@PathVariable String sezione,
+                                     @PathVariable Long id,
+                                     @PathVariable String tipo,
                                      @PathVariable String filename) {
 
-        String subfolder = "prodotti/" + id + "/" + tipo;
+        // Whitelist semplice per evitare percorsi non previsti
+        if (!SEZIONI.contains(sezione) || !TIPI.contains(tipo)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String subfolder = sezione + "/" + id + "/" + tipo;
         Resource res = storage.load(subfolder, filename);
-        if (res == null) return ResponseEntity.notFound().build();
+        if (res == null) {
+            return ResponseEntity.notFound().build();
+        }
 
-        // 1) Determina il content-type
         String contentType = detectContentType(res, filename);
-
-        // 2) Content-Disposition inline + Content-Type corretto
         String encoded = UriUtils.encode(filename, StandardCharsets.UTF_8);
+
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + encoded + "\"")
                 .header(HttpHeaders.CACHE_CONTROL, "max-age=3600, must-revalidate")
@@ -48,8 +65,9 @@ public class FileController {
                 .body(res);
     }
 
+    // ---------- helper ----------
+
     private String detectContentType(Resource res, String filename) {
-        // fallback map per estensioni comuni
         Map<String, String> byExt = Map.of(
                 "jpg", "image/jpeg",
                 "jpeg", "image/jpeg",
@@ -59,7 +77,6 @@ public class FileController {
                 "pdf", "application/pdf"
         );
 
-        // a) se è FileSystemResource prova Files.probeContentType
         try {
             if (res instanceof FileSystemResource fsr) {
                 Path p = fsr.getFile().toPath();
@@ -68,18 +85,14 @@ public class FileController {
             }
         } catch (Exception ignored) {}
 
-        // b) prova con l’heuristic di Java sul nome
         String byName = URLConnection.guessContentTypeFromName(filename);
         if (byName != null) return byName;
 
-        // c) fallback su estensione
         String ext = "";
         int dot = filename.lastIndexOf('.');
         if (dot >= 0 && dot < filename.length() - 1) {
             ext = filename.substring(dot + 1).toLowerCase();
         }
-        if (byExt.containsKey(ext)) return byExt.get(ext);
-
-        return MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        return byExt.getOrDefault(ext, MediaType.APPLICATION_OCTET_STREAM_VALUE);
     }
 }

@@ -2,72 +2,121 @@
 <html lang="it" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{layout/base :: layout (~{::title}, ~{::section})}">
 <head>
-    <title>Area Distributore · Filiera Agricola</title>
+    <title>Area Distributore · Crea Pacchetto</title>
 </head>
 <body>
 <section>
     <div class="hero">
-        <h1 th:text="'Benvenuto ' + ${username} + ', ' + ${ruolo}"></h1>
+        <h1 th:text="'Benvenuto ' + ${username} + ' (' + ${ruolo} + ')'"></h1>
         <p>Questa è la tua area Distributore.</p>
     </div>
 
+    <!-- flash -->
+    <div th:if="${successMsg}" class="flash flash-ok" th:text="${successMsg}"></div>
+    <div th:if="${errorMsg}" class="flash flash-err" th:text="${errorMsg}"></div>
+
     <div class="actions" style="margin:1rem 0;display:flex;gap:.75rem;flex-wrap:wrap;">
-        <button id="toggleFormBtn" type="button" class="btn">Apri Form</button>
-        <a th:href="@{/}" class="btn-ghost">Home</a>
+        <button id="toggleFormBtn" type="button" class="btn">Crea Pacchetto</button>
+        <a th:href="@{/}" class="btn btn-ghost">Torna alla Home</a>
     </div>
 
-    <!-- FORM: inizialmente nascosto -->
+    <!-- ================= FORM CREAZIONE ================= -->
     <div id="createPackageCard" style="display:none;">
-        <form id="createPackageForm" class="card">
+        <form id="createPackageForm"
+              class="card"
+              th:action="@{/distributore/pacchetti/crea}"
+              th:object="${pacchettoForm}"
+              method="post"
+              enctype="multipart/form-data">
             <div class="card-body" style="display:grid;gap:1rem;">
 
-                <!-- Nome Pacchetto -->
+                <div th:if="${pacchettoForm != null and #fields.hasAnyErrors()}" class="flash flash-err">
+                    Correggi i campi evidenziati. Tutti i campi sono obbligatori.
+                </div>
+
+                <!-- Nome -->
                 <div class="field">
                     <label for="nome" class="label">Nome Pacchetto *</label>
-                    <input id="nome" type="text" name="nome" class="input" required>
+                    <input id="nome" name="nome" type="text" th:field="*{nome}" class="input" maxlength="100">
+                    <div class="error" th:if="${#fields.hasErrors('nome')}" th:errors="*{nome}"></div>
+                    <div class="error" id="errNome"></div>
                 </div>
 
                 <!-- Descrizione -->
                 <div class="field">
                     <label for="descrizione" class="label">Descrizione *</label>
-                    <textarea id="descrizione" rows="3" name="descrizione" class="textarea" required></textarea>
+                    <textarea id="descrizione" name="descrizione" rows="3" th:field="*{descrizione}" class="textarea"
+                              maxlength="1000"></textarea>
+                    <div class="error" th:if="${#fields.hasErrors('descrizione')}" th:errors="*{descrizione}"></div>
+                    <div class="error" id="errDescrizione"></div>
                 </div>
 
-                <!-- Indirizzo luogo vendita -->
+                <!-- Indirizzo -->
                 <div class="field">
                     <label for="indirizzo" class="label">Indirizzo luogo vendita *</label>
-                    <textarea id="indirizzo" rows="2" name="indirizzo" class="textarea" required></textarea>
+                    <input id="indirizzo" name="indirizzo" type="text" th:field="*{indirizzo}" class="input"
+                           maxlength="255">
+                    <div class="error" th:if="${#fields.hasErrors('indirizzo')}" th:errors="*{indirizzo}"></div>
+                    <div class="error" id="errIndirizzo"></div>
                 </div>
 
                 <!-- Prezzo Totale -->
                 <div class="field">
-                    <label for="prezzo" class="label">Prezzo Totale (€) *</label>
-                    <input id="prezzo" type="text" name="prezzo" placeholder="Es. 25.00" class="input" required>
+                    <label for="prezzoTotale" class="label">Prezzo Totale (€) *</label>
+                    <input id="prezzoTotale" name="prezzoTotale" type="text" placeholder="Es. 12.50"
+                           th:field="*{prezzoTotale}" class="input">
+                    <div class="error" th:if="${#fields.hasErrors('prezzoTotale')}" th:errors="*{prezzoTotale}"></div>
+                    <div class="error" id="errPrezzo"></div>
                 </div>
 
                 <!-- Quantità -->
                 <div class="field">
                     <label for="quantita" class="label">Quantità *</label>
-                    <input id="quantita" type="number" name="quantita" min="1" step="1" class="input" required>
+                    <input id="quantita" name="quantita" type="number" min="1" step="1" th:field="*{quantita}"
+                           class="input">
+                    <div class="error" th:if="${#fields.hasErrors('quantita')}" th:errors="*{quantita}"></div>
+                    <div class="error" id="errQuantita"></div>
+                </div>
+
+                <!-- Selezione prodotti -->
+                <div class="field">
+                    <label class="label">Seleziona almeno due prodotti *</label>
+                    <div id="productListJs" style="display:grid;gap:.4rem;">
+                        <div th:each="p : ${prodottiMarketplace}">
+                            <label class="muted" style="display:flex;align-items:center;gap:.5rem;">
+                                <input type="checkbox" th:field="*{prodottiIds}" th:value="${p.id}"/>
+                                <span>
+                  <span th:text="${p.nome}"></span>
+                  (<span th:text="${p.prezzo}"></span> €)
+                </span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="error" id="errProdotti"></div>
+                    <div class="error" th:if="${#fields.hasErrors('prodottiIds')}" th:errors="*{prodottiIds}"></div>
                 </div>
 
                 <!-- Certificati -->
                 <div class="field" style="display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:center;">
                     <div>
                         <input id="certificati" name="certificati" type="file" multiple hidden>
-                        <label for="certificati" class="btn btn-primary" style="width:100%;">Seleziona certificati *</label>
+                        <label for="certificati" class="btn btn-primary" id="lblCert" style="width:100%;">Seleziona
+                            certificati *</label>
                     </div>
                     <div class="muted" id="certificatiInfo">Nessun file selezionato</div>
                 </div>
+                <div class="error" id="errCertificati"></div>
 
                 <!-- Foto -->
                 <div class="field" style="display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:center;">
                     <div>
                         <input id="foto" name="foto" type="file" accept="image/*" multiple hidden>
-                        <label for="foto" class="btn btn-primary" style="width:100%;">Seleziona foto *</label>
+                        <label for="foto" class="btn btn-primary" id="lblFoto" style="width:100%;">Seleziona foto
+                            *</label>
                     </div>
                     <div class="muted" id="fotoInfo">Nessun file selezionato</div>
                 </div>
+                <div class="error" id="errFoto"></div>
 
                 <div class="form-actions" style="margin-top:.5rem;">
                     <button type="submit" class="btn btn-primary" id="inviaBtn">Invia Pacchetto</button>
@@ -76,7 +125,45 @@
         </form>
     </div>
 
-    <!-- Stili -->
+    <!-- ================= RIEPILOGO PACCHETTI ================= -->
+    <h2 style="margin-top:2rem;">I tuoi pacchetti</h2>
+    <div th:if="${pacchetti == null or #lists.isEmpty(pacchetti)}" class="muted">Nessun pacchetto creato finora.</div>
+    <table th:if="${pacchetti != null and !#lists.isEmpty(pacchetti)}" class="table">
+        <thead>
+        <tr>
+            <th>Nome</th>
+            <th>Descrizione</th>
+            <th>Qtà</th>
+            <th>Prezzo Totale</th>
+            <th>Indirizzo</th>
+            <th>Certificati</th>
+            <th>Foto</th>
+            <th>Stato</th>
+            <th>Commento</th>
+            <th>Azioni</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="p : ${pacchetti}">
+            <td th:text="${p.nome}">-</td>
+            <td th:text="${p.descrizione}">-</td>
+            <td th:text="${p.quantita}">0</td>
+            <td th:text="${p.prezzoTotale}">0.00</td>
+            <td th:text="${p.indirizzo}">-</td>
+            <td th:text="${p.certificati}">-</td>
+            <td th:text="${p.foto}">-</td>
+            <td th:text="${p.stato}">IN_ATTESA</td>
+            <td th:text="${p.commento}">-</td>
+            <td>
+                <a th:if="${p.stato == 'RIFIUTATO'}"
+                   th:href="@{'/distributore/pacchetti/' + ${p.id} + '/modifica'}"
+                   class="btn btn-ghost">Modifica</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <!-- STILI -->
     <style>
         .btn {
             padding: .75rem 1rem;
@@ -87,38 +174,154 @@
             color: #0f172a;
             font-weight: 600
         }
-        .btn:hover { filter: brightness(0.98) }
+
+        .btn:hover {
+            filter: brightness(0.98)
+        }
+
         .btn-primary {
             background: #cfe3ff;
             border-color: #475569;
             color: #0f172a
         }
+
         .btn-ghost {
             background: #cfe3ff;
             color: #0f172a;
             border-color: #94a3b8
         }
-        .card { border: 1px solid #cbd5e1; border-radius: 12px; background: #fafafa }
-        .card-body { padding: 1rem }
-        .label { display: block; margin-bottom: .35rem; font-weight: 700; font-size: 1rem; color: #111827 }
-        .input, .textarea {
-            width: 100%; padding: .8rem .9rem;
-            border: 1px solid #64748b; border-radius: 8px;
-            background: #fff; color: #0b1324
+
+        .card {
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            background: #fafafa
         }
-        .muted { font-size: .95rem; color: #374151 }
+
+        .card-body {
+            padding: 1rem
+        }
+
+        .label {
+            display: block;
+            margin-bottom: .35rem;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #111827
+        }
+
+        .input, .textarea {
+            width: 100%;
+            padding: .8rem .9rem;
+            border: 1px solid #64748b;
+            border-radius: 8px;
+            background: #fff;
+            color: #0b1324
+        }
+
+        .input:focus, .textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, .18)
+        }
+
+        ::placeholder {
+            color: #374151;
+            opacity: 1
+        }
+
+        .muted {
+            font-size: .95rem;
+            color: #374151
+        }
+
+        .field {
+            display: block
+        }
+
+        .error {
+            color: #b00020;
+            font-size: .9rem;
+            margin-top: .25rem
+        }
+
+        .field-error {
+            border-color: #b00020 !important;
+            box-shadow: 0 0 0 3px rgba(176, 0, 32, .12)
+        }
+
+        .invalid-file {
+            border-color: #b00020 !important;
+            box-shadow: 0 0 0 3px rgba(176, 0, 32, .12)
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        .table th, .table td {
+            border: 1px solid #e5e7eb;
+            padding: .5rem .6rem;
+            vertical-align: top
+        }
+
+        .table thead th {
+            background: #f3f4f6;
+            font-weight: 700;
+            color: #0f172a
+        }
+
+        @media (max-width: 640px) {
+            .actions {
+                gap: .5rem
+            }
+
+            .card-body {
+                gap: .75rem
+            }
+        }
     </style>
 
-    <!-- JS -->
+    <!-- JS: validazione "manuale" con messaggi inline -->
     <script>
-        (function () {
+        document.addEventListener('DOMContentLoaded', function () {
             const toggleBtn = document.getElementById('toggleFormBtn');
             const card = document.getElementById('createPackageCard');
+            const form = document.getElementById('createPackageForm');
+
+            const nome = document.getElementById('nome');
+            const descrizione = document.getElementById('descrizione');
+            const indirizzo = document.getElementById('indirizzo');
+            const prezzoTotale = document.getElementById('prezzoTotale');
+            const quantita = document.getElementById('quantita');
+
+            const errNome = document.getElementById('errNome');
+            const errDescrizione = document.getElementById('errDescrizione');
+            const errIndirizzo = document.getElementById('errIndirizzo');
+            const errPrezzo = document.getElementById('errPrezzo');
+            const errQuantita = document.getElementById('errQuantita');
+
+            const productList = document.getElementById('productListJs');
+            const errProdotti = document.getElementById('errProdotti');
+
             const certificati = document.getElementById('certificati');
             const certificatiInfo = document.getElementById('certificatiInfo');
+            const lblCert = document.getElementById('lblCert');
+            const errCert = document.getElementById('errCertificati');
+
             const foto = document.getElementById('foto');
             const fotoInfo = document.getElementById('fotoInfo');
+            const lblFoto = document.getElementById('lblFoto');
+            const errFoto = document.getElementById('errFoto');
 
+            // toggle card
+            toggleBtn.addEventListener('click', () => {
+                const visibile = card.style.display !== 'none';
+                card.style.display = visibile ? 'none' : 'block';
+                toggleBtn.textContent = visibile ? 'Crea Pacchetto' : 'Chiudi Form';
+            });
+
+            // contatori file
             function updateInfo(input, infoEl, sing, plur) {
                 if (!input.files || input.files.length === 0) {
                     infoEl.textContent = 'Nessun file selezionato';
@@ -128,16 +331,104 @@
                 infoEl.textContent = n === 1 ? `1 ${sing} selezionato` : `${n} ${plur} selezionati`;
             }
 
-            toggleBtn.addEventListener('click', () => {
-                const visibile = card.style.display !== 'none';
-                card.style.display = visibile ? 'none' : 'block';
-                toggleBtn.textContent = visibile ? 'Apri Form' : 'Chiudi Form';
+            certificati.addEventListener('change', () => {
+                updateInfo(certificati, certificatiInfo, 'certificato', 'certificati');
+                if (certificati.files.length > 0) {
+                    errCert.textContent = '';
+                    lblCert.classList.remove('invalid-file');
+                }
+            });
+            foto.addEventListener('change', () => {
+                updateInfo(foto, fotoInfo, 'file', 'file');
+                if (foto.files.length > 0) {
+                    errFoto.textContent = '';
+                    lblFoto.classList.remove('invalid-file');
+                }
             });
 
-            certificati.addEventListener('change', () => updateInfo(certificati, certificatiInfo, 'certificato', 'certificati'));
-            foto.addEventListener('change', () => updateInfo(foto, fotoInfo, 'file', 'file'));
-        })();
+            // util: set/clear errore
+            function setErr(inputEl, errEl, msg) {
+                if (msg) {
+                    errEl.textContent = msg;
+                    inputEl.classList.add('field-error');
+                    inputEl.setAttribute('aria-invalid', 'true');
+                } else {
+                    errEl.textContent = '';
+                    inputEl.classList.remove('field-error');
+                    inputEl.removeAttribute('aria-invalid');
+                }
+            }
+
+            function validate() {
+                let ok = true;
+
+                // Nome
+                setErr(nome, errNome, !nome.value.trim() ? 'Campo obbligatorio.' : '');
+                ok &&= !!nome.value.trim();
+
+                // Descrizione
+                setErr(descrizione, errDescrizione, !descrizione.value.trim() ? 'Campo obbligatorio.' : '');
+                ok &&= !!descrizione.value.trim();
+
+                // Indirizzo
+                setErr(indirizzo, errIndirizzo, !indirizzo.value.trim() ? 'Campo obbligatorio.' : '');
+                ok &&= !!indirizzo.value.trim();
+
+                // Prezzo (formato 1234.56 o 1234,56)
+                const prezzo = prezzoTotale.value.trim().replace(',', '.');
+                const prezzoOk = /^\d+(\.\d{1,2})?$/.test(prezzo);
+                setErr(prezzoTotale, errPrezzo, !prezzo ? 'Campo obbligatorio.' : (!prezzoOk ? 'Formato non valido (es. 12.50 o 12,50).' : ''));
+                ok &&= (prezzo && prezzoOk);
+
+                // Quantità (>=1)
+                const q = Number(quantita.value);
+                const qOk = quantita.value.trim() !== '' && Number.isFinite(q) && q >= 1;
+                setErr(quantita, errQuantita, !qOk ? 'Inserisci un numero intero ≥ 1.' : '');
+                ok &&= qOk;
+
+                // Almeno 2 prodotti
+                const prodottiChecked = productList.querySelectorAll('input[type="checkbox"]:checked');
+                errProdotti.textContent = (prodottiChecked.length < 2) ? 'Seleziona almeno 2 prodotti.' : '';
+                ok &&= (prodottiChecked.length >= 2);
+
+                // Certificati obbligatori
+                if (!(certificati.files && certificati.files.length > 0)) {
+                    errCert.textContent = 'Allega almeno un certificato.';
+                    lblCert.classList.add('invalid-file');
+                    ok = false;
+                } else {
+                    errCert.textContent = '';
+                    lblCert.classList.remove('invalid-file');
+                }
+
+                // Foto obbligatorie
+                if (!(foto.files && foto.files.length > 0)) {
+                    errFoto.textContent = 'Allega almeno una foto.';
+                    lblFoto.classList.add('invalid-file');
+                    ok = false;
+                } else {
+                    errFoto.textContent = '';
+                    lblFoto.classList.remove('invalid-file');
+                }
+
+                return ok;
+            }
+
+            // valida SOLO on submit
+            form.addEventListener('submit', function (e) {
+                if (!validate()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
+                if (!confirm('Inviare il pacchetto per approvazione?')) {
+                    e.preventDefault();
+                }
+            });
+
+        });
     </script>
+
 </section>
 </body>
 </html>

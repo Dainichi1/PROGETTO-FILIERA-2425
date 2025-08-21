@@ -145,6 +145,10 @@ public class ProdottoServiceImpl implements ProdottoService {
             var urlsToAdd = filenamesToPublicUrls(prodottoId, "certificati", savedFilenames);
             p.setCertificati(appendCsv(p.getCertificati(), joinCsv(urlsToAdd)));
         }
+        if (p.getStato() == StatoProdotto.APPROVATO /* || p.getStato() == PUBLISHED */) {
+            throw new IllegalStateException("L'item non è più modificabile in questo stato.");
+        }
+
 
         Prodotto updated = prodottoRepository.save(p);
         return ProdottoMapper.toResponse(updated);
@@ -180,11 +184,14 @@ public class ProdottoServiceImpl implements ProdottoService {
     public void approve(Long id) {
         Prodotto p = prodottoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Prodotto inesistente: id=" + id));
+
         if (p.getStato() != StatoProdotto.IN_ATTESA) {
             throw new IllegalStateException("Prodotto non in stato IN_ATTESA: id=" + id);
         }
+
         prodottoRepository.updateStatoAndCommento(id, StatoProdotto.APPROVATO, null);
     }
+
 
     @Override
     @Transactional

@@ -14,27 +14,21 @@ import java.util.Optional;
 @Repository
 public interface ProdottoRepository extends JpaRepository<Prodotto, Long> {
 
-    // Unicità nome + creatore
     boolean existsByNomeAndCreatoDa_Username(String nome, String username);
 
     Optional<Prodotto> findByNomeAndCreatoDa_Username(String nome, String username);
 
-    // Paginazione (se ti serve)
     Page<Prodotto> findByCreatoDa_Username(String username, Pageable pageable);
 
     Page<Prodotto> findByStato(StatoProdotto stato, Pageable pageable);
 
-    // *** LISTA per riepilogo del produttore (ordinati dal più recente) ***
     List<Prodotto> findByCreatoDa_UsernameOrderByCreatedAtDesc(String username);
 
-    // Aggiornamento stato+commento (curatore)
-    @Modifying
-    @Query("update Prodotto p set p.stato=:stato, p.commento=:commento where p.id=:id")
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE Prodotto p SET p.stato = :stato, p.commento = :commento WHERE p.id = :id")
     int updateStatoAndCommento(@Param("id") Long id,
                                @Param("stato") StatoProdotto stato,
                                @Param("commento") String commento);
 
-
     List<Prodotto> findByStato(StatoProdotto stato);
-
 }

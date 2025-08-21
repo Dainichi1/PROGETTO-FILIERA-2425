@@ -8,7 +8,7 @@
 <section>
     <div class="hero">
         <h1>Marketplace</h1>
-        <p>Esplora i prodotti approvati dal Curatore.</p>
+        <p>Esplora prodotti e pacchetti approvati dal Curatore.</p>
     </div>
 
     <div class="mp-layout">
@@ -17,15 +17,15 @@
             <div class="mp-list-header">Risultati</div>
 
             <div th:if="${#lists.isEmpty(items)}" class="empty">
-                Nessun prodotto disponibile al momento.
+                Nessun elemento disponibile al momento.
             </div>
 
             <ul th:if="${!#lists.isEmpty(items)}" class="mp-ul">
                 <li th:each="it : ${items}">
                     <a class="mp-row"
-                       th:href="@{/marketplace(id=${it.id})}"
-                       th:classappend="${selected != null and selected.id == it.id} ? ' is-active'">
-                        <div class="mp-type">PRODOTTO</div>
+                       th:href="@{/marketplace(id=${it.id}, t=${it.tipo})}"
+                       th:classappend="${selected != null and selected.id == it.id and selected.tipo == it.tipo} ? ' is-active'">
+                        <div class="mp-type" th:text="${it.tipo}">TIPO</div>
                         <div class="mp-name" th:text="${it.nome}">Nome</div>
                     </a>
                 </li>
@@ -35,16 +35,16 @@
         <!-- COLONNA DESTRA: DETTAGLIO -->
         <main class="mp-detail">
             <div th:if="${selected == null}" class="empty">
-                Seleziona un prodotto dalla lista per visualizzare i dettagli.
+                Seleziona un elemento dalla lista per visualizzare i dettagli.
             </div>
 
             <div th:if="${selected != null}" class="card">
                 <div class="card-body">
                     <div class="meta">
-                        <span class="badge">PRODOTTO</span>
+                        <span class="badge" th:text="${selected.tipo}">TIPO</span>
                     </div>
 
-                    <h2 style="margin: .5rem 0 1rem 0; color: #0f172a;" th:text="${selected.nome}">Nome Prodotto</h2>
+                    <h2 style="margin: .5rem 0 1rem 0; color: #0f172a;" th:text="${selected.nome}">Nome</h2>
 
                     <div class="grid-2">
                         <div>
@@ -63,39 +63,26 @@
 
                         <div>
                             <h3>Certificati</h3>
-                            <div th:if="${selected.certificati == null or #strings.isEmpty(selected.certificati)}">—</div>
-                            <ul th:if="${selected.certificati != null and !#strings.isEmpty(selected.certificati)}">
-                                <li th:each="token : ${#strings.arraySplit(selected.certificati, ',')}"
-                                    th:with="url=${#strings.contains(token,'/') ? token : '/files/prodotti/' + selected.id + '/certificati/' + token}">
+                            <div th:if="${selected.certificatiCsv == null or #strings.isEmpty(selected.certificatiCsv)}">—</div>
+                            <ul th:if="${selected.certificatiCsv != null and !#strings.isEmpty(selected.certificatiCsv)}">
+                                <li th:each="token : ${#strings.arraySplit(selected.certificatiCsv, ',')}"
+                                    th:with="url=${#strings.contains(token,'/') ? token : '/files/' + selected.folder + '/' + selected.id + '/certificati/' + token}">
                                     <a th:href="${url}" target="_blank" rel="noopener"
                                        th:text="${#strings.substring(url, url.lastIndexOf('/') + 1)}">file</a>
                                 </li>
                             </ul>
 
                             <h3 style="margin-top:1rem;">Foto</h3>
-                            <div th:if="${selected.foto == null or #strings.isEmpty(selected.foto)}">—</div>
-                            <div class="thumbs" th:if="${selected.foto != null and !#strings.isEmpty(selected.foto)}">
+                            <div th:if="${selected.fotoCsv == null or #strings.isEmpty(selected.fotoCsv)}">—</div>
+                            <div class="thumbs" th:if="${selected.fotoCsv != null and !#strings.isEmpty(selected.fotoCsv)}">
                                 <a class="thumb"
-                                   th:each="token : ${#strings.arraySplit(selected.foto, ',')}"
-                                   th:with="url=${#strings.contains(token,'/') ? token : '/files/prodotti/' + selected.id + '/foto/' + token}"
+                                   th:each="token : ${#strings.arraySplit(selected.fotoCsv, ',')}"
+                                   th:with="url=${#strings.contains(token,'/') ? token : '/files/' + selected.folder + '/' + selected.id + '/foto/' + token}"
                                    th:href="${url}" target="_blank" rel="noopener">
                                     <img th:src="${url}" alt="foto">
                                 </a>
                             </div>
 
-
-
-
-                            <h3 style="margin-top:1rem;">Foto</h3>
-                            <div th:if="${selected.foto == null or #strings.isEmpty(selected.foto)}">—</div>
-
-                            <!-- thumbnails -->
-                            <div class="thumbs" th:if="${selected.foto != null and !#strings.isEmpty(selected.foto)}">
-                                <a th:each="url : ${#strings.arraySplit(selected.foto, ',')}"
-                                   th:href="${url}" target="_blank" rel="noopener" class="thumb">
-                                    <img th:src="${url}" alt="foto">
-                                </a>
-                            </div>
                         </div>
                     </div>
                 </div>

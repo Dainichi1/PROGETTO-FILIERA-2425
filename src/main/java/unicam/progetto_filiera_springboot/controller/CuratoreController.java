@@ -1,16 +1,16 @@
 package unicam.progetto_filiera_springboot.controller;
 
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import unicam.progetto_filiera_springboot.application.dto.ProdottoResponse;
+import unicam.progetto_filiera_springboot.application.service.PacchettoService;
 import unicam.progetto_filiera_springboot.application.service.ProdottoService;
-import unicam.progetto_filiera_springboot.domain.actor.Curatore;
+import unicam.progetto_filiera_springboot.domain.model.Ruolo;
+import unicam.progetto_filiera_springboot.repository.UtenteRepository;
 
-import java.util.List;
+import java.security.Principal;
 import java.util.Optional;
 
 @Controller
@@ -19,61 +19,41 @@ import java.util.Optional;
 public class CuratoreController {
 
     private final ProdottoService prodottoService;
+    private final PacchettoService pacchettoService;
+    private final UtenteRepository utenteRepository;
 
-    /**
-     * Home del Curatore:
-     * - accesso consentito solo se in sessione c’è un Curatore
-     * - mostra la lista dei prodotti con stato IN_ATTESA
-     */
     @GetMapping
-    public String home(HttpSession session, Model model) {
-        Object attore = session.getAttribute("attore");
+    public String home(Principal principal, Model model) {
+        if (principal == null) return "redirect:/login";
+        var user = utenteRepository.findById(principal.getName()).orElse(null);
+        if (user == null || user.getRuolo() != Ruolo.CURATORE) return "redirect:/login";
 
-        if (!(attore instanceof Curatore c)) {
-            return "redirect:/login";
-        }
+        model.addAttribute("username", user.getUsername());
+        model.addAttribute("ruolo", user.getRuolo());
 
-        model.addAttribute("username", c.getUsername());
-        model.addAttribute("ruolo", c.getRuolo());
-
-        // Carico i prodotti con stato IN_ATTESA
-        List<ProdottoResponse> inAttesa = prodottoService.listInAttesa();
-        model.addAttribute("inAttesa", inAttesa);
+        // Prodotti e pacchetti in attesa
+        model.addAttribute("inAttesa", prodottoService.listInAttesa());
+        model.addAttribute("pacchettiInAttesa", pacchettoService.listInAttesa());
 
         return "curatore/index";
     }
 
-    /**
-     * Approva un prodotto:
-     * - imposta stato APPROVATO
-     * - rimuove dalla lista IN_ATTESA
-     */
+    // APPROVA PRODOTTO
     @PostMapping("/prodotti/{id}/approve")
-    public String approve(@PathVariable Long id,
-                          HttpSession session,
-                          RedirectAttributes ra) {
-        if (!(session.getAttribute("attore") instanceof Curatore)) {
-            return "redirect:/login";
-        }
-
+    public String approve(@PathVariable Long id, Principal principal, RedirectAttributes ra) {
+        if (!isCuratore(principal)) return "redirect:/login";
         prodottoService.approve(id);
         ra.addFlashAttribute("ok", "Prodotto approvato e rimosso dalla lista in attesa.");
         return "redirect:/curatore";
     }
 
-    /**
-     * Rifiuta un prodotto:
-     * - imposta stato RIFIUTATO
-     * - commento opzionale
-     */
+    // RIFIUTA PRODOTTO
     @PostMapping("/prodotti/{id}/reject")
     public String reject(@PathVariable Long id,
                          @RequestParam(name = "commento", required = false) String commento,
-                         HttpSession session,
+                         Principal principal,
                          RedirectAttributes ra) {
-        if (!(session.getAttribute("attore") instanceof Curatore)) {
-            return "redirect:/login";
-        }
+        if (!isCuratore(principal)) return "redirect:/login";
 
         prodottoService.reject(id, Optional.ofNullable(commento));
         ra.addFlashAttribute("ok",
@@ -81,5 +61,38 @@ public class CuratoreController {
                         ? "Prodotto rifiutato e restituito al produttore per modifiche."
                         : "Prodotto rifiutato con commento. Restituito al produttore per modifiche.");
         return "redirect:/curatore";
+    }
+
+    // APPROVA PACCHETTO
+    @PostMapping("/pacchetti/{id}/approve")
+    public String approvePacchetto(@PathVariable Long id, Principal principal, RedirectAttributes ra) {
+        if (!isCuratore(principal)) return "redirect:/login";
+        pacchettoService.approve(id);
+        ra.addFlashAttribute("ok", "Pacchetto approvato e rimosso dalla lista in attesa.");
+        return "redirect:/curatore";
+    }
+
+    // RIFIUTA PACCHETTO (firma uniformata con Optional<String>)
+    @PostMapping("/pacchetti/{id}/reject")
+    public String rejectPacchetto(@PathVariable Long id,
+                                  @RequestParam(name = "commento", required = false) String commento,
+                                  Principal principal,
+                                  RedirectAttributes ra) {
+        if (!isCuratore(principal)) return "redirect:/login";
+
+        pacchettoService.reject(id, Optional.ofNullable(commento));
+        ra.addFlashAttribute("ok",
+                (commento == null || commento.isBlank())
+                        ? "Pacchetto rifiutato e rimandato al distributore."
+                        : "Pacchetto rifiutato con commento.");
+        return "redirect:/curatore";
+    }
+
+    // ---- helper ----
+    private boolean isCuratore(Principal principal) {
+        if (principal == null) return false;
+        return utenteRepository.findById(principal.getName())
+                .map(u -> u.getRuolo() == Ruolo.CURATORE)
+                .orElse(false);
     }
 }

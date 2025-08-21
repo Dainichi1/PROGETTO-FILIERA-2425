@@ -1,6 +1,5 @@
 package unicam.progetto_filiera_springboot.controller.prodotto;
 
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
@@ -11,10 +10,11 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import unicam.progetto_filiera_springboot.application.dto.ProdottoForm;
 import unicam.progetto_filiera_springboot.application.service.ProdottoService;
-import unicam.progetto_filiera_springboot.domain.actor.Produttore;
-import unicam.progetto_filiera_springboot.strategy.validation.ValidationException;
 import unicam.progetto_filiera_springboot.controller.error.UploadException;
+import unicam.progetto_filiera_springboot.strategy.validation.ValidationException;
+import unicam.progetto_filiera_springboot.repository.UtenteRepository;
 
+import java.security.Principal;
 import java.util.List;
 
 @Controller
@@ -22,24 +22,32 @@ import java.util.List;
 public class ProdottoMvcController {
 
     private final ProdottoService prodottoService;
+    private final UtenteRepository utenteRepository;
 
-    public ProdottoMvcController(ProdottoService prodottoService) {
+    public ProdottoMvcController(ProdottoService prodottoService,
+                                 UtenteRepository utenteRepository) {
         this.prodottoService = prodottoService;
+        this.utenteRepository = utenteRepository;
     }
 
-
     @GetMapping("/nuovo")
-    public String nuovo(HttpSession session, Model model) {
-        Object attore = session.getAttribute("attore");
-        if (!(attore instanceof Produttore p)) {
+    public String nuovo(Principal principal, Model model) {
+        if (principal == null) {
+            return "redirect:/login";
+        }
+        String username = principal.getName();
+
+        // Ruolo per header pagina (letto da DB)
+        var utente = utenteRepository.findById(username).orElse(null);
+        if (utente == null) {
             return "redirect:/login";
         }
 
-        model.addAttribute("username", p.getUsername());
-        model.addAttribute("ruolo", p.getRuolo());
+        model.addAttribute("username", username);
+        model.addAttribute("ruolo", utente.getRuolo());
 
-        // *** RIEPILOGO PRODOTTI DEL PRODUTTORE ***
-        var prodotti = prodottoService.prodottiDi(p.getUsername());
+        // Riepilogo prodotti del produttore
+        var prodotti = prodottoService.prodottiDi(username);
         model.addAttribute("prodotti", prodotti);
 
         if (!model.containsAttribute("form")) {
@@ -48,22 +56,18 @@ public class ProdottoMvcController {
         return "produttore/index";
     }
 
-
-
-
-
     @PostMapping(value = "/invia", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public String invia(@Valid @ModelAttribute("form") ProdottoForm form,
                         BindingResult binding,
                         @RequestParam("foto") List<MultipartFile> foto,
                         @RequestParam("certificati") List<MultipartFile> certificati,
-                        HttpSession session,
+                        Principal principal,
                         RedirectAttributes ra) {
 
-        Object attore = session.getAttribute("attore");
-        if (!(attore instanceof Produttore prod)) {
+        if (principal == null) {
             return "redirect:/login";
         }
+        String username = principal.getName();
 
         // 1) Errori di validazione dei campi del form
         if (binding.hasErrors()) {
@@ -84,7 +88,7 @@ public class ProdottoMvcController {
 
         // 3) Chiamata service + gestione elegante errori
         try {
-            var resp = prodottoService.creaProdottoConFile(form, prod.getUsername(), foto, certificati);
+            var resp = prodottoService.creaProdottoConFile(form, username, foto, certificati);
             ra.addFlashAttribute("successMsg", "Prodotto inviato al Curatore. ID: " + resp.getId());
             return "redirect:/produttore/prodotti/nuovo";
 
@@ -94,7 +98,6 @@ public class ProdottoMvcController {
             return "redirect:/produttore/prodotti/nuovo";
 
         } catch (Exception e) {
-            // fallback: evita Whitelabel per qualsiasi imprevisto
             ra.addFlashAttribute("form", form);
             ra.addFlashAttribute("errorMsg", "Errore imprevisto durante l’invio del prodotto.");
             return "redirect:/produttore/prodotti/nuovo";

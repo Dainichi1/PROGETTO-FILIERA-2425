@@ -1,17 +1,18 @@
 package unicam.progetto_filiera_springboot.controller.prodotto;
 
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import unicam.progetto_filiera_springboot.application.dto.ProdottoForm;
 import unicam.progetto_filiera_springboot.application.dto.ProdottoResponse;
 import unicam.progetto_filiera_springboot.application.service.ProdottoService;
-import unicam.progetto_filiera_springboot.domain.actor.Produttore;
 import unicam.progetto_filiera_springboot.strategy.validation.ValidationException;
 
+import java.net.URI;
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -32,19 +33,28 @@ public class ProdottoController {
     public ResponseEntity<ProdottoResponse> creaMultipart(@Valid @ModelAttribute ProdottoForm form,
                                                           @RequestParam("foto") List<MultipartFile> foto,
                                                           @RequestParam("certificati") List<MultipartFile> certificati,
-                                                          HttpSession session) {
+                                                          Principal principal) {
 
-        Object attore = session.getAttribute("attore");
-        if (!(attore instanceof Produttore prod)) {
-            return ResponseEntity.status(401).build(); // non loggato come Produttore
+        if (principal == null) {
+            return ResponseEntity.status(401).build(); // non autenticato
+        }
+        String username = principal.getName();
+
+        if (foto == null || foto.isEmpty()) {
+            throw new ValidationException("Devi caricare almeno una foto.");
+        }
+        if (certificati == null || certificati.isEmpty()) {
+            throw new ValidationException("Devi caricare almeno un certificato.");
         }
 
-        if (foto == null || foto.isEmpty())
-            throw new ValidationException("Devi caricare almeno una foto.");
-        if (certificati == null || certificati.isEmpty())
-            throw new ValidationException("Devi caricare almeno un certificato.");
+        ProdottoResponse resp = prodottoService.creaProdottoConFile(form, username, foto, certificati);
 
-        ProdottoResponse resp = prodottoService.creaProdottoConFile(form, prod.getUsername(), foto, certificati);
-        return ResponseEntity.ok(resp);
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()           // /api/prodotti
+                .path("/{id}")                  // /{id}
+                .buildAndExpand(resp.getId())
+                .toUri();
+
+        return ResponseEntity.created(location).body(resp); // 201 + Location
     }
 }

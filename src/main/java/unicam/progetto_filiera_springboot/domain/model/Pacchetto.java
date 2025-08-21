@@ -2,19 +2,20 @@ package unicam.progetto_filiera_springboot.domain.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Table(
-        name = "prodotti",
+        name = "pacchetti",
         uniqueConstraints = @UniqueConstraint(
-                name = "uq_prodotti_nome_creatore",
+                name = "uq_pacchetti_nome_creatore",
                 columnNames = {"nome", "creato_da"}
         )
 )
-public class Prodotto implements Item{
+public class Pacchetto implements Item {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,7 +39,7 @@ public class Prodotto implements Item{
     private int quantita;
 
     @PositiveOrZero
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal prezzo;
 
     @Size(max = 255)
@@ -56,13 +57,13 @@ public class Prodotto implements Item{
             name = "creato_da",
             referencedColumnName = "username",
             nullable = false,
-            foreignKey = @ForeignKey(name = "fk_prodotti_creato_da")
+            foreignKey = @ForeignKey(name = "fk_pacchetti_creato_da")
     )
     private Utente creatoDa;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private StatoProdotto stato = StatoProdotto.IN_ATTESA;
+    private StatoPacchetto stato = StatoPacchetto.IN_ATTESA;
 
     @Size(max = 500)
     @Column(length = 500)
@@ -71,40 +72,53 @@ public class Prodotto implements Item{
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    protected Prodotto() { }
+    @ManyToMany
+    @JoinTable(
+            name = "pacchetti_prodotti",
+            joinColumns = @JoinColumn(name = "pacchetto_id"),
+            inverseJoinColumns = @JoinColumn(name = "prodotto_id")
+    )
+    private Set<Prodotto> prodotti = new LinkedHashSet<>();
 
-    public Prodotto(String nome, String descrizione, int quantita, BigDecimal prezzo, String indirizzo, Utente creatoDa) {
+    protected Pacchetto() {}
+
+    public Pacchetto(String nome, String descrizione, int quantita,
+                     BigDecimal prezzo, String indirizzo, Utente creatoDa) {
         this.nome = nome;
         this.descrizione = descrizione;
         this.quantita = quantita;
         this.prezzo = prezzo;
         this.indirizzo = indirizzo;
         this.creatoDa = creatoDa;
-        this.stato = StatoProdotto.IN_ATTESA;
+        this.stato = StatoPacchetto.IN_ATTESA;
     }
 
-    // Getter/Setter (aggiungi getter/setter per version se ti serve esporla)
-    public Long getId() { return id; }
-    public String getNome() { return nome; }
+    // ====== Item getters ======
+    @Override public Long getId() { return id; }
+    @Override public String getNome() { return nome; }
+    @Override public String getDescrizione() { return descrizione; }
+    @Override public BigDecimal getPrezzo() { return prezzo; }
+    @Override public int getQuantita() { return quantita; }
+    @Override public String getIndirizzo() { return indirizzo; }
+    @Override public String getCertificati() { return certificati; }
+    @Override public String getFoto() { return foto; }
+
+    // ====== setters/getters extra ======
     public void setNome(String nome) { this.nome = nome; }
-    public String getDescrizione() { return descrizione; }
     public void setDescrizione(String descrizione) { this.descrizione = descrizione; }
-    public int getQuantita() { return quantita; }
     public void setQuantita(int quantita) { this.quantita = quantita; }
-    public BigDecimal getPrezzo() { return prezzo; }
     public void setPrezzo(BigDecimal prezzo) { this.prezzo = prezzo; }
-    public String getIndirizzo() { return indirizzo; }
     public void setIndirizzo(String indirizzo) { this.indirizzo = indirizzo; }
-    public String getCertificati() { return certificati; }
     public void setCertificati(String certificati) { this.certificati = certificati; }
-    public String getFoto() { return foto; }
     public void setFoto(String foto) { this.foto = foto; }
     public Utente getCreatoDa() { return creatoDa; }
     public void setCreatoDa(Utente creatoDa) { this.creatoDa = creatoDa; }
-    public StatoProdotto getStato() { return stato; }
-    public void setStato(StatoProdotto stato) { this.stato = stato; }
+    public StatoPacchetto getStato() { return stato; }
+    public void setStato(StatoPacchetto stato) { this.stato = stato; }
     public String getCommento() { return commento; }
     public void setCommento(String commento) { this.commento = commento; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public Set<Prodotto> getProdotti() { return prodotti; }
+    public void setProdotti(Set<Prodotto> prodotti) { this.prodotti = prodotti; }
     public Long getVersion() { return version; }
 }

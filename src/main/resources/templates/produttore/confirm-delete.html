@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout (~{::title}, ~{::section})}">
+<head>
+    <title>Conferma eliminazione · Produttore</title>
+</head>
+<body>
+<section>
+    <div class="card" style="max-width:720px;margin:1rem auto;">
+        <div class="card-body" style="display:grid;gap:1rem;">
+            <h2 style="margin:0 0 .75rem 0;color:#0f172a;">
+                Conferma eliminazione
+            </h2>
+
+            <p>
+                Vuoi davvero eliminare il prodotto
+                <strong th:text="${prodotto.nome}">nome prodotto</strong>?
+            </p>
+
+            <p class="muted">
+                Questa azione non può essere annullata.
+            </p>
+
+            <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+                <!-- Form di conferma eliminazione -->
+                <form th:action="@{'/produttore/prodotti/' + ${prodotto.id} + '/elimina'}"
+                      method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit" class="btn btn-primary">Sì, elimina</button>
+                </form>
+
+                <!-- Annulla: torna alla home produttore -->
+                <a th:href="@{/produttore}" class="btn btn-ghost">No, annulla</a>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .btn {
+            padding: .75rem 1rem;
+            border: 1px solid #6b7280;
+            border-radius: 8px;
+            background: #e0ecff;
+            cursor: pointer;
+            color: #0f172a;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            filter: brightness(0.98);
+        }
+
+        .btn-primary {
+            background: #cfe3ff;
+            border-color: #475569;
+            color: #0f172a;
+        }
+
+        .btn-ghost {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+            color: #374151;
+        }
+
+        .card {
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            background: #fafafa;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        .muted {
+            font-size: .95rem;
+            color: #374151;
+        }
+    </style>
+</section>
+</body>
+</html>

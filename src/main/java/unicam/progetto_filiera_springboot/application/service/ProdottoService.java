@@ -28,4 +28,10 @@ public interface ProdottoService {
 
     List<ProdottoResponse> listApprovati();
 
+    boolean isEliminabile(Long id, String username);
+
+    ProdottoResponse findByIdAndOwner(Long id, String username);
+
+    /** Elimina definitivamente se consentito (controlli inclusi) */
+    void elimina(Long id, String username);
 }

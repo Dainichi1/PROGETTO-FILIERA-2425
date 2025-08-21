@@ -229,4 +229,49 @@ public class ProdottoServiceImpl implements ProdottoService {
                 .map(ProdottoMapper::toResponse)
                 .toList();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProdottoResponse findByIdAndOwner(Long id, String username) {
+        var p = prodottoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Prodotto inesistente: id=" + id));
+
+        if (p.getCreatoDa() == null || p.getCreatoDa().getUsername() == null
+                || !p.getCreatoDa().getUsername().equals(username)) {
+            throw new IllegalArgumentException("Operazione non consentita per questo utente.");
+        }
+        return ProdottoMapper.toResponse(p);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isEliminabile(Long id, String username) {
+        var p = prodottoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Prodotto inesistente: id=" + id));
+
+        if (p.getCreatoDa() == null || p.getCreatoDa().getUsername() == null
+                || !p.getCreatoDa().getUsername().equals(username)) {
+            throw new IllegalArgumentException("Operazione non consentita per questo utente.");
+        }
+        return p.getStato() != StatoProdotto.APPROVATO;
+    }
+
+    @Override
+    @Transactional
+    public void elimina(Long id, String username) {
+        var p = prodottoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Prodotto inesistente: id=" + id));
+
+        if (p.getCreatoDa() == null || p.getCreatoDa().getUsername() == null
+                || !p.getCreatoDa().getUsername().equals(username)) {
+            throw new IllegalArgumentException("Operazione non consentita per questo utente.");
+        }
+        if (p.getStato() == StatoProdotto.APPROVATO) {
+            throw new IllegalStateException("Puoi eliminare solo prodotti con stato \"In Attesa\" o \"Rifiutato\".");
+        }
+
+
+
+        prodottoRepository.deleteById(id);
+    }
 }

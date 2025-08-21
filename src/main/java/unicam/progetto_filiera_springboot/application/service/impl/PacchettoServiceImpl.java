@@ -6,7 +6,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import unicam.progetto_filiera_springboot.application.dto.PacchettoForm;
 import unicam.progetto_filiera_springboot.application.dto.PacchettoResponse;
+import unicam.progetto_filiera_springboot.application.dto.ProdottoResponse;
 import unicam.progetto_filiera_springboot.application.mapper.PacchettoMapper;
+import unicam.progetto_filiera_springboot.application.mapper.ProdottoMapper;
 import unicam.progetto_filiera_springboot.application.service.PacchettoService;
 import unicam.progetto_filiera_springboot.controller.error.UploadException;
 import unicam.progetto_filiera_springboot.domain.event.EventPublisher;
@@ -242,6 +244,51 @@ public class PacchettoServiceImpl implements PacchettoService {
                 .stream()
                 .map(PacchettoMapper::toResponse)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PacchettoResponse findByIdAndOwner(Long id, String username) {
+        var p = pacchettoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pacchetto inesistente: id=" + id));
+
+        if (p.getCreatoDa() == null || p.getCreatoDa().getUsername() == null
+                || !p.getCreatoDa().getUsername().equals(username)) {
+            throw new IllegalArgumentException("Operazione non consentita per questo utente.");
+        }
+        return PacchettoMapper.toResponse(p);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isEliminabile(Long id, String username) {
+        var p = pacchettoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pacchetto inesistente: id=" + id));
+
+        if (p.getCreatoDa() == null || p.getCreatoDa().getUsername() == null
+                || !p.getCreatoDa().getUsername().equals(username)) {
+            throw new IllegalArgumentException("Operazione non consentita per questo utente.");
+        }
+        return p.getStato() != StatoPacchetto.APPROVATO;
+    }
+
+    @Override
+    @Transactional
+    public void elimina(Long id, String username) {
+        var p = pacchettoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pacchetto inesistente: id=" + id));
+
+        if (p.getCreatoDa() == null || p.getCreatoDa().getUsername() == null
+                || !p.getCreatoDa().getUsername().equals(username)) {
+            throw new IllegalArgumentException("Operazione non consentita per questo utente.");
+        }
+        if (p.getStato() == StatoPacchetto.APPROVATO) {
+            throw new IllegalStateException("Puoi eliminare solo pacchetti con stato \"In Attesa\" o \"Rifiutato\".");
+        }
+
+
+        pacchettoRepository.deleteById(id);
+
     }
 
     // ================== Helpers ==================

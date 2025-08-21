@@ -3,6 +3,7 @@ package unicam.progetto_filiera_springboot.application.service;
 import org.springframework.web.multipart.MultipartFile;
 import unicam.progetto_filiera_springboot.application.dto.PacchettoForm;
 import unicam.progetto_filiera_springboot.application.dto.PacchettoResponse;
+import unicam.progetto_filiera_springboot.application.dto.ProdottoResponse;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,4 +28,11 @@ public interface PacchettoService {
     void reject(Long id, Optional<String> commento);
 
     List<PacchettoResponse> listApprovati();
+
+    boolean isEliminabile(Long id, String username);
+
+    PacchettoResponse findByIdAndOwner(Long id, String username);
+
+    /** Elimina definitivamente se consentito (controlli inclusi) */
+    void elimina(Long id, String username);
 }

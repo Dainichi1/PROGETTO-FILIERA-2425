@@ -125,6 +125,7 @@
             <th>Stato</th>
             <th>Commento</th>
             <th>Azioni</th>
+            <th>Elimina</th>
         </tr>
         </thead>
         <tbody>
@@ -143,6 +144,12 @@
                    th:href="@{'/produttore/prodotti/' + ${p.id} + '/modifica'}"
                    class="btn btn-ghost">Modifica</a>
             </td>
+            <td>
+                <a th:href="@{'/produttore/prodotti/' + ${p.id} + '/elimina'}" class="btn btn-ghost">Elimina</a>
+            </td>
+
+
+
         </tr>
         </tbody>
     </table>
@@ -246,8 +253,11 @@
 
         .flash-ok {
             background: #e7fff1;
-            border: 1px solid #7ad7a1
+            border: 1px solid #7ad7a1;
+            color: #0f172a;
+            font-weight: 600;
         }
+
 
         .flash-err {
             background: #ffecec;
@@ -280,6 +290,22 @@
             font-weight: 700;
             color: #0f172a
         }
+
+        .flash-err {
+            background: #ffecec;
+            border: 1px solid #ff9aa2;
+            color: #0b1324;
+            font-weight: 700;
+        }
+
+        .btn-danger{
+            background:#fee2e2;
+            border-color:#ef4444;
+            color:#0f172a;
+        }
+        .btn-danger:hover{ filter:brightness(0.97) }
+
+
     </style>
 
     <!-- JS -->

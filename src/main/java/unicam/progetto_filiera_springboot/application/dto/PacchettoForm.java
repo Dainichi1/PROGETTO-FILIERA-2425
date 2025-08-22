@@ -1,6 +1,8 @@
 package unicam.progetto_filiera_springboot.application.dto;
 
 import jakarta.validation.constraints.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -20,15 +22,19 @@ public class PacchettoForm {
 
     @NotNull(message = "Il prezzo totale è obbligatorio")
     @Digits(integer = 8, fraction = 2, message = "Prezzo non valido (max 8 cifre, 2 decimali)")
+    @DecimalMin(value = "0.00", message = "Il prezzo deve essere ≥ 0")
     private BigDecimal prezzoTotale;
 
     @NotNull(message = "La quantità è obbligatoria")
-    @PositiveOrZero(message = "La quantità deve essere ≥ 0")
+    @Positive(message = "La quantità deve essere ≥ 1")
     private Integer quantita;
 
     @NotNull(message = "Seleziona almeno due prodotti")
     @Size(min = 2, message = "Devi selezionare almeno due prodotti")
     private List<Long> prodottiIds;
+
+    private List<MultipartFile> foto;
+    private List<MultipartFile> certificati;
 
     // getter/setter
     public String getNome() { return nome; }
@@ -48,4 +54,9 @@ public class PacchettoForm {
 
     public List<Long> getProdottiIds() { return prodottiIds; }
     public void setProdottiIds(List<Long> prodottiIds) { this.prodottiIds = prodottiIds; }
+
+    public List<MultipartFile> getFoto() { return foto; }
+    public void setFoto(List<MultipartFile> foto) { this.foto = foto; }
+    public List<MultipartFile> getCertificati() { return certificati; }
+    public void setCertificati(List<MultipartFile> certificati) { this.certificati = certificati; }
 }

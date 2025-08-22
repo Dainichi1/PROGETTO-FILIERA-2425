@@ -43,7 +43,15 @@ public class DistributoreController {
 
         model.addAttribute("username", user.getUsername());
         model.addAttribute("ruolo", user.getRuolo());
-        model.addAttribute("pacchettoForm", new PacchettoForm());
+
+
+        if (!model.containsAttribute("pacchettoForm")) {
+            model.addAttribute("pacchettoForm", new PacchettoForm());
+        }
+        if (!model.containsAttribute("hasFormErrors")) {
+            model.addAttribute("hasFormErrors", false);
+        }
+
 
         // Prodotti approvati
         List<ProdottoResponse> prodotti = prodottoService.listApprovati();

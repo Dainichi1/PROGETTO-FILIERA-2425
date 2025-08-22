@@ -3,10 +3,7 @@ package unicam.progetto_filiera_springboot.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import unicam.progetto_filiera_springboot.application.dto.ProdottoForm;
 import unicam.progetto_filiera_springboot.application.dto.ProdottoResponse;
@@ -36,17 +33,16 @@ public class ProduttoreController {
         model.addAttribute("username", username);
         model.addAttribute("ruolo", utente.getRuolo());
 
-        // POPOLA SEMPRE LA LISTA (anche vuota)
         List<ProdottoResponse> prodotti = prodottoService.prodottiDi(username);
-        if (prodotti == null) prodotti = Collections.emptyList();
-        model.addAttribute("prodotti", prodotti);
+        model.addAttribute("prodotti", prodotti != null ? prodotti : Collections.emptyList());
 
-        if (!model.containsAttribute("form")) {
-            model.addAttribute("form", new ProdottoForm());
-        }
+        if (!model.containsAttribute("form"))        model.addAttribute("form", new ProdottoForm());
+        if (!model.containsAttribute("hasFormErrors")) model.addAttribute("hasFormErrors", false);
 
         return "produttore/index";
     }
+
+    // ==== ELIMINAZIONE ====
 
     @GetMapping("/prodotti/{id}/elimina")
     public String confermaElimina(@PathVariable Long id, Principal principal, Model model, RedirectAttributes ra) {
@@ -54,7 +50,6 @@ public class ProduttoreController {
         String username = principal.getName();
 
         try {
-            // recupero dati per mostrare nome ecc.
             ProdottoResponse p = prodottoService.findByIdAndOwner(id, username);
 
             if (!prodottoService.isEliminabile(id, username)) {
@@ -64,7 +59,7 @@ public class ProduttoreController {
             }
 
             model.addAttribute("prodotto", p);
-            return "produttore/confirm-delete"; // pagina di conferma (no logica, solo grafica)
+            return "produttore/confirm-delete";
 
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("errorMsg", e.getMessage() != null ? e.getMessage() : "Operazione non consentita.");
@@ -72,9 +67,6 @@ public class ProduttoreController {
         }
     }
 
-    /**
-     * STEP 2: eliminazione definitiva
-     */
     @PostMapping("/prodotti/{id}/elimina")
     public String elimina(@PathVariable Long id, Principal principal, RedirectAttributes ra) {
         if (principal == null) return "redirect:/login";
@@ -84,7 +76,6 @@ public class ProduttoreController {
             prodottoService.elimina(id, username);
             ra.addFlashAttribute("successMsg", "Prodotto eliminato con successo.");
         } catch (IllegalStateException ise) {
-            // es. tentativo di eliminare APPROVATO
             ra.addFlashAttribute("errorMsg", ise.getMessage());
         } catch (IllegalArgumentException iae) {
             ra.addFlashAttribute("errorMsg", iae.getMessage() != null ? iae.getMessage() : "Operazione non consentita.");

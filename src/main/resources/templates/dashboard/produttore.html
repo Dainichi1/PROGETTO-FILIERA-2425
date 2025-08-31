@@ -1,10 +1,17 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="it">
-<head><title>Dashboard Produttore</title></head>
+<head>
+    <title>Dashboard Produttore</title>
+    <meta charset="UTF-8"/>
+</head>
 <body>
-<h1 th:text="'Ciao ' + ${utente.nome} + '!'">Ciao!</h1>
+<h1 th:text="'Benvenuto ' + ${utente.nome} + ', il tuo ruolo è ' + ${utente.ruolo} + '.'">
+    Benvenuto, il tuo ruolo è Produttore.
+</h1>
+
 <h2>Dashboard Produttore</h2>
-<p>(Placeholder: qui inseriremo gestione prodotti, eventi, ecc.)</p>
-<p><a href="/">Torna alla Home</a></p>
+<p>(Placeholder)</p>
+
+<p><a th:href="@{/}">Torna alla Home</a></p>
 </body>
 </html>

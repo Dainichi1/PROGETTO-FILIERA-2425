@@ -5,13 +5,11 @@ import unicam.filiera.dto.PostSocialDto;
 import unicam.filiera.dto.ProdottoDto;
 import unicam.filiera.model.PrenotazioneVisita;
 import unicam.filiera.model.Prodotto;
-import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.model.VisitaInvito;
 import unicam.filiera.service.ProdottoService;
 import unicam.filiera.service.ProdottoServiceImpl;
 import unicam.filiera.util.ValidatoreAnnuncioItem;
 import unicam.filiera.util.ValidatorePrenotazioneVisita;
-import unicam.filiera.view.PannelloProduttore;
 
 import java.io.File;
 import java.util.List;
@@ -123,10 +121,7 @@ public class ProduttoreController {
         }
     }
 
-    public void visualizzaVisiteDisponibili(PannelloProduttore view) {
-        List<VisitaInvito> visite = visitaDAO.findByDestinatario(username);
-        view.showVisiteDisponibili(visite);
-    }
+
 
     public void prenotaVisita(long idVisita, int numeroPersone, BiConsumer<String, Boolean> callback) {
         VisitaInvito visita = visitaDAO.findById(idVisita);
@@ -151,11 +146,7 @@ public class ProduttoreController {
         }
     }
 
-    public void visualizzaPrenotazioniVisite(PannelloProduttore view) {
-        List<PrenotazioneVisita> prenotazioni = prenotazioneVisitaDAO.findByUsername(username);
-        List<VisitaInvito> tutteLeVisite = visitaDAO.findAll(); // opzionale, se vuoi mostrare descrizioni etc.
-        view.showPrenotazioniVisite(prenotazioni, tutteLeVisite);
-    }
+
 
     public void eliminaPrenotazioneVisita(long idPrenotazione, BiConsumer<String, Boolean> callback) {
         PrenotazioneVisita pren = prenotazioneVisitaDAO.findById(idPrenotazione);

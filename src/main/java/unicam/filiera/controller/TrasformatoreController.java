@@ -8,7 +8,6 @@ import unicam.filiera.service.ProdottoTrasformatoService;
 import unicam.filiera.service.ProdottoTrasformatoServiceImpl;
 import unicam.filiera.util.ValidatoreAnnuncioItem;
 import unicam.filiera.util.ValidatorePrenotazioneVisita;
-import unicam.filiera.view.PannelloTrasformatore; // o la tua view
 
 import java.io.File;
 import java.util.List;
@@ -140,13 +139,6 @@ public class TrasformatoreController {
 
     // ———————————— SEZIONE VISITE INVITO ————————————
 
-    /**
-     * Visualizza le visite disponibili per questo trasformatore (ad es. nella UI).
-     */
-    public void visualizzaVisiteDisponibili(PannelloTrasformatore view) {
-        List<VisitaInvito> visite = visitaDAO.findByDestinatario(username);
-        view.showVisiteDisponibili(visite);
-    }
 
     /**
      * Prenota una visita invito.
@@ -174,14 +166,7 @@ public class TrasformatoreController {
         }
     }
 
-    /**
-     * Visualizza tutte le prenotazioni di visite effettuate dal trasformatore.
-     */
-    public void visualizzaPrenotazioniVisite(PannelloTrasformatore view) {
-        List<PrenotazioneVisita> prenotazioni = prenotazioneVisitaDAO.findByUsername(username);
-        List<VisitaInvito> tutteLeVisite = visitaDAO.findAll(); // opzionale, per arricchire le info
-        view.showPrenotazioniVisite(prenotazioni, tutteLeVisite);
-    }
+
 
     /**
      * Elimina una prenotazione di visita.

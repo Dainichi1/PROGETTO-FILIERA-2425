@@ -2,13 +2,20 @@ package unicam.filiera.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import unicam.filiera.security.RoleCheckingAuthenticationSuccessHandler;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private final RoleCheckingAuthenticationSuccessHandler successHandler;
+
+    public SecurityConfig(RoleCheckingAuthenticationSuccessHandler successHandler) {
+        this.successHandler = successHandler;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -16,11 +23,21 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**"))
                 .headers(h -> h.frameOptions(f -> f.sameOrigin()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/register", "/h2-console/**", "/css/**", "/js/**").permitAll()
-                        .anyRequest().permitAll()
+                        .requestMatchers("/", "/register", "/login", "/h2-console/**", "/css/**", "/js/**").permitAll()
+                        .anyRequest().authenticated()
                 )
-                .formLogin(f -> f.disable())
-                .httpBasic(b -> b.disable());
+                .formLogin(f -> f
+                        .loginPage("/login")
+                        .loginProcessingUrl("/doLogin")
+                        .successHandler(successHandler)                // verifica ruolo selezionato
+                        .failureUrl("/login?error=credenziali")        // credenziali errate
+                        .permitAll()
+                )
+                .logout(l -> l
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/")
+                        .permitAll()
+                );
 
         return http.build();
     }

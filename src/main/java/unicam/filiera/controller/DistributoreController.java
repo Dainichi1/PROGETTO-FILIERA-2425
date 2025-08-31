@@ -10,8 +10,6 @@ import unicam.filiera.service.ProdottoService;
 import unicam.filiera.service.ProdottoServiceImpl;
 import unicam.filiera.util.ValidatoreAnnuncioItem;
 import unicam.filiera.util.ValidatorePrenotazioneVisita;
-import unicam.filiera.view.PannelloDistributore;
-import unicam.filiera.view.PannelloProduttore;
 
 import java.io.File;
 import java.util.List;
@@ -140,10 +138,7 @@ public class DistributoreController {
                 .orElse(null);
     }
 
-    public void visualizzaVisiteDisponibili(PannelloDistributore view) {
-        List<VisitaInvito> visite = visitaDAO.findByDestinatario(username);
-        view.showVisiteDisponibili(visite);
-    }
+
 
     public void prenotaVisita(long idVisita, int numeroPersone, BiConsumer<String, Boolean> callback) {
         VisitaInvito visita = visitaDAO.findById(idVisita);
@@ -168,11 +163,7 @@ public class DistributoreController {
         }
     }
 
-    public void visualizzaPrenotazioniVisite(PannelloDistributore view) {
-        List<PrenotazioneVisita> prenotazioni = prenotazioneVisitaDAO.findByUsername(username);
-        List<VisitaInvito> tutteLeVisite = visitaDAO.findAll(); // opzionale, se vuoi mostrare descrizioni etc.
-        view.showPrenotazioniVisite(prenotazioni, tutteLeVisite);
-    }
+
 
     public void eliminaPrenotazioneVisita(long idPrenotazione, BiConsumer<String, Boolean> callback) {
         PrenotazioneVisita pren = prenotazioneVisitaDAO.findById(idPrenotazione);

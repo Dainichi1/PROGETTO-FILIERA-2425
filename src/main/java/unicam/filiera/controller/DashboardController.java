@@ -2,10 +2,13 @@ package unicam.filiera.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import unicam.filiera.model.UtenteAutenticato;
+import unicam.filiera.model.Ruolo;
 import unicam.filiera.repository.UtenteRepository;
 import unicam.filiera.factory.ViewFactory;
 import unicam.filiera.factory.UtenteFactory;
@@ -24,8 +27,15 @@ public class DashboardController {
         this.viewFactory = viewFactory;
     }
 
-    @GetMapping("/{username}")
-    public String dashboard(@PathVariable String username, Model model) {
+    @GetMapping
+    public String dashboard(Authentication auth, Model model) {
+        if (auth == null || !auth.isAuthenticated()) {
+            log.warn("Accesso alla dashboard senza autenticazione.");
+            return "redirect:/login";
+        }
+
+        String username = auth.getName();
+
         return repo.findById(username)
                 .map(e -> {
                     UtenteAutenticato domain = (UtenteAutenticato) UtenteFactory.creaAttore(
@@ -34,12 +44,18 @@ public class DashboardController {
                             e.getNome(),
                             e.getCognome(),
                             e.getRuolo(),
-                            e.getFondi() != null ? e.getFondi() : 0.0
+                            (e.getRuolo() == Ruolo.ACQUIRENTE && e.getFondi() != null) ? e.getFondi() : 0.0
                     );
+
+                    model.addAttribute("utente", domain);
+
                     String view = viewFactory.viewFor(e.getRuolo(), model, domain);
-                    log.info("Utente {} con ruolo {} → view {}", username, e.getRuolo(), view);
+                    log.info("Utente '{}' con ruolo '{}' → view '{}'", username, e.getRuolo(), view);
                     return view;
                 })
-                .orElse("error/utente_non_trovato");
+                .orElseGet(() -> {
+                    log.error("Utente '{}' non trovato in DB.", username);
+                    return "error/utente_non_trovato";
+                });
     }
 }

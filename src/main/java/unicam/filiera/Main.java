@@ -34,10 +34,6 @@ public class Main {
             System.out.println(pk);
         }
 
-        // 5) Avvia la GUI
-        SwingUtilities.invokeLater(() -> {
-            unicam.filiera.view.MainWindow window = new unicam.filiera.view.MainWindow();
-            window.setVisible(true);
-        });
+
     }
 }

@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<head><title>Dashboard Acquirente</title></head>
+<body>
+<h1 th:text="'Ciao ' + ${utente.nome} + '!'">Ciao!</h1>
+<h2>Dashboard Acquirente</h2>
+<p th:text="'Fondi disponibili: ' + ${utente.fondi} + ' €'"></p>
+<p><a href="/">Torna alla Home</a></p>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<head>
+    <title>Registrazione Utente</title>
+    <meta charset="UTF-8"/>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2rem;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        form div {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: inline-block;
+            width: 150px;
+            font-weight: bold;
+        }
+        input, select {
+            padding: 0.3rem;
+            width: 200px;
+        }
+        button {
+            padding: 0.5rem 1rem;
+            background-color: #2c7be5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #1a5bbf;
+        }
+        .error-box {
+            border: 1px solid red;
+            background: #ffe6e6;
+            color: red;
+            padding: 0.8rem;
+            margin-bottom: 1.2rem;
+            border-radius: 5px;
+        }
+        .field-error {
+            color: red;
+            font-size: 0.9em;
+            margin-left: 155px;
+        }
+    </style>
+</head>
+<body>
+<h1>Registrazione Nuovo Utente</h1>
+
+<!-- Messaggio di errore generale (se presente) -->
+<div th:if="${error}" class="error-box" th:text="${error}"></div>
+
+<!-- Form di registrazione -->
+<form th:action="@{/register}" th:object="${utente}" method="post" novalidate>
+
+    <div>
+        <label for="username">Username:</label>
+        <input type="text" id="username" th:field="*{username}"/>
+        <p th:if="${#fields.hasErrors('username')}" th:errors="*{username}" class="field-error"></p>
+    </div>
+
+    <div>
+        <label for="password">Password:</label>
+        <input type="password" id="password" th:field="*{password}"/>
+        <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="field-error"></p>
+    </div>
+
+    <div>
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" th:field="*{nome}"/>
+        <p th:if="${#fields.hasErrors('nome')}" th:errors="*{nome}" class="field-error"></p>
+    </div>
+
+    <div>
+        <label for="cognome">Cognome:</label>
+        <input type="text" id="cognome" th:field="*{cognome}"/>
+        <p th:if="${#fields.hasErrors('cognome')}" th:errors="*{cognome}" class="field-error"></p>
+    </div>
+
+    <div>
+        <label for="ruolo">Ruolo:</label>
+        <select id="ruolo" th:field="*{ruolo}">
+            <option value="">-- seleziona --</option>
+            <option value="PRODUTTORE">Produttore</option>
+            <option value="ACQUIRENTE">Acquirente</option>
+            <option value="CURATORE">Curatore</option>
+        </select>
+        <p th:if="${#fields.hasErrors('ruolo')}" th:errors="*{ruolo}" class="field-error"></p>
+    </div>
+
+    <div>
+        <button type="submit">Registrati</button>
+    </div>
+</form>
+
+<p><a th:href="@{/}">Torna alla Home</a></p>
+</body>
+</html>

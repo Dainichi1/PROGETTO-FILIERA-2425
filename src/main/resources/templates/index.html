@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Pannello Principale - Filiera Agricola</title>
+</head>
+<body>
+<h1>🌱 Benvenuto nella Filiera Agricola</h1>
+
+<p>Da qui puoi accedere ai servizi della piattaforma:</p>
+
+<ul>
+    <li><a th:href="@{/register}">📝 Registrati come nuovo utente</a></li>
+    <li><a th:href="@{/login}">🔑 Accedi (Login)</a></li>
+</ul>
+
+<hr/>
+
+<p>
+    <small>Questa piattaforma permette la gestione, valorizzazione e tracciabilità dei prodotti agricoli locali.</small>
+</p>
+<!-- Script per popup di successo -->
+<script th:if="${success}" th:inline="javascript">
+    alert([[${success}]]);
+    window.location.href = '/'; // torna alla home
+</script>
+</body>
+</html>

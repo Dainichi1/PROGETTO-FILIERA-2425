@@ -15,24 +15,39 @@ public final class UtenteFactory {
     }
 
     // DTO interno per incapsulare parametri di creazione
-    private static record Data(String username, String password, String nome, String cognome, Ruolo ruolo, double fondi) {}
-
+    private static record Data(
+            String username,
+            String password,
+            String nome,
+            String cognome,
+            Ruolo ruolo,
+            double fondi
+    ) {}
 
     // Registry di strategie per ciascun Ruolo
     private static final Map<Ruolo, Function<Data, Utente>> registry = new EnumMap<>(Ruolo.class);
 
     static {
-        registry.put(Ruolo.PRODUTTORE, d -> new Produttore(d.username, d.password, d.nome, d.cognome));
-        registry.put(Ruolo.TRASFORMATORE, d -> new Trasformatore(d.username, d.password, d.nome, d.cognome));
+        registry.put(Ruolo.PRODUTTORE,
+                d -> new Produttore(d.username(), d.password(), d.nome(), d.cognome()));
+
+        registry.put(Ruolo.TRASFORMATORE,
+                d -> new Trasformatore(d.username(), d.password(), d.nome(), d.cognome()));
+
         registry.put(Ruolo.DISTRIBUTORE_TIPICITA,
-                d -> new DistributoreTipicita(d.username, d.password, d.nome, d.cognome));
-        registry.put(Ruolo.CURATORE, d -> new Curatore(d.username, d.password, d.nome, d.cognome));
-        registry.put(Ruolo.ANIMATORE, d -> new Animatore(d.username, d.password, d.nome, d.cognome));
+                d -> new DistributoreTipicita(d.username(), d.password(), d.nome(), d.cognome()));
+
+        registry.put(Ruolo.CURATORE,
+                d -> new Curatore(d.username(), d.password(), d.nome(), d.cognome()));
+
+        registry.put(Ruolo.ANIMATORE,
+                d -> new Animatore(d.username(), d.password(), d.nome(), d.cognome()));
+
         registry.put(Ruolo.ACQUIRENTE,
-                d -> new Acquirente(d.username, d.password, d.nome, d.cognome, d.fondi));
+                d -> new Acquirente(d.username(), d.password(), d.nome(), d.cognome(), d.fondi()));
 
         registry.put(Ruolo.GESTORE_PIATTAFORMA,
-                d -> new GestorePiattaforma(d.username, d.password, d.nome, d.cognome));
+                d -> new GestorePiattaforma(d.username(), d.password(), d.nome(), d.cognome()));
     }
 
     /**
@@ -55,7 +70,8 @@ public final class UtenteFactory {
     public static Utente creaUtenteRegistrazione(
             String username, String password,
             String nome, String cognome,
-            Ruolo ruolo) {
+            Ruolo ruolo
+    ) {
         return new UtenteAutenticato(username, password, nome, cognome, ruolo);
     }
 
@@ -65,31 +81,28 @@ public final class UtenteFactory {
     public static Utente creaAttore(
             String username, String password,
             String nome, String cognome,
-            Ruolo ruolo, double fondi) {
+            Ruolo ruolo,
+            double fondi
+    ) {
         Data d = new Data(username, password, nome, cognome, ruolo, fondi);
+
         return registry.getOrDefault(
                 ruolo,
-                data -> {
-                    if (data.ruolo() == Ruolo.ACQUIRENTE)
-                        return new Acquirente(data.username(), data.password(), data.nome(), data.cognome(), data.fondi());
-                    else
-                        return new UtenteAutenticato(data.username(), data.password(), data.nome(), data.cognome(), data.ruolo());
-                }
+                data -> new UtenteAutenticato(
+                        data.username(), data.password(),
+                        data.nome(), data.cognome(), data.ruolo()
+                )
         ).apply(d);
-
     }
 
-
-
     /**
-     * Crea l’attore appropriato dopo il login, per ruoli diversi da ACQUIRENTE.
+     * Overload: crea attore per ruoli che non hanno fondi.
      */
     public static Utente creaAttore(
             String username, String password,
             String nome, String cognome,
-            Ruolo ruolo) {
+            Ruolo ruolo
+    ) {
         return creaAttore(username, password, nome, cognome, ruolo, 0.0);
     }
-
-
 }

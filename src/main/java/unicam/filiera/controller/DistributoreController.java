@@ -32,11 +32,7 @@ public class DistributoreController {
         this.prodottoService = prodottoService;
     }
 
-    public DistributoreController(String username) {
-        this(username,
-                new PacchettoServiceImpl(),
-                new ProdottoServiceImpl(JdbcProdottoDAO.getInstance()));
-    }
+
 
 
     // ———————————————— metodi di sola lettura ————————————————

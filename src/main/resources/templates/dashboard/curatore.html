@@ -1,10 +1,229 @@
 <!DOCTYPE html>
-<html lang="it">
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Dashboard Curatore</title>
+    <style>
+        .hidden {
+            display: none;
+        }
+
+        table {
+            border-collapse: collapse;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background: #f2f2f2;
+        }
+
+        button {
+            margin: 4px;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .commento-input {
+            width: 100%;
+            min-width: 150px;
+        }
+
+        /* Modali */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .modal-content button {
+            margin-top: 15px;
+            padding: 8px 16px;
+        }
+    </style>
 </head>
 <body>
+<h1 th:text="'Benvenuto ' + ${utente != null ? utente.nome : 'Utente'} + ', il tuo ruolo è ' + (${utente != null ? utente.ruolo : 'Curatore'}) + '.'">
+    Benvenuto, il tuo ruolo è Curatore.
+</h1>
 
+<h2>Dashboard Curatore</h2>
+
+<!-- Bottone toggle lista -->
+<button type="button" onclick="toggleLista(this)">Visualizza Elementi da approvare</button>
+
+<!-- Tabella elementi -->
+<div id="listaElementi" class="hidden">
+    <h3>Elementi in attesa di approvazione</h3>
+    <table>
+        <thead>
+        <tr>
+            <th>Nome Prodotto</th>
+            <th>Nome Creatore</th>
+            <th>Descrizione</th>
+            <th>Quantità</th>
+            <th>Prezzo</th>
+            <th>Indirizzo</th>
+            <th>Certificati</th>
+            <th>Foto</th>
+            <th>Accetta</th>
+            <th>Rifiuta</th>
+            <th>Commento</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Loop sugli elementi -->
+        <tr th:each="prodotto : ${prodotti}">
+            <td th:text="${prodotto.nome}">Mela Rossa</td>
+            <td th:text="${prodotto.creatoDa}">Mario Rossi</td>
+            <td th:text="${prodotto.descrizione}">Descrizione prodotto</td>
+            <td th:text="${prodotto.quantita}">10</td>
+            <td th:text="${prodotto.prezzo}">15.50</td>
+            <td th:text="${prodotto.indirizzo}">Via Roma 10</td>
+            <td>
+                <ul>
+                    <li th:each="cert : ${prodotto.certificati}">
+                        <a th:href="@{'/file/certificati/' + ${cert}}" target="_blank" th:text="${cert}">cert.pdf</a>
+                    </li>
+                </ul>
+            </td>
+            <td>
+                <ul>
+                    <li th:each="foto : ${prodotto.foto}">
+                        <a th:href="@{'/file/foto/' + ${foto}}" target="_blank" th:text="${foto}">foto.jpg</a>
+                    </li>
+                </ul>
+            </td>
+            <td>
+                <!-- Form approvazione -->
+                <form th:action="@{/curatore/approva}" method="post" style="display:inline;">
+                    <input type="hidden" name="nome" th:value="${prodotto.nome}"/>
+                    <input type="hidden" name="creatore" th:value="${prodotto.creatoDa}"/>
+                    <button type="button"
+                            class="approve-btn"
+                            th:attr="data-nome=${prodotto.nome}">
+                        Accetta
+                    </button>
+                </form>
+            </td>
+            <td>
+                <!-- Form rifiuto -->
+                <form th:action="@{/curatore/rifiuta}" method="post" style="display:inline;"
+                      th:id="'form-rifiuta-' + ${prodotto.nome} + '-' + ${prodotto.creatoDa}">
+                    <input type="hidden" name="nome" th:value="${prodotto.nome}"/>
+                    <input type="hidden" name="creatore" th:value="${prodotto.creatoDa}"/>
+                    <button type="button"
+                            class="reject-btn"
+                            th:attr="data-nome=${prodotto.nome}">
+                        Rifiuta
+                    </button>
+                </form>
+            </td>
+            <td>
+                <!-- Input collegato al form con l’attributo "form" -->
+                <input type="text" name="commento"
+                       class="commento-input"
+                       placeholder="Inserisci commento"
+                       th:form="'form-rifiuta-' + ${prodotto.nome} + '-' + ${prodotto.creatoDa}"/>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Modale conferma approvazione -->
+<div id="approveModal" class="modal">
+    <div class="modal-content">
+        <p id="approveMessage"></p>
+        <button onclick="closeApproveModal()">OK</button>
+    </div>
+</div>
+
+<!-- Modale conferma rifiuto -->
+<div id="rejectModal" class="modal">
+    <div class="modal-content">
+        <p id="rejectMessage"></p>
+        <button onclick="closeRejectModal()">OK</button>
+    </div>
+</div>
+
+<p><a th:href="@{/}">Torna alla Home</a></p>
+
+<script>
+    function toggleLista(btn) {
+        const div = document.getElementById("listaElementi");
+        const isHiddenAfterToggle = div.classList.toggle("hidden");
+        btn.textContent = isHiddenAfterToggle
+            ? "Visualizza Elementi da approvare"
+            : "Nascondi Lista Elementi";
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Bottone "Accetta"
+        document.querySelectorAll(".approve-btn").forEach(btn => {
+            btn.addEventListener("click", function () {
+                const nomeProdotto = this.getAttribute("data-nome");
+                document.getElementById("approveMessage").textContent = nomeProdotto + " approvato!";
+                document.getElementById("approveModal").style.display = "flex";
+                window.formToSubmit = this.closest("form");
+            });
+        });
+
+        // Bottone "Rifiuta"
+        document.querySelectorAll(".reject-btn").forEach(btn => {
+            btn.addEventListener("click", function () {
+                const nomeProdotto = this.getAttribute("data-nome");
+                document.getElementById("rejectMessage").textContent = nomeProdotto + " rifiutato!";
+                document.getElementById("rejectModal").style.display = "flex";
+                window.formToSubmit = this.closest("form");
+            });
+        });
+    });
+
+    function closeApproveModal() {
+        document.getElementById("approveModal").style.display = "none";
+        if (window.formToSubmit) {
+            window.formToSubmit.submit();
+            window.formToSubmit = null;
+        }
+    }
+
+    function closeRejectModal() {
+        document.getElementById("rejectModal").style.display = "none";
+        if (window.formToSubmit) {
+            window.formToSubmit.submit();
+            window.formToSubmit = null;
+        }
+    }
+</script>
 </body>
 </html>

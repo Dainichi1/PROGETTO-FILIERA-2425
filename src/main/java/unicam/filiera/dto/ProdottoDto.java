@@ -1,8 +1,6 @@
 package unicam.filiera.dto;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -19,11 +17,6 @@ import java.util.List;
 @NoArgsConstructor
 public class ProdottoDto {
 
-    /**
-     * Nel flusso di modifica, contiene il nome con cui il prodotto
-     * era stato salvato originariamente (prima della correzione).
-     * Altrimenti null.
-     */
     private String originalName;
 
     @NotBlank(message = "⚠ Nome obbligatorio")
@@ -32,25 +25,25 @@ public class ProdottoDto {
     @NotBlank(message = "⚠ Descrizione obbligatoria")
     private String descrizione;
 
+    @NotNull(message = "⚠ Inserisci la quantità")
     @Min(value = 1, message = "⚠ La quantità deve essere almeno 1")
-    private int quantita;
+    private Integer quantita;
 
+    @NotNull(message = "⚠ Inserisci un prezzo")
     @Positive(message = "⚠ Il prezzo deve essere positivo")
-    private double prezzo;
+    private Double prezzo;
 
     @NotBlank(message = "⚠ Indirizzo obbligatorio")
     private String indirizzo;
 
-    // File caricati dal form (validazione gestita manualmente nel Controller)
     private List<MultipartFile> certificati;
     private List<MultipartFile> foto;
 
-    // Costruttore personalizzato (utile nei test o conversioni manuali)
     public ProdottoDto(
             String nome,
             String descrizione,
-            int quantita,
-            double prezzo,
+            Integer quantita,
+            Double prezzo,
             String indirizzo,
             List<MultipartFile> certificati,
             List<MultipartFile> foto
@@ -62,8 +55,8 @@ public class ProdottoDto {
             String originalName,
             String nome,
             String descrizione,
-            int quantita,
-            double prezzo,
+            Integer quantita,
+            Double prezzo,
             String indirizzo,
             List<MultipartFile> certificati,
             List<MultipartFile> foto

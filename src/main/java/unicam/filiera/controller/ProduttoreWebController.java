@@ -22,17 +22,11 @@ public class ProduttoreWebController {
         this.prodottoService = prodottoService;
     }
 
-    /**
-     * Garantisce che "prodottoDto" sia sempre presente nel Model
-     */
     @ModelAttribute("prodottoDto")
     public ProdottoDto prodottoDto() {
         return new ProdottoDto();
     }
 
-    /**
-     * Mostra la dashboard del produttore
-     */
     @GetMapping("/dashboard")
     public String dashboardProduttore(Model model) {
         if (!model.containsAttribute("prodottoDto")) {
@@ -42,9 +36,6 @@ public class ProduttoreWebController {
         return "dashboard/produttore";
     }
 
-    /**
-     * Gestione invio del form "Crea Prodotto"
-     */
     @PostMapping("/crea")
     public String creaProdotto(
             @Valid @ModelAttribute("prodottoDto") ProdottoDto prodottoDto,
@@ -57,23 +48,18 @@ public class ProduttoreWebController {
                 || prodottoDto.getCertificati().stream().allMatch(MultipartFile::isEmpty)) {
             bindingResult.rejectValue("certificati", "error.certificati", "⚠ Devi caricare almeno un certificato");
         }
-
         if (prodottoDto.getFoto() == null || prodottoDto.getFoto().isEmpty()
                 || prodottoDto.getFoto().stream().allMatch(MultipartFile::isEmpty)) {
             bindingResult.rejectValue("foto", "error.foto", "⚠ Devi caricare almeno una foto");
         }
 
         if (bindingResult.hasErrors()) {
-            // Form rimane aperto e mostra errori
             model.addAttribute("showForm", true);
             return "dashboard/produttore";
         }
 
         try {
-            String username = (authentication != null)
-                    ? authentication.getName()
-                    : "produttore_demo";
-
+            String username = (authentication != null) ? authentication.getName() : "produttore_demo";
             prodottoService.creaProdotto(prodottoDto, username);
 
             model.addAttribute("successMessage", "Prodotto inviato al Curatore con successo!");

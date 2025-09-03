@@ -1,17 +1,25 @@
 <div class="dettagli">
-    <h2 th:text="${prodotto.nome}">Nome prodotto</h2>
-    <p><strong>Descrizione:</strong> <span th:text="${prodotto.descrizione}"></span></p>
-    <p><strong>Quantità:</strong> <span th:text="${prodotto.quantita}"></span></p>
-    <p><strong>Prezzo:</strong> <span th:text="${prodotto.prezzo}"></span> €</p>
-    <p><strong>Creato da:</strong> <span th:text="${prodotto.creatoDa}"></span></p>
+    <h2 th:text="${elemento.nome}">Nome elemento</h2>
+    <p><strong>Descrizione:</strong> <span th:text="${elemento.descrizione}"></span></p>
+    <p><strong>Quantità:</strong> <span th:text="${elemento.quantita}"></span></p>
+    <p><strong>Prezzo:</strong> <span th:text="${elemento.prezzo}"></span> €</p>
+    <p><strong>Creato da:</strong> <span th:text="${elemento.creatoDa}"></span></p>
+
+    <!-- Lista prodotti del pacchetto -->
+    <div th:if="${tipo == 'pacchetto'}">
+        <h4>📦 Prodotti inclusi</h4>
+        <ul>
+            <li th:each="nomeProdotto : ${elemento.prodotti}" th:text="${nomeProdotto}"></li>
+        </ul>
+    </div>
 
     <!-- FOTO cliccabili -->
-    <div th:if="${prodotto.foto != null and !prodotto.foto.isEmpty()}">
+    <div th:if="${elemento.foto != null and !elemento.foto.isEmpty()}">
         <h4>📸 Foto</h4>
         <ul style="list-style:none; padding:0;">
-            <li th:each="foto : ${prodotto.foto}" style="margin:5px 0;">
+            <li th:each="foto : ${elemento.foto}" style="margin:5px 0;">
                 <a th:href="@{'/file/foto/' + ${foto}}" target="_blank">
-                    <img th:src="@{'/file/foto/' + ${foto}}" alt="Foto prodotto"
+                    <img th:src="@{'/file/foto/' + ${foto}}" alt="Foto"
                          style="max-width: 200px; border: 1px solid #ccc; padding: 3px;"/>
                 </a>
             </li>
@@ -19,10 +27,10 @@
     </div>
 
     <!-- CERTIFICATI cliccabili -->
-    <div th:if="${prodotto.certificati != null and !prodotto.certificati.isEmpty()}">
+    <div th:if="${elemento.certificati != null and !elemento.certificati.isEmpty()}">
         <h4>📜 Certificati</h4>
         <ul style="list-style:none; padding:0;">
-            <li th:each="cert : ${prodotto.certificati}" style="margin:5px 0;">
+            <li th:each="cert : ${elemento.certificati}" style="margin:5px 0;">
                 <a th:href="@{'/file/certificati/' + ${cert}}" target="_blank">
                     <span th:text="${cert}"></span>
                 </a>

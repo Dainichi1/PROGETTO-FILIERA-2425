@@ -38,21 +38,35 @@
         <h3>Prodotti approvati</h3>
         <ul>
             <li th:each="p : ${prodotti}">
-                <a href="#" th:data-id="${p.id}" th:text="${p.nome}"
-                   onclick="caricaDettagli(this.getAttribute('data-id')); return false;"></a>
+                <a href="#"
+                   th:data-id="${p.id}"
+                   th:data-tipo="'prodotto'"
+                   th:text="${p.nome}"
+                   onclick="caricaDettagli(this.getAttribute('data-id'), this.getAttribute('data-tipo')); return false;"></a>
+            </li>
+        </ul>
+
+        <h3>Pacchetti approvati</h3>
+        <ul>
+            <li th:each="pac : ${pacchetti}">
+                <a href="#"
+                   th:data-id="${pac.id}"
+                   th:data-tipo="'pacchetto'"
+                   th:text="${pac.nome}"
+                   onclick="caricaDettagli(this.getAttribute('data-id'), this.getAttribute('data-tipo')); return false;"></a>
             </li>
         </ul>
     </div>
 
     <!-- Colonna destra -->
     <div class="destra" id="dettagli">
-        <p><i>Seleziona un prodotto per vedere i dettagli</i></p>
+        <p><i>Seleziona un prodotto o pacchetto per vedere i dettagli</i></p>
     </div>
 </div>
 
 <script>
-    async function caricaDettagli(id) {
-        const response = await fetch(`/marketplace/${id}`);
+    async function caricaDettagli(id, tipo) {
+        const response = await fetch(`/marketplace/${tipo}/${id}`);
         if (response.ok) {
             const html = await response.text();
             document.getElementById("dettagli").innerHTML = html;

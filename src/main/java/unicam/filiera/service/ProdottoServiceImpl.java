@@ -9,7 +9,7 @@ import unicam.filiera.factory.ItemFactory;
 import unicam.filiera.factory.ProdottoFactory;
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.StatoProdotto;
-import unicam.filiera.model.observer.ProdottoNotifier;
+import unicam.filiera.observer.ProdottoNotifier;
 import unicam.filiera.repository.ProdottoRepository;
 
 import java.io.File;

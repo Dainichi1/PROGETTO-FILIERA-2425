@@ -1,41 +1,31 @@
 package unicam.filiera.model.observer;
 
-import unicam.filiera.model.Prodotto;
-
-import java.util.ArrayList;
+import jakarta.annotation.PostConstruct;
+import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * Classe che funge da soggetto osservato nel pattern Observer.
- * Notifica tutti gli osservatori registrati quando un prodotto viene aggiornato.
+ * Gestisce la notifica degli eventi ai vari osservatori.
+ * Gli osservatori vengono registrati automaticamente come bean Spring.
  */
+@Component
 public class ProdottoNotifier {
 
-    private static ProdottoNotifier instance;
+    private final List<OsservatoreProdotto> osservatori;
 
-    private final List<OsservatoreProdotto> osservatori = new ArrayList<>();
-
-    private ProdottoNotifier() {
+    // Spring inietta automaticamente tutti i bean che implementano OsservatoreProdotto
+    public ProdottoNotifier(List<OsservatoreProdotto> osservatori) {
+        this.osservatori = osservatori;
     }
 
-    public static ProdottoNotifier getInstance() {
-        if (instance == null) {
-            instance = new ProdottoNotifier();
-        }
-        return instance;
+    @PostConstruct
+    public void init() {
+        System.out.println("ProdottoNotifier inizializzato con " + osservatori.size() + " osservatori registrati.");
     }
 
-    public void registraOsservatore(OsservatoreProdotto osservatore) {
-        osservatori.add(osservatore);
-    }
-
-    public void notificaTutti(Prodotto prodotto, String evento) {
+    public void notificaTutti(unicam.filiera.model.Prodotto prodotto, String evento) {
         for (OsservatoreProdotto o : osservatori) {
             o.notifica(prodotto, evento);
         }
-    }
-
-    public void rimuoviOsservatore(OsservatoreProdotto osservatore) {
-        osservatori.remove(osservatore);
     }
 }

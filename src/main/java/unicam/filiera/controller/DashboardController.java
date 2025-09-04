@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import unicam.filiera.model.UtenteAutenticato;
 import unicam.filiera.model.Ruolo;
 import unicam.filiera.repository.UtenteRepository;
-import unicam.filiera.factory.ViewFactory;
 import unicam.filiera.factory.UtenteFactory;
 
 @Controller
@@ -20,11 +19,9 @@ public class DashboardController {
     private static final Logger log = LoggerFactory.getLogger(DashboardController.class);
 
     private final UtenteRepository repo;
-    private final ViewFactory viewFactory;
 
-    public DashboardController(UtenteRepository repo, ViewFactory viewFactory) {
+    public DashboardController(UtenteRepository repo) {
         this.repo = repo;
-        this.viewFactory = viewFactory;
     }
 
     @GetMapping
@@ -49,9 +46,33 @@ public class DashboardController {
 
                     model.addAttribute("utente", domain);
 
-                    String view = viewFactory.viewFor(e.getRuolo(), model, domain);
-                    log.info("Utente '{}' con ruolo '{}' → view '{}'", username, e.getRuolo(), view);
-                    return view;
+                    // Redireziona ai controller specifici in base al ruolo
+                    switch (e.getRuolo()) {
+                        case PRODUTTORE -> {
+                            log.info("Utente '{}' con ruolo PRODUTTORE → redirect /produttore/dashboard", username);
+                            return "redirect:/produttore/dashboard";
+                        }
+                        case ACQUIRENTE -> {
+                            log.info("Utente '{}' con ruolo ACQUIRENTE → redirect /acquirente/dashboard", username);
+                            return "redirect:/acquirente/dashboard";
+                        }
+                        case CURATORE -> {
+                            log.info("Utente '{}' con ruolo CURATORE → redirect /curatore/dashboard", username);
+                            return "redirect:/curatore/dashboard";
+                        }
+                        case DISTRIBUTORE_TIPICITA -> {
+                            log.info("Utente '{}' con ruolo DISTRIBUTORE_TIPICITA → redirect /distributore/dashboard", username);
+                            return "redirect:/distributore/dashboard";
+                        }
+                        case TRASFORMATORE -> {
+                            log.info("Utente '{}' con ruolo TRASFORMATORE → redirect /trasformatore/dashboard", username);
+                            return "redirect:/trasformatore/dashboard";
+                        }
+                        default -> {
+                            log.error("Ruolo '{}' non gestito per utente '{}'", e.getRuolo(), username);
+                            return "error/ruolo_non_gestito";
+                        }
+                    }
                 })
                 .orElseGet(() -> {
                     log.error("Utente '{}' non trovato in DB.", username);

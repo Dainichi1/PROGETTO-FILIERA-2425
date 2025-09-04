@@ -1,17 +1,20 @@
-package unicam.filiera.model.observer;
+package unicam.filiera.observer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.Pacchetto;
+import unicam.filiera.model.Prodotto;
+import unicam.filiera.model.ProdottoTrasformato;
 
 /**
  * Observer unico del Curatore:
- * riceve notifiche sia sui Prodotti che sui Pacchetti.
+ * riceve notifiche su Prodotti, Pacchetti e Prodotti Trasformati.
  */
 @Component
-public class CuratoreObserver implements OsservatoreProdotto, OsservatorePacchetto {
+public class CuratoreObserver implements OsservatoreProdotto,
+        OsservatorePacchetto,
+        OsservatoreProdottoTrasformato {
 
     private static final Logger log = LoggerFactory.getLogger(CuratoreObserver.class);
 
@@ -58,6 +61,29 @@ public class CuratoreObserver implements OsservatoreProdotto, OsservatorePacchet
                             pacchetto.getNome(), pacchetto.getCreatoDa());
             default ->
                     log.warn("⚠️ Evento sconosciuto '{}' per pacchetto: {}", evento, pacchetto.getNome());
+        }
+    }
+
+    /* ================================
+       Notifiche sui Prodotti Trasformati
+    ================================ */
+    @Override
+    public void notifica(ProdottoTrasformato prodottoTrasformato, String evento) {
+        switch (evento) {
+            case "NUOVO_PRODOTTO_TRASFORMATO" ->
+                    log.info("🍷 Nuovo prodotto trasformato in attesa: {} (Creato da: {})",
+                            prodottoTrasformato.getNome(), prodottoTrasformato.getCreatoDa());
+            case "APPROVATO" ->
+                    log.info("✅ Prodotto trasformato approvato: {} (Creato da: {})",
+                            prodottoTrasformato.getNome(), prodottoTrasformato.getCreatoDa());
+            case "RIFIUTATO" ->
+                    log.info("❌ Prodotto trasformato rifiutato: {} (Creato da: {}, Commento: {})",
+                            prodottoTrasformato.getNome(), prodottoTrasformato.getCreatoDa(), prodottoTrasformato.getCommento());
+            case "ELIMINATO_PRODOTTO_TRASFORMATO" ->
+                    log.info("🗑️ Prodotto trasformato eliminato: {} (Creato da: {})",
+                            prodottoTrasformato.getNome(), prodottoTrasformato.getCreatoDa());
+            default ->
+                    log.warn("⚠️ Evento sconosciuto '{}' per prodotto trasformato: {}", evento, prodottoTrasformato.getNome());
         }
     }
 }

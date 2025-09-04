@@ -4,14 +4,63 @@
     <title>Dashboard Produttore</title>
     <meta charset="UTF-8"/>
     <style>
-        .form-container { display: none; margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 6px; background-color: #f9f9f9; max-width: 500px; }
-        .form-container label { display: block; margin-top: 10px; font-weight: bold; }
-        .form-container input, .form-container textarea { width: 100%; padding: 6px; margin-top: 5px; }
-        .form-container input.error, .form-container textarea.error { border: 2px solid red; }
-        .error-message { color: red; font-size: 0.9rem; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 20px; border-radius: 8px; text-align: center; max-width: 400px; }
-        .modal-content button { margin: 10px; padding: 8px 16px; }
+        .form-container {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background-color: #f9f9f9;
+            max-width: 500px;
+        }
+
+        .form-container label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .form-container input,
+        .form-container textarea {
+            width: 100%;
+            padding: 6px;
+            margin-top: 5px;
+        }
+
+        .form-container input.error,
+        .form-container textarea.error {
+            border: 2px solid red;
+        }
+
+        .error-message {
+            color: red;
+            font-size: 0.9rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .modal-content button {
+            margin: 10px;
+            padding: 8px 16px;
+        }
     </style>
 </head>
 <body>
@@ -117,34 +166,6 @@
         document.getElementById("createProductForm").submit();
     }
 
-    // Validazione client-side in tempo reale
-    document.querySelectorAll("#createProductForm input, #createProductForm textarea").forEach(el => {
-        el.addEventListener("input", () => {
-            if (el.value.trim() !== "") {
-                el.classList.remove("error");
-                const errorSpan = el.nextElementSibling;
-                if (errorSpan && errorSpan.classList.contains("error-message")) {
-                    errorSpan.innerText = "";
-                }
-            }
-        });
-    });
-
-    document.getElementById("certificati").addEventListener("change", function () {
-        if (this.files.length > 0) {
-            this.classList.remove("error");
-            this.nextElementSibling.innerText = "";
-        }
-    });
-
-    document.getElementById("foto").addEventListener("change", function () {
-        if (this.files.length > 0) {
-            this.classList.remove("error");
-            this.nextElementSibling.innerText = "";
-        }
-    });
-
-    // Mostra modale successo se presente
     window.addEventListener("load", () => {
         const successModal = document.getElementById("successModal");
         if (successModal) {

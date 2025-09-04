@@ -1,101 +1,81 @@
 package unicam.filiera.dto;
 
-import java.io.File;
+import jakarta.validation.constraints.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 
 /**
- * DTO per trasferire i dati di un Pacchetto (nuovo o in modifica).
+ * DTO per la creazione o modifica di un Pacchetto da parte del distributore.
+ * Incapsula tutti i campi del form della UI.
  */
+@Getter
+@Setter
+@NoArgsConstructor
 public class PacchettoDto {
-    /**
-     * Nome originario del pacchetto prima della modifica; null se è un nuovo pacchetto
-     */
-    private final String originalName;
 
-    private final String nome;
-    private final String descrizione;
-    private final String indirizzo;
-    private final String prezzoTxt;
-    private final String quantitaTxt;
-    private final List<String> nomiProdotti;
-    private final List<File> certificati;
-    private final List<File> foto;
+    private String originalName;
 
-    /**
-     * Costruttore per flusso “nuovo pacchetto”
-     */
+    @NotBlank(message = "⚠ Nome pacchetto obbligatorio")
+    private String nome;
+
+    @NotBlank(message = "⚠ Descrizione obbligatoria")
+    private String descrizione;
+
+    @NotBlank(message = "⚠ Indirizzo luogo vendita obbligatorio")
+    private String indirizzo;
+
+    @NotNull(message = "⚠ Inserisci un prezzo")
+    @Positive(message = "⚠ Il prezzo deve essere positivo")
+    private Double prezzo;
+
+    @NotNull(message = "⚠ Inserisci la quantità")
+    @Min(value = 1, message = "⚠ La quantità deve essere almeno 1")
+    private Integer quantita;
+
+    @NotEmpty(message = "⚠ Devi selezionare almeno 2 prodotti")
+    @Size(min = 2, message = "⚠ Devi selezionare almeno 2 prodotti")
+    private List<Long> prodottiSelezionati;
+
+    // Validazione gestita manualmente nel Controller
+    private List<MultipartFile> certificati;
+    private List<MultipartFile> foto;
+
     public PacchettoDto(
             String nome,
             String descrizione,
             String indirizzo,
-            String prezzoTxt,
-            String quantitaTxt,
-            List<String> nomiProdotti,
-            List<File> certificati,
-            List<File> foto) {
-        this(null, nome, descrizione, indirizzo, prezzoTxt, quantitaTxt, nomiProdotti, certificati, foto);
+            Double prezzo,
+            Integer quantita,
+            List<Long> prodottiSelezionati,
+            List<MultipartFile> certificati,
+            List<MultipartFile> foto
+    ) {
+        this(null, nome, descrizione, indirizzo, prezzo, quantita, prodottiSelezionati, certificati, foto);
     }
 
-    /**
-     * Costruttore completo, usato per il flusso di modifica
-     */
     public PacchettoDto(
             String originalName,
             String nome,
             String descrizione,
             String indirizzo,
-            String prezzoTxt,
-            String quantitaTxt,
-            List<String> nomiProdotti,
-            List<File> certificati,
-            List<File> foto) {
+            Double prezzo,
+            Integer quantita,
+            List<Long> prodottiSelezionati,
+            List<MultipartFile> certificati,
+            List<MultipartFile> foto
+    ) {
         this.originalName = originalName;
         this.nome = nome;
         this.descrizione = descrizione;
         this.indirizzo = indirizzo;
-        this.prezzoTxt = prezzoTxt;
-        this.quantitaTxt = quantitaTxt;
-        this.nomiProdotti = List.copyOf(nomiProdotti);
-        this.certificati = List.copyOf(certificati);
-        this.foto = List.copyOf(foto);
-    }
-
-    /**
-     * @return il nome originario in caso di modifica, altrimenti null
-     */
-    public String getOriginalName() {
-        return originalName;
-    }
-
-    public String getNome() {
-        return nome;
-    }
-
-    public String getDescrizione() {
-        return descrizione;
-    }
-
-    public String getIndirizzo() {
-        return indirizzo;
-    }
-
-    public String getPrezzoTxt() {
-        return prezzoTxt;
-    }
-
-    public String getQuantitaTxt() {
-        return quantitaTxt;
-    }
-
-    public List<String> getNomiProdotti() {
-        return nomiProdotti;
-    }
-
-    public List<File> getCertificati() {
-        return certificati;
-    }
-
-    public List<File> getFoto() {
-        return foto;
+        this.prezzo = prezzo;
+        this.quantita = quantita;
+        this.prodottiSelezionati = prodottiSelezionati;
+        this.certificati = certificati;
+        this.foto = foto;
     }
 }

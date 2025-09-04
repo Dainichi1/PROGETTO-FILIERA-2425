@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<head>
+    <title>Dashboard Distributore</title>
+    <meta charset="UTF-8"/>
+    <style>
+        .form-container { display: none; margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 6px; background-color: #f9f9f9; max-width: 600px; }
+        .form-container label { display: block; margin-top: 10px; font-weight: bold; }
+        .form-container input, .form-container textarea { width: 100%; padding: 6px; margin-top: 5px; }
+        .form-container input.error, .form-container textarea.error { border: 2px solid red; }
+        .checkbox-list { margin-top: 10px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: #fff; max-height: 200px; overflow-y: auto; }
+        .checkbox-list label { display: block; margin-bottom: 5px; font-weight: normal; }
+        .checkbox-list.error { border: 2px solid red; background-color: #ffeaea; }
+        .error-message { color: red; font-size: 0.9rem; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 8px; text-align: center; max-width: 400px; }
+        .modal-content button { margin: 10px; padding: 8px 16px; }
+    </style>
+</head>
+<body>
+<h1 th:text="'Benvenuto ' + ${utente != null ? utente.nome : 'Utente'} + ', il tuo ruolo è ' + (${utente != null ? utente.ruolo : 'Distributore'}) + '.'">
+    Benvenuto, il tuo ruolo è Distributore.
+</h1>
+
+<h2>Dashboard Distributore</h2>
+
+<button type="button" onclick="toggleForm()">Crea Pacchetto</button>
+
+<div id="pacchettoForm" class="form-container"
+     th:style="${showForm} ? 'display:block;' : 'display:none;'">
+
+    <h3>Nuovo Pacchetto</h3>
+    <form id="createPackageForm"
+          th:action="@{/distributore/crea}"
+          th:object="${pacchettoDto}"
+          method="post"
+          enctype="multipart/form-data">
+
+        <!-- Nome -->
+        <label for="nome">Nome Pacchetto:</label>
+        <input type="text" th:field="*{nome}" id="nome"
+               th:classappend="${#fields.hasErrors('nome')} ? 'error'"/>
+        <span class="error-message" th:errors="*{nome}"></span>
+
+        <!-- Descrizione -->
+        <label for="descrizione">Descrizione:</label>
+        <textarea th:field="*{descrizione}" id="descrizione"
+                  th:classappend="${#fields.hasErrors('descrizione')} ? 'error'"></textarea>
+        <span class="error-message" th:errors="*{descrizione}"></span>
+
+        <!-- Indirizzo -->
+        <label for="indirizzo">Indirizzo luogo vendita:</label>
+        <input type="text" th:field="*{indirizzo}" id="indirizzo"
+               th:classappend="${#fields.hasErrors('indirizzo')} ? 'error'"/>
+        <span class="error-message" th:errors="*{indirizzo}"></span>
+
+        <!-- Prezzo -->
+        <label for="prezzo">Prezzo totale:</label>
+        <input type="number" step="0.01" th:field="*{prezzo}" id="prezzo"
+               th:classappend="${#fields.hasErrors('prezzo')} ? 'error'"/>
+        <span class="error-message" th:errors="*{prezzo}"></span>
+
+        <!-- Quantità -->
+        <label for="quantita">Quantità:</label>
+        <input type="number" th:field="*{quantita}" id="quantita"
+               th:classappend="${#fields.hasErrors('quantita')} ? 'error'"/>
+        <span class="error-message" th:errors="*{quantita}"></span>
+
+        <!-- Prodotti approvati -->
+        <label>Seleziona Prodotti Approvati (minimo 2):</label>
+        <div class="checkbox-list"
+             th:classappend="${#fields.hasErrors('prodottiSelezionati')} ? ' error'">
+            <div th:each="prodotto : ${prodottiApprovati}">
+                <label>
+                    <input type="checkbox" th:field="*{prodottiSelezionati}"
+                           th:value="${prodotto.id}"/>
+                    <span th:text="${prodotto.nome}">Nome prodotto</span>
+                </label>
+            </div>
+        </div>
+        <span class="error-message" th:errors="*{prodottiSelezionati}"></span>
+
+        <!-- Certificati -->
+        <label for="certificati">Seleziona certificati:</label>
+        <input type="file" th:field="*{certificati}" id="certificati" multiple
+               th:classappend="${#fields.hasErrors('certificati')} ? 'error'"/>
+        <span class="error-message" th:errors="*{certificati}"></span>
+
+        <!-- Foto -->
+        <label for="foto">Seleziona foto:</label>
+        <input type="file" th:field="*{foto}" id="foto" multiple
+               th:classappend="${#fields.hasErrors('foto')} ? 'error'"/>
+        <span class="error-message" th:errors="*{foto}"></span>
+
+        <!-- Pulsanti -->
+        <button type="button" onclick="openConfirmModal()">Invia Pacchetto</button>
+        <button type="button" onclick="toggleForm()">Chiudi Form</button>
+    </form>
+</div>
+
+<!-- Modale conferma invio -->
+<div id="confirmModal" class="modal">
+    <div class="modal-content">
+        <p>Inviare il pacchetto al Curatore per approvazione?</p>
+        <button onclick="submitForm()">Sì</button>
+        <button onclick="closeModal('confirmModal')">No</button>
+    </div>
+</div>
+
+<!-- Modale successo -->
+<div id="successModal" class="modal" th:if="${successMessage}">
+    <div class="modal-content">
+        <p th:text="${successMessage}">Pacchetto inviato al Curatore!</p>
+        <button onclick="window.location.href='/distributore/dashboard'">OK</button>
+    </div>
+</div>
+
+<script>
+    function toggleForm() {
+        const form = document.getElementById("pacchettoForm");
+        form.style.display = (form.style.display === "none") ? "block" : "none";
+    }
+
+    function openConfirmModal() {
+        document.getElementById("confirmModal").style.display = "flex";
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).style.display = "none";
+    }
+
+    function submitForm() {
+        closeModal("confirmModal");
+        document.getElementById("createPackageForm").submit();
+    }
+
+    // Validazione client-side in tempo reale
+    document.querySelectorAll("#createPackageForm input, #createPackageForm textarea").forEach(el => {
+        if (el.type !== "checkbox" && el.type !== "file") {
+            el.addEventListener("input", () => {
+                if (el.value.trim() !== "") {
+                    el.classList.remove("error");
+                    const errorSpan = el.nextElementSibling;
+                    if (errorSpan && errorSpan.classList.contains("error-message")) {
+                        errorSpan.innerText = "";
+                    }
+                }
+            });
+        }
+    });
+
+    // Checkbox (prodotti selezionati)
+    document.querySelectorAll("#createPackageForm input[type='checkbox']").forEach(cb => {
+        cb.addEventListener("change", () => {
+            const container = document.querySelector(".checkbox-list");
+            if (document.querySelectorAll("#createPackageForm input[type='checkbox']:checked").length >= 2) {
+                container.classList.remove("error");
+                const errorSpan = container.nextElementSibling;
+                if (errorSpan && errorSpan.classList.contains("error-message")) {
+                    errorSpan.innerText = "";
+                }
+            }
+        });
+    });
+
+    // Certificati
+    document.getElementById("certificati").addEventListener("change", function () {
+        if (this.files.length > 0) {
+            this.classList.remove("error");
+            this.nextElementSibling.innerText = "";
+        }
+    });
+
+    // Foto
+    document.getElementById("foto").addEventListener("change", function () {
+        if (this.files.length > 0) {
+            this.classList.remove("error");
+            this.nextElementSibling.innerText = "";
+        }
+    });
+
+    // Mostra modale successo se presente
+    window.addEventListener("load", () => {
+        const successModal = document.getElementById("successModal");
+        if (successModal) {
+            successModal.style.display = "flex";
+        }
+    });
+</script>
+
+<p><a th:href="@{/}">Torna alla Home</a></p>
+</body>
+</html>

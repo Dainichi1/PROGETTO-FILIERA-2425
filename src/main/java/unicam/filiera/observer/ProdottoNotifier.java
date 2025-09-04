@@ -1,4 +1,4 @@
-package unicam.filiera.model.observer;
+package unicam.filiera.observer;
 
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Component;

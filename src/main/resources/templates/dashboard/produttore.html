@@ -172,6 +172,38 @@
             successModal.style.display = "flex";
         }
     });
+
+    // Validazione client-side in tempo reale per Produttore
+    document.querySelectorAll("#createProductForm input, #createProductForm textarea").forEach(el => {
+        if (el.type !== "file") {
+            el.addEventListener("input", () => {
+                if (el.value.trim() !== "") {
+                    el.classList.remove("error");
+                    const errorSpan = el.nextElementSibling;
+                    if (errorSpan && errorSpan.classList.contains("error-message")) {
+                        errorSpan.innerText = "";
+                    }
+                }
+            });
+        }
+    });
+
+    // Certificati
+    document.getElementById("certificati").addEventListener("change", function () {
+        if (this.files.length > 0) {
+            this.classList.remove("error");
+            this.nextElementSibling.innerText = "";
+        }
+    });
+
+    // Foto
+    document.getElementById("foto").addEventListener("change", function () {
+        if (this.files.length > 0) {
+            this.classList.remove("error");
+            this.nextElementSibling.innerText = "";
+        }
+    });
+
 </script>
 
 <p><a th:href="@{/}">Torna alla Home</a></p>

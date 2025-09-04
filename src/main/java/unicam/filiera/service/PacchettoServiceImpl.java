@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -59,6 +60,25 @@ public class PacchettoServiceImpl implements PacchettoService {
     }
 
     @Override
+    public void aggiornaPacchetto(String nomeOriginale, PacchettoDto dto, String creatore) {
+        PacchettoEntity existing = pacchettoRepository.findByNomeAndCreatoDa(nomeOriginale, creatore)
+                .orElseThrow(() -> new IllegalArgumentException("Pacchetto non trovato per la modifica"));
+
+        if (existing.getStato() != StatoProdotto.RIFIUTATO) {
+            throw new IllegalStateException("Puoi modificare solo pacchetti con stato RIFIUTATO");
+        }
+
+        Pacchetto updated = PacchettoFactory.creaPacchetto(dto, creatore);
+        updated.setCommento(null);
+        updated.setStato(StatoProdotto.IN_ATTESA);
+
+        PacchettoEntity entity = mapToEntity(updated, dto, existing.getId());
+        pacchettoRepository.save(entity);
+
+        notifier.notificaTutti(updated, "NUOVO_PACCHETTO");
+    }
+
+    @Override
     public List<Pacchetto> getPacchettiCreatiDa(String creatore) {
         return pacchettoRepository.findByCreatoDa(creatore)
                 .stream()
@@ -88,36 +108,11 @@ public class PacchettoServiceImpl implements PacchettoService {
     }
 
     @Override
-    public void aggiornaPacchetto(String nomeOriginale, PacchettoDto dto, String creatore) {
-        PacchettoEntity existing = pacchettoRepository.findByNomeAndCreatoDa(nomeOriginale, creatore)
-                .orElseThrow(() -> new IllegalArgumentException("Pacchetto non trovato per la modifica"));
-
-        if (existing.getStato() != StatoProdotto.RIFIUTATO) {
-            throw new IllegalStateException("Puoi modificare solo pacchetti con stato RIFIUTATO");
-        }
-
-        Pacchetto updated = PacchettoFactory.creaPacchetto(dto, creatore);
-        updated.setCommento(null);
-        updated.setStato(StatoProdotto.IN_ATTESA);
-
-        PacchettoEntity entity = mapToEntity(updated, dto, existing.getId());
-        pacchettoRepository.save(entity);
-
-        notifier.notificaTutti(updated, "NUOVO_PACCHETTO");
-    }
-
-    @Override
     public void cambiaStatoPacchetto(String nome, String creatore, StatoProdotto nuovoStato, String commento) {
         PacchettoEntity entity = pacchettoRepository.findByNomeAndCreatoDa(nome, creatore)
                 .orElseThrow(() -> new IllegalArgumentException("Pacchetto non trovato"));
 
-        entity.setStato(nuovoStato);
-
-        if (nuovoStato == StatoProdotto.RIFIUTATO) {
-            entity.setCommento((commento != null && !commento.isBlank()) ? commento : null);
-        } else {
-            entity.setCommento(null);
-        }
+        aggiornaStatoECommento(entity, nuovoStato, commento);
 
         pacchettoRepository.save(entity);
 
@@ -126,6 +121,41 @@ public class PacchettoServiceImpl implements PacchettoService {
                 pacchetto,
                 nuovoStato == StatoProdotto.APPROVATO ? "APPROVATO" : "RIFIUTATO"
         );
+    }
+
+    // =======================
+    // Stato Helper
+    // =======================
+
+    private void aggiornaStatoECommento(PacchettoEntity entity, StatoProdotto nuovoStato, String commento) {
+        entity.setStato(nuovoStato);
+        if (nuovoStato == StatoProdotto.RIFIUTATO) {
+            entity.setCommento((commento != null && !commento.isBlank()) ? commento : null);
+        } else {
+            entity.setCommento(null);
+        }
+    }
+
+    // =======================
+    // File Helper
+    // =======================
+
+    private String salvaMultipartFile(MultipartFile multipartFile, String destDir) {
+        try {
+            String filename = UUID.randomUUID() + "_" + multipartFile.getOriginalFilename();
+            Path path = Paths.get(destDir, filename);
+            Files.copy(multipartFile.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
+            return filename;
+        } catch (IOException e) {
+            throw new RuntimeException("Errore nel salvataggio del file " + multipartFile.getOriginalFilename(), e);
+        }
+    }
+
+    private String toCsv(List<MultipartFile> files, String dir) {
+        return files == null ? "" :
+                files.stream()
+                        .map(file -> salvaMultipartFile(file, dir))
+                        .collect(Collectors.joining(","));
     }
 
     // =======================
@@ -153,19 +183,8 @@ public class PacchettoServiceImpl implements PacchettoService {
                         .collect(Collectors.toSet());
         e.setProdotti(prodotti);
 
-        // Salvataggio fisico file
-        String certCsv = dto.getCertificati() == null ? "" :
-                dto.getCertificati().stream()
-                        .map(file -> salvaMultipartFile(file, CERT_DIR))
-                        .collect(Collectors.joining(","));
-
-        String fotoCsv = dto.getFoto() == null ? "" :
-                dto.getFoto().stream()
-                        .map(file -> salvaMultipartFile(file, FOTO_DIR))
-                        .collect(Collectors.joining(","));
-
-        e.setCertificati(certCsv);
-        e.setFoto(fotoCsv);
+        e.setCertificati(toCsv(dto.getCertificati(), CERT_DIR));
+        e.setFoto(toCsv(dto.getFoto(), FOTO_DIR));
 
         return e;
     }
@@ -192,20 +211,5 @@ public class PacchettoServiceImpl implements PacchettoService {
                         .map(ProdottoEntity::getNome)
                         .collect(Collectors.toList()))
                 .build();
-    }
-
-    // =======================
-    // File Helper
-    // =======================
-
-    private String salvaMultipartFile(MultipartFile multipartFile, String destDir) {
-        try {
-            String filename = UUID.randomUUID() + "_" + multipartFile.getOriginalFilename();
-            Path path = Paths.get(destDir, filename);
-            Files.copy(multipartFile.getInputStream(), path);
-            return filename;
-        } catch (IOException e) {
-            throw new RuntimeException("Errore nel salvataggio del file " + multipartFile.getOriginalFilename(), e);
-        }
     }
 }

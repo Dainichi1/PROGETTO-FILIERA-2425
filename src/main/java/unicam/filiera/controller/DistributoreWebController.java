@@ -1,6 +1,8 @@
 package unicam.filiera.controller;
 
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -8,6 +10,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import unicam.filiera.dto.PacchettoDto;
 import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.service.PacchettoService;
@@ -16,6 +19,8 @@ import unicam.filiera.service.ProdottoService;
 @Controller
 @RequestMapping("/distributore")
 public class DistributoreWebController {
+
+    private static final Logger log = LoggerFactory.getLogger(DistributoreWebController.class);
 
     private final PacchettoService pacchettoService;
     private final ProdottoService prodottoService;
@@ -46,10 +51,11 @@ public class DistributoreWebController {
     public String creaPacchetto(
             @Valid @ModelAttribute("pacchettoDto") PacchettoDto pacchettoDto,
             BindingResult bindingResult,
-            Model model,
-            Authentication authentication
+            Authentication authentication,
+            RedirectAttributes redirectAttrs,
+            Model model
     ) {
-        // Validazione manuale per file
+        // Validazione manuale file
         if (pacchettoDto.getCertificati() == null || pacchettoDto.getCertificati().isEmpty()
                 || pacchettoDto.getCertificati().stream().allMatch(MultipartFile::isEmpty)) {
             bindingResult.rejectValue("certificati", "error.certificati", "⚠ Devi caricare almeno un certificato");
@@ -59,16 +65,17 @@ public class DistributoreWebController {
             bindingResult.rejectValue("foto", "error.foto", "⚠ Devi caricare almeno una foto");
         }
 
-        // Validazione per prodotti selezionati (min 2)
+        // Validazione extra sui prodotti selezionati
         if (pacchettoDto.getProdottiSelezionati() == null || pacchettoDto.getProdottiSelezionati().size() < 2) {
             bindingResult.rejectValue("prodottiSelezionati", "error.prodottiSelezionati",
                     "⚠ Devi selezionare almeno 2 prodotti per creare un pacchetto");
         }
 
         if (bindingResult.hasErrors()) {
+            log.warn("❌ Creazione pacchetto fallita per errori di validazione");
             model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
             model.addAttribute("showForm", true);
-            model.addAttribute("validationFailed", true); // come per il Produttore
+            model.addAttribute("validationFailed", true);
             return "dashboard/distributore";
         }
 
@@ -76,17 +83,16 @@ public class DistributoreWebController {
             String username = (authentication != null) ? authentication.getName() : "distributore_demo";
             pacchettoService.creaPacchetto(pacchettoDto, username);
 
-            model.addAttribute("successMessage", "Pacchetto inviato al Curatore con successo!");
-            model.addAttribute("pacchettoDto", new PacchettoDto());
-            model.addAttribute("showForm", false);
+            redirectAttrs.addFlashAttribute("successMessage", "✅ Pacchetto inviato al Curatore con successo!");
+            return "redirect:/distributore/dashboard";
 
         } catch (Exception ex) {
+            log.error("⚠️ Errore nella creazione del pacchetto", ex);
+            model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
             model.addAttribute("errorMessage", "Errore: " + ex.getMessage());
             model.addAttribute("showForm", true);
             model.addAttribute("validationFailed", true);
+            return "dashboard/distributore";
         }
-
-        model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
-        return "dashboard/distributore";
     }
 }

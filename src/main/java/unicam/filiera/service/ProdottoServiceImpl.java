@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -51,35 +52,6 @@ public class ProdottoServiceImpl implements ProdottoService {
     }
 
     @Override
-    public List<Prodotto> getProdottiCreatiDa(String creatore) {
-        return repository.findByCreatoDa(creatore)
-                .stream()
-                .map(this::mapToDomain)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<Prodotto> getProdottiByStato(StatoProdotto stato) {
-        return repository.findByStato(stato)
-                .stream()
-                .map(this::mapToDomain)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public void eliminaProdotto(String nome, String creatore) {
-        ProdottoEntity entity = repository.findByNomeAndCreatoDa(nome, creatore)
-                .orElseThrow(() -> new IllegalArgumentException("Prodotto non trovato"));
-
-        if (entity.getStato() == StatoProdotto.APPROVATO) {
-            throw new IllegalStateException("Non puoi eliminare un prodotto già approvato");
-        }
-
-        repository.delete(entity);
-        notifier.notificaTutti(mapToDomain(entity), "ELIMINATO_PRODOTTO");
-    }
-
-    @Override
     public void aggiornaProdotto(String nomeOriginale, ProdottoDto dto, String creatore) {
         ProdottoEntity existing = repository.findByNomeAndCreatoDa(nomeOriginale, creatore)
                 .orElseThrow(() -> new IllegalArgumentException("Prodotto non trovato per la modifica"));
@@ -99,24 +71,51 @@ public class ProdottoServiceImpl implements ProdottoService {
     }
 
     @Override
+    public List<Prodotto> getProdottiCreatiDa(String creatore) {
+        return repository.findByCreatoDa(creatore)
+                .stream()
+                .map(this::mapToDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Prodotto> getProdottiByStato(StatoProdotto stato) {
+        return repository.findByStato(stato)
+                .stream()
+                .map(this::mapToDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Prodotto> getProdottiApprovatiByProduttore(String usernameProduttore) {
+        return repository.findByStatoAndCreatoDa(StatoProdotto.APPROVATO, usernameProduttore)
+                .stream()
+                .map(this::mapToDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void eliminaProdotto(String nome, String creatore) {
+        ProdottoEntity entity = repository.findByNomeAndCreatoDa(nome, creatore)
+                .orElseThrow(() -> new IllegalArgumentException("Prodotto non trovato"));
+
+        if (entity.getStato() == StatoProdotto.APPROVATO) {
+            throw new IllegalStateException("Non puoi eliminare un prodotto già approvato");
+        }
+
+        repository.delete(entity);
+        notifier.notificaTutti(mapToDomain(entity), "ELIMINATO_PRODOTTO");
+    }
+
+    @Override
     public void cambiaStatoProdotto(String nome, String creatore, StatoProdotto nuovoStato, String commento) {
         ProdottoEntity entity = repository.findByNomeAndCreatoDa(nome, creatore)
                 .orElseThrow(() -> new IllegalArgumentException("Prodotto non trovato"));
 
-        // Aggiorna stato
-        entity.setStato(nuovoStato);
-
-        if (nuovoStato == StatoProdotto.RIFIUTATO) {
-            // Se ho scritto un commento lo salvo, altrimenti metto null
-            entity.setCommento((commento != null && !commento.isBlank()) ? commento : null);
-        } else {
-            // Se approvato → niente commento
-            entity.setCommento(null);
-        }
+        aggiornaStatoECommento(entity, nuovoStato, commento);
 
         repository.save(entity);
 
-        // Converte a dominio e notifica gli osservatori
         Prodotto prodotto = mapToDomain(entity);
         notifier.notificaTutti(
                 prodotto,
@@ -124,6 +123,33 @@ public class ProdottoServiceImpl implements ProdottoService {
         );
     }
 
+    // =======================
+    // Stato Helper
+    // =======================
+
+    private void aggiornaStatoECommento(ProdottoEntity entity, StatoProdotto nuovoStato, String commento) {
+        entity.setStato(nuovoStato);
+        if (nuovoStato == StatoProdotto.RIFIUTATO) {
+            entity.setCommento((commento != null && !commento.isBlank()) ? commento : null);
+        } else {
+            entity.setCommento(null);
+        }
+    }
+
+    // =======================
+    // File Helper
+    // =======================
+
+    private String salvaMultipartFile(MultipartFile multipartFile, String destDir) {
+        try {
+            String filename = UUID.randomUUID() + "_" + multipartFile.getOriginalFilename();
+            Path path = Paths.get(destDir, filename);
+            Files.copy(multipartFile.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
+            return filename;
+        } catch (IOException e) {
+            throw new RuntimeException("Errore nel salvataggio del file " + multipartFile.getOriginalFilename(), e);
+        }
+    }
 
     // =======================
     // Mapping Helpers
@@ -141,19 +167,8 @@ public class ProdottoServiceImpl implements ProdottoService {
         e.setStato(prodotto.getStato());
         e.setCommento(prodotto.getCommento());
 
-        // Salvataggio fisico file
-        String certCsv = dto.getCertificati() == null ? "" :
-                dto.getCertificati().stream()
-                        .map(file -> salvaMultipartFile(file, CERT_DIR))
-                        .collect(Collectors.joining(","));
-
-        String fotoCsv = dto.getFoto() == null ? "" :
-                dto.getFoto().stream()
-                        .map(file -> salvaMultipartFile(file, FOTO_DIR))
-                        .collect(Collectors.joining(","));
-
-        e.setCertificati(certCsv);
-        e.setFoto(fotoCsv);
+        e.setCertificati(toCsv(dto.getCertificati(), CERT_DIR));
+        e.setFoto(toCsv(dto.getFoto(), FOTO_DIR));
 
         return e;
     }
@@ -178,18 +193,11 @@ public class ProdottoServiceImpl implements ProdottoService {
                 .build();
     }
 
-    // =======================
-    // File Helper
-    // =======================
-
-    private String salvaMultipartFile(MultipartFile multipartFile, String destDir) {
-        try {
-            String filename = UUID.randomUUID() + "_" + multipartFile.getOriginalFilename();
-            Path path = Paths.get(destDir, filename);
-            Files.copy(multipartFile.getInputStream(), path);
-            return filename;
-        } catch (IOException e) {
-            throw new RuntimeException("Errore nel salvataggio del file " + multipartFile.getOriginalFilename(), e);
-        }
+    // helper per conversione fileList → CSV
+    private String toCsv(List<MultipartFile> files, String dir) {
+        return files == null ? "" :
+                files.stream()
+                        .map(file -> salvaMultipartFile(file, dir))
+                        .collect(Collectors.joining(","));
     }
 }

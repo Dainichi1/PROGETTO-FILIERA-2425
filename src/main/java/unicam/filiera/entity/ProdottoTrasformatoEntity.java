@@ -5,11 +5,14 @@ import lombok.Getter;
 import lombok.Setter;
 import unicam.filiera.model.StatoProdotto;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Setter
 @Getter
 @Entity
-@Table(name = "prodotti")
-public class ProdottoEntity {
+@Table(name = "prodotti_trasformati")
+public class ProdottoTrasformatoEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,6 +42,15 @@ public class ProdottoEntity {
 
     private String commento;
 
+    // Relazione embedded invece del CSV
+    @ElementCollection
+    @CollectionTable(
+            name = "fasi_produzione",
+            joinColumns = @JoinColumn(name = "prodotto_trasformato_id")
+    )
+    private List<FaseProduzioneEmbeddable> fasiProduzione = new ArrayList<>();
+
+    // CSV dei nomi file
     @Column(length = 2000)
     private String certificati;
 

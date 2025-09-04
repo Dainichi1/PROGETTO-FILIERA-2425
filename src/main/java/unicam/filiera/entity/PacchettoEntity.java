@@ -1,9 +1,6 @@
 package unicam.filiera.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.Setter;
 import unicam.filiera.model.StatoProdotto;
@@ -21,29 +18,31 @@ public class PacchettoEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "⚠ Nome pacchetto obbligatorio")
+    @Column(nullable = false)
     private String nome;
 
-    @NotBlank(message = "⚠ Descrizione obbligatoria")
+    @Column(nullable = false)
     private String descrizione;
 
-    @NotBlank(message = "⚠ Indirizzo luogo vendita obbligatorio")
+    @Column(nullable = false)
     private String indirizzo;
 
-    @Min(value = 1, message = "⚠ La quantità deve essere almeno 1")
+    @Column(nullable = false)
     private int quantita;
 
-    @Positive(message = "⚠ Il prezzo deve essere positivo")
+    @Column(nullable = false)
     private double prezzo;
 
+    @Column(nullable = false)
     private String creatoDa;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private StatoProdotto stato = StatoProdotto.IN_ATTESA;
 
     private String commento;
 
-    // Relazione con i prodotti che compongono il pacchetto
+    // relazione con prodotti
     @ManyToMany
     @JoinTable(
             name = "pacchetto_prodotti",
@@ -52,7 +51,6 @@ public class PacchettoEntity {
     )
     private Set<ProdottoEntity> prodotti = new HashSet<>();
 
-    // Per semplicità: CSV di nomi file
     @Column(length = 2000)
     private String certificati;
 

@@ -1,123 +1,68 @@
 package unicam.filiera.dto;
 
-import java.io.File;
+import jakarta.validation.constraints.*;
+import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 
 /**
  * DTO per la creazione o modifica di un Prodotto Trasformato da parte del Trasformatore.
- * Incapsula tutti i campi del form della UI, compreso (per l’update) il nome originale,
- * e la lista delle fasi di produzione.
+ * Include le fasi di produzione che collegano produttori e prodotti base approvati.
  */
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
+@EqualsAndHashCode
 public class ProdottoTrasformatoDto {
 
-    private final String originalName;
+    private String originalName;
 
-    private final String nome;
-    private final String descrizione;
-    private final String quantitaTxt;
-    private final String prezzoTxt;
-    private final String indirizzo;
-    private final List<File> certificati;
-    private final List<File> foto;
-    private final List<FaseProduzioneDto> fasiProduzione;
+    @NotBlank(message = "⚠ Nome prodotto obbligatorio")
+    private String nome;
 
-    // Costruttore per "nuovo prodotto trasformato" (originalName = null)
-    public ProdottoTrasformatoDto(
-            String nome,
-            String descrizione,
-            String quantitaTxt,
-            String prezzoTxt,
-            String indirizzo,
-            List<File> certificati,
-            List<File> foto,
-            List<FaseProduzioneDto> fasiProduzione) {
-        this(null, nome, descrizione, quantitaTxt, prezzoTxt, indirizzo, certificati, foto, fasiProduzione);
-    }
+    @NotBlank(message = "⚠ Descrizione obbligatoria")
+    private String descrizione;
 
-    // Costruttore completo (usato per modifica)
-    public ProdottoTrasformatoDto(
-            String originalName,
-            String nome,
-            String descrizione,
-            String quantitaTxt,
-            String prezzoTxt,
-            String indirizzo,
-            List<File> certificati,
-            List<File> foto,
-            List<FaseProduzioneDto> fasiProduzione) {
-        this.originalName = originalName;
-        this.nome = nome;
-        this.descrizione = descrizione;
-        this.quantitaTxt = quantitaTxt;
-        this.prezzoTxt = prezzoTxt;
-        this.indirizzo = indirizzo;
-        this.certificati = certificati;
-        this.foto = foto;
-        this.fasiProduzione = fasiProduzione;
-    }
+    @NotNull(message = "⚠ Inserisci la quantità")
+    @Min(value = 1, message = "⚠ La quantità deve essere almeno 1")
+    private Integer quantita;
 
-    public String getOriginalName() {
-        return originalName;
-    }
+    @NotNull(message = "⚠ Inserisci un prezzo")
+    @Positive(message = "⚠ Il prezzo deve essere positivo")
+    private Double prezzo;
 
-    public String getNome() {
-        return nome;
-    }
+    @NotBlank(message = "⚠ Indirizzo obbligatorio")
+    private String indirizzo;
 
-    public String getDescrizione() {
-        return descrizione;
-    }
-
-    public String getQuantitaTxt() {
-        return quantitaTxt;
-    }
-
-    public String getPrezzoTxt() {
-        return prezzoTxt;
-    }
-
-    public String getIndirizzo() {
-        return indirizzo;
-    }
-
-    public List<File> getCertificati() {
-        return certificati;
-    }
-
-    public List<File> getFoto() {
-        return foto;
-    }
-
-    public List<FaseProduzioneDto> getFasiProduzione() {
-        return fasiProduzione;
-    }
+    // File caricati (validazione gestita nei Controller)
+    private List<MultipartFile> certificati;
+    private List<MultipartFile> foto;
 
     /**
-     * Mini-DTO che rappresenta una singola fase di produzione
-     * del prodotto trasformato. Serve per trasferire dal form UI
-     * le info sulle fasi (descrizione, produttore, prodotto base).
+     * Elenco delle fasi di produzione del prodotto trasformato.
+     * Devono esserci almeno 2 fasi e i prodotti devono essere approvati.
      */
+    @Size(min = 2, message = "⚠ Devi inserire almeno 2 fasi di produzione")
+    private List<FaseProduzioneDto> fasiProduzione;
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @ToString
+    @EqualsAndHashCode
     public static class FaseProduzioneDto {
-        private final String descrizioneFase;
-        private final String produttore;         // può essere anche l'idProduttore
-        private final String prodottoProduttore; // può essere anche l'idProdotto
 
-        public FaseProduzioneDto(String descrizioneFase, String produttore, String prodottoProduttore) {
-            this.descrizioneFase = descrizioneFase;
-            this.produttore = produttore;
-            this.prodottoProduttore = prodottoProduttore;
-        }
+        @NotBlank(message = "⚠ Descrizione fase obbligatoria")
+        private String descrizioneFase;
 
-        public String getDescrizioneFase() {
-            return descrizioneFase;
-        }
+        @NotBlank(message = "⚠ Devi selezionare un produttore")
+        private String produttoreUsername;
 
-        public String getProduttore() {
-            return produttore;
-        }
-
-        public String getProdottoProduttore() {
-            return prodottoProduttore;
-        }
+        @NotNull(message = "⚠ Devi selezionare un prodotto base")
+        private Long prodottoOrigineId;
     }
 }

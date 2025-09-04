@@ -18,13 +18,8 @@ public interface ProdottoService {
 
     void eliminaProdotto(String nome, String creatore);
 
-    /**
-     * Permette al Curatore di aggiornare lo stato e il commento di un prodotto.
-     *
-     * @param nome nome del prodotto
-     * @param creatore username del produttore
-     * @param nuovoStato nuovo stato (APPROVATO o RIFIUTATO)
-     * @param commento eventuale commento (solo in caso di RIFIUTO)
-     */
     void cambiaStatoProdotto(String nome, String creatore, StatoProdotto nuovoStato, String commento);
+
+    // solo prodotti approvati del produttore selezionato
+    List<Prodotto> getProdottiApprovatiByProduttore(String usernameProduttore);
 }

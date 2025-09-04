@@ -8,10 +8,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-/**
- * DTO per la creazione o modifica di un Prodotto da parte del produttore.
- * Incapsula tutti i campi del form della UI.
- */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -36,6 +32,7 @@ public class ProdottoDto {
     @NotBlank(message = "⚠ Indirizzo obbligatorio")
     private String indirizzo;
 
+    // Validazione gestita manualmente nel Controller
     private List<MultipartFile> certificati;
     private List<MultipartFile> foto;
 

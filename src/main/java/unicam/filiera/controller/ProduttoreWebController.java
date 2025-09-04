@@ -55,6 +55,7 @@ public class ProduttoreWebController {
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("showForm", true);
+            model.addAttribute("validationFailed", true); // serve alla view per mostrare subito errori
             return "dashboard/produttore";
         }
 

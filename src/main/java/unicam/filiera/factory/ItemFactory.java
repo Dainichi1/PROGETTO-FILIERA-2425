@@ -22,26 +22,19 @@ public final class ItemFactory {
 
     private ItemFactory() {}
 
-    /**
-     * Tipi di Item supportati dalla factory.
-     */
     public enum TipoItem {
         PRODOTTO,
         PACCHETTO,
         PRODOTTO_TRASFORMATO
     }
 
-    /**
-     * DTO + creatore incapsulati in un unico oggetto.
-     */
     public static record Data(Object dto, String creatore) {}
 
-    // Registry delle strategie: TipoItem → funzione di costruzione
     private static final Map<TipoItem, Function<Data, Item>> registry =
             new EnumMap<>(TipoItem.class);
 
     static {
-        // Strategia: PRODOTTO
+        // --- Strategia: PRODOTTO ---
         registry.put(TipoItem.PRODOTTO, data -> {
             if (!(data.dto() instanceof ProdottoDto dto)) {
                 throw new IllegalArgumentException("DTO non valido per PRODOTTO");
@@ -67,7 +60,7 @@ public final class ItemFactory {
                     .build();
         });
 
-        // Strategia: PACCHETTO
+        // --- Strategia: PACCHETTO ---
         registry.put(TipoItem.PACCHETTO, data -> {
             if (!(data.dto() instanceof PacchettoDto dto)) {
                 throw new IllegalArgumentException("DTO non valido per PACCHETTO");
@@ -82,7 +75,7 @@ public final class ItemFactory {
                     .prodotti(dto.getProdottiSelezionati() == null
                             ? java.util.List.of()
                             : dto.getProdottiSelezionati().stream()
-                            .map(Object::toString) // ID convertiti in stringa
+                            .map(Object::toString)
                             .collect(Collectors.toList()))
                     .certificati(dto.getCertificati() == null ?
                             java.util.List.of() : dto.getCertificati().stream()
@@ -98,7 +91,36 @@ public final class ItemFactory {
                     .build();
         });
 
+        // --- Strategia: PRODOTTO_TRASFORMATO ---
+        registry.put(TipoItem.PRODOTTO_TRASFORMATO, data -> {
+            if (!(data.dto() instanceof ProdottoTrasformatoDto dto)) {
+                throw new IllegalArgumentException("DTO non valido per PRODOTTO_TRASFORMATO");
+            }
 
+            return new ProdottoTrasformato.Builder()
+                    .nome(dto.getNome())
+                    .descrizione(dto.getDescrizione())
+                    .quantita(dto.getQuantita())
+                    .prezzo(dto.getPrezzo())
+                    .indirizzo(dto.getIndirizzo())
+                    .fasiProduzione(dto.getFasiProduzione() == null
+                            ? java.util.List.of()
+                            : dto.getFasiProduzione().stream()
+                            .map(FaseProduzione::fromDto)   // usa il convertitore corretto
+                            .collect(Collectors.toList()))
+                    .certificati(dto.getCertificati() == null ?
+                            java.util.List.of() : dto.getCertificati().stream()
+                            .map(MultipartFile::getOriginalFilename)
+                            .collect(Collectors.toList()))
+                    .foto(dto.getFoto() == null ?
+                            java.util.List.of() : dto.getFoto().stream()
+                            .map(MultipartFile::getOriginalFilename)
+                            .collect(Collectors.toList()))
+                    .creatoDa(data.creatore())
+                    .stato(StatoProdotto.IN_ATTESA)
+                    .commento(null)
+                    .build();
+        });
     }
 
     public static void register(TipoItem tipo, Function<Data, Item> creator) {

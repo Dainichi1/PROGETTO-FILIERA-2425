@@ -1,42 +1,66 @@
 package unicam.filiera.model;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
+import unicam.filiera.dto.ProdottoTrasformatoDto;
+
+import java.util.Objects;
+
+/**
+ * Value Object che rappresenta una fase di produzione
+ * di un prodotto trasformato.
+ */
+@Getter
+@ToString
+@EqualsAndHashCode
 public class FaseProduzione {
+
     private final String descrizioneFase;
-    private final String produttoreUsername;     // Username del produttore
-    private final String prodottoOrigine;        // Nome (o id) del prodotto collegato
+    private final String produttoreUsername; // Username (o id) del produttore
+    private final Long prodottoOrigineId;    // ID del prodotto base
 
-    // Costruttore per DAO/DTO
-    public FaseProduzione(String descrizioneFase, String produttoreUsername, String prodottoOrigine) {
-        this.descrizioneFase = descrizioneFase;
-        this.produttoreUsername = produttoreUsername;
-        this.prodottoOrigine = prodottoOrigine;
+    public FaseProduzione(String descrizioneFase, String produttoreUsername, Long prodottoOrigineId) {
+        this.descrizioneFase = Objects.requireNonNull(descrizioneFase, "Descrizione fase obbligatoria").trim();
+        this.produttoreUsername = Objects.requireNonNull(produttoreUsername, "Produttore obbligatorio").trim();
+        this.prodottoOrigineId = Objects.requireNonNull(prodottoOrigineId, "Prodotto origine obbligatorio");
     }
 
-    public String getDescrizioneFase() {
-        return descrizioneFase;
-    }
-
-    public String getProduttoreUsername() {
-        return produttoreUsername;
-    }
-
-    public String getProdottoOrigine() {
-        return prodottoOrigine;
-    }
-
-    public static FaseProduzione fromDto(unicam.filiera.dto.ProdottoTrasformatoDto.FaseProduzioneDto dto) {
+    /* --- Factory Methods --- */
+    public static FaseProduzione fromDto(ProdottoTrasformatoDto.FaseProduzioneDto dto) {
+        if (dto == null) {
+            throw new IllegalArgumentException("DTO non può essere null");
+        }
         return new FaseProduzione(
                 dto.getDescrizioneFase(),
-                dto.getProduttore(),
-                dto.getProdottoProduttore()
+                dto.getProduttoreUsername(),
+                dto.getProdottoOrigineId()
         );
     }
 
-    @Override
-    public String toString() {
-        return "[Fase: " + descrizioneFase +
-                ", Produttore: " + produttoreUsername +
-                ", Prodotto: " + prodottoOrigine +
-                "]";
+    public static FaseProduzione fromCsvString(String csv) {
+        if (csv == null || csv.isBlank()) {
+            throw new IllegalArgumentException("CSV vuoto o nullo per FaseProduzione");
+        }
+        String[] parts = csv.split("\\|", -1);
+        if (parts.length != 3) {
+            throw new IllegalArgumentException("Formato CSV non valido per FaseProduzione: " + csv);
+        }
+        return new FaseProduzione(parts[0], parts[1], Long.valueOf(parts[2]));
+    }
+
+    public static boolean isValidCsv(String csv) {
+        if (csv == null || csv.isBlank()) return false;
+        String[] parts = csv.split("\\|", -1);
+        return parts.length == 3 &&
+                !parts[0].isBlank() &&
+                !parts[1].isBlank() &&
+                !parts[2].isBlank();
+    }
+
+    public String toCsvString() {
+        return descrizioneFase.strip() + "|" +
+                produttoreUsername.strip() + "|" +
+                prodottoOrigineId;
     }
 }

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<head>
+    <title>Dashboard Trasformatore</title>
+    <meta charset="UTF-8"/>
+    <style>
+        .form-container {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background-color: #f9f9f9;
+            max-width: 600px;
+        }
+
+        .form-container label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .form-container input, .form-container textarea, .form-container select {
+            width: 100%;
+            padding: 6px;
+            margin-top: 5px;
+        }
+
+        .form-container input.error, .form-container textarea.error, .form-container select.error {
+            border: 2px solid red;
+        }
+
+        .error-message {
+            color: red;
+            font-size: 0.9rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        /* gestione via classList */
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .modal-content button {
+            margin: 10px;
+            padding: 8px 16px;
+        }
+    </style>
+</head>
+<body>
+
+<h1 th:text="'Benvenuto ' + ${utente != null ? utente.nome : 'Utente'} + ', il tuo ruolo è Trasformatore.'">
+    Benvenuto, il tuo ruolo è Trasformatore.
+</h1>
+
+<h2>Dashboard Trasformatore</h2>
+
+<!-- Bottone per aprire il form -->
+<button type="button" onclick="toggleForm()">Crea Prodotto Trasformato</button>
+
+<div id="trasformatoForm" class="form-container"
+     th:style="${showForm} ? 'display:block;' : 'display:none;'">
+
+    <h3>Nuovo Prodotto Trasformato</h3>
+    <form id="createTrasformatoForm"
+          th:action="@{/trasformatore/crea}"
+          th:object="${trasformatoDto}"
+          method="post"
+          enctype="multipart/form-data">
+
+        <!-- Nome -->
+        <label for="nome">Nome Prodotto:</label>
+        <input type="text" th:field="*{nome}" id="nome"
+               th:classappend="${#fields.hasErrors('nome')} ? 'error'"/>
+        <span class="error-message" th:errors="*{nome}"></span>
+
+        <!-- Descrizione -->
+        <label for="descrizione">Descrizione:</label>
+        <textarea th:field="*{descrizione}" id="descrizione"
+                  th:classappend="${#fields.hasErrors('descrizione')} ? 'error'"></textarea>
+        <span class="error-message" th:errors="*{descrizione}"></span>
+
+        <!-- Quantità -->
+        <label for="quantita">Quantità:</label>
+        <input type="number" th:field="*{quantita}" id="quantita"
+               th:classappend="${#fields.hasErrors('quantita')} ? 'error'"/>
+        <span class="error-message" th:errors="*{quantita}"></span>
+
+        <!-- Prezzo -->
+        <label for="prezzo">Prezzo:</label>
+        <input type="number" step="0.01" th:field="*{prezzo}" id="prezzo"
+               th:classappend="${#fields.hasErrors('prezzo')} ? 'error'"/>
+        <span class="error-message" th:errors="*{prezzo}"></span>
+
+        <!-- Indirizzo -->
+        <label for="indirizzo">Indirizzo:</label>
+        <input type="text" th:field="*{indirizzo}" id="indirizzo"
+               th:classappend="${#fields.hasErrors('indirizzo')} ? 'error'"/>
+        <span class="error-message" th:errors="*{indirizzo}"></span>
+
+        <!-- Certificati -->
+        <label for="certificati">Seleziona certificati:</label>
+        <input type="file" th:field="*{certificati}" id="certificati" multiple
+               th:classappend="${#fields.hasErrors('certificati')} ? 'error'"/>
+        <span class="error-message" th:errors="*{certificati}"></span>
+
+        <!-- Foto -->
+        <label for="foto">Seleziona foto:</label>
+        <input type="file" th:field="*{foto}" id="foto" multiple
+               th:classappend="${#fields.hasErrors('foto')} ? 'error'"/>
+        <span class="error-message" th:errors="*{foto}"></span>
+
+        <!-- Sezione Fasi -->
+        <h4>Fasi di Trasformazione</h4>
+        <div id="fasiContainer">
+            <p th:if="${trasformatoDto.fasiProduzione == null or trasformatoDto.fasiProduzione.isEmpty()}">
+                Nessuna fase aggiunta.
+            </p>
+            <ul id="fasiList">
+                <li th:each="fase : ${trasformatoDto.fasiProduzione}">
+                    <span th:text="${fase.descrizioneFase}">Descrizione fase</span> -
+                    <span th:text="${fase.produttoreUsername}">Produttore</span> -
+                    <span th:text="${fase.prodottoOrigineId}">Prodotto base</span>
+                    <button type="button" onclick="rimuoviFase(this)">Rimuovi</button>
+                </li>
+            </ul>
+        </div>
+        <span class="error-message" th:errors="*{fasiProduzione}"></span>
+
+        <button type="button" onclick="openFaseModal()">Aggiungi Fase</button>
+
+
+        <!-- Pulsanti -->
+        <button type="button" onclick="openConfirmModal()">Invia Prodotto Trasformato</button>
+        <button type="button" onclick="toggleForm()">Chiudi Form</button>
+    </form>
+</div>
+
+<!-- Modale conferma invio -->
+<div id="confirmModal" class="modal">
+    <div class="modal-content">
+        <p>Inviare il prodotto trasformato al Curatore per approvazione?</p>
+        <button onclick="submitForm()">Sì</button>
+        <button type="button" onclick="closeModal('confirmModal')">No</button>
+    </div>
+</div>
+
+<!-- Modale successo -->
+<div id="successModal" class="modal" th:if="${successMessage}">
+    <div class="modal-content">
+        <p th:text="${successMessage}">Prodotto trasformato inviato al Curatore!</p>
+        <button onclick="window.location.href='/trasformatore/dashboard'">OK</button>
+    </div>
+</div>
+
+<!-- Modale Aggiungi Fase -->
+<div id="faseModal" class="modal">
+    <div class="modal-content">
+        <h3>Aggiungi Fase</h3>
+        <label for="faseDescrizione">Descrizione fase:</label>
+        <input type="text" id="faseDescrizione" required/>
+
+        <label for="faseProduttore">Produttore:</label>
+        <select id="faseProduttore" required>
+            <option value="">-- Seleziona Produttore --</option>
+            <option th:each="prod : ${produttori}"
+                    th:value="${prod.username}"
+                    th:text="${prod.nome + ' ' + prod.cognome}"></option>
+        </select>
+
+        <label for="faseProdottoBase">Prodotto base:</label>
+        <select id="faseProdottoBase" required>
+            <option value="">-- Seleziona Prodotto Base --</option>
+        </select>
+
+        <div style="margin-top:15px;">
+            <button type="button" onclick="aggiungiFase()">OK</button>
+            <button type="button" onclick="closeModal('faseModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleForm() {
+        const form = document.getElementById("trasformatoForm");
+        form.style.display = (form.style.display === "none") ? "block" : "none";
+    }
+
+    function openConfirmModal() {
+        document.getElementById("confirmModal").classList.add("show");
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove("show");
+    }
+
+    function submitForm() {
+        closeModal("confirmModal");
+        document.getElementById("createTrasformatoForm").submit();
+    }
+
+    function openFaseModal() {
+        document.getElementById("faseModal").classList.add("show");
+    }
+
+    function aggiungiFase() {
+        const descrizione = document.getElementById("faseDescrizione").value.trim();
+        const produttoreSelect = document.getElementById("faseProduttore");
+        const produttore = produttoreSelect.value;
+        const produttoreText = produttoreSelect.selectedOptions[0]?.text || "";
+
+        const prodottoSelect = document.getElementById("faseProdottoBase");
+        const prodottoBase = prodottoSelect.value;
+        const prodottoText = prodottoSelect.selectedOptions[0]?.text || "";
+
+        if (!descrizione || !produttore || !prodottoBase) {
+            alert("Tutti i campi della fase sono obbligatori!");
+            return;
+        }
+
+        const container = document.getElementById("fasiList");
+        const index = container.children.length; // indice fase
+        const li = document.createElement("li");
+
+        li.innerHTML = `
+        ${descrizione} - Produttore: ${produttoreText} - Prodotto: ${prodottoText}
+        <button type="button" onclick="rimuoviFase(this)">Rimuovi</button>
+        <!-- Hidden inputs per il backend -->
+        <input type="hidden" name="fasiProduzione[${index}].descrizioneFase" value="${descrizione}">
+        <input type="hidden" name="fasiProduzione[${index}].produttoreUsername" value="${produttore}">
+        <input type="hidden" name="fasiProduzione[${index}].prodottoOrigineId" value="${prodottoBase}">
+    `;
+
+        container.appendChild(li);
+
+        // Reset campi
+        closeModal("faseModal");
+        document.getElementById("faseDescrizione").value = "";
+        document.getElementById("faseProduttore").value = "";
+        document.getElementById("faseProdottoBase").innerHTML = '<option value="">-- Seleziona Prodotto Base --</option>';
+    }
+
+    function rimuoviFase(button) {
+        const li = button.parentElement;
+        li.remove();
+
+        // Risincronizza gli indici dopo la rimozione
+        const container = document.getElementById("fasiList");
+        [...container.children].forEach((li, i) => {
+            const inputs = li.querySelectorAll("input[type='hidden']");
+            inputs[0].name = `fasiProduzione[${i}].descrizioneFase`;
+            inputs[1].name = `fasiProduzione[${i}].produttoreUsername`;
+            inputs[2].name = `fasiProduzione[${i}].prodottoOrigineId`;
+        });
+    }
+
+
+    // Popola dinamicamente i prodotti approvati del produttore selezionato
+    document.getElementById("faseProduttore").addEventListener("change", function () {
+        const username = this.value;
+        const selectProdotti = document.getElementById("faseProdottoBase");
+        selectProdotti.innerHTML = '<option value="">-- Seleziona Prodotto Base --</option>';
+
+        if (!username) return;
+
+        fetch(`/trasformatore/prodotti/${username}`)
+            .then(response => response.json())
+            .then(prodotti => {
+                prodotti.forEach(p => {
+                    const option = document.createElement("option");
+                    option.value = p.id;
+                    option.textContent = p.nome;
+                    selectProdotti.appendChild(option);
+                });
+            })
+            .catch(err => {
+                console.error("Errore nel caricamento dei prodotti:", err);
+            });
+    });
+
+    // Rimuovi errori in tempo reale
+    document.querySelectorAll("#createTrasformatoForm input, #createTrasformatoForm textarea, #createTrasformatoForm select")
+        .forEach(el => {
+            el.addEventListener("input", () => {
+                if (el.value.trim() !== "") {
+                    el.classList.remove("error");
+                    const errorSpan = el.nextElementSibling;
+                    if (errorSpan && errorSpan.classList.contains("error-message")) {
+                        errorSpan.innerText = "";
+                    }
+                }
+            });
+        });
+
+    // File input
+    document.getElementById("certificati").addEventListener("change", function () {
+        if (this.files.length > 0) {
+            this.classList.remove("error");
+            this.nextElementSibling.innerText = "";
+        }
+    });
+    document.getElementById("foto").addEventListener("change", function () {
+        if (this.files.length > 0) {
+            this.classList.remove("error");
+            this.nextElementSibling.innerText = "";
+        }
+    });
+
+    // Mostra modale successo se presente
+    window.addEventListener("load", () => {
+        const successModal = document.getElementById("successModal");
+        if (successModal) {
+            successModal.classList.add("show");
+        }
+    });
+</script>
+
+
+<p><a th:href="@{/}">Torna alla Home</a></p>
+</body>
+</html>

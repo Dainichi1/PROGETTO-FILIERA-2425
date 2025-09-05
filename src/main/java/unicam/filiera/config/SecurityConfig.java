@@ -23,7 +23,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**"))
                 .headers(h -> h.frameOptions(f -> f.sameOrigin()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/register", "/login", "/h2-console/**", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/", "/register", "/login", "/h2-console/**", "/css/**", "/static/js/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(f -> f

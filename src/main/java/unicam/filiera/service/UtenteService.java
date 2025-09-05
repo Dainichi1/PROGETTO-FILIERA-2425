@@ -3,7 +3,10 @@ package unicam.filiera.service;
 import org.springframework.stereotype.Service;
 import unicam.filiera.controller.RegistrazioneEsito;
 import unicam.filiera.entity.UtenteEntity;
+import unicam.filiera.model.Ruolo;
 import unicam.filiera.repository.UtenteRepository;
+
+import java.util.List;
 
 @Service
 public class UtenteService {
@@ -23,5 +26,12 @@ public class UtenteService {
         }
         repo.save(u);
         return RegistrazioneEsito.SUCCESSO;
+    }
+
+    /**
+     * Restituisce tutti gli utenti con ruolo PRODUTTORE.
+     */
+    public List<UtenteEntity> getProduttori() {
+        return repo.findByRuolo(Ruolo.PRODUTTORE);
     }
 }

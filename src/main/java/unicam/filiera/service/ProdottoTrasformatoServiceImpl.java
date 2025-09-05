@@ -84,6 +84,7 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
     public List<ProdottoTrasformato> getProdottiTrasformatiByStato(StatoProdotto stato) {
         return repository.findByStato(stato)
                 .stream()
+                .filter(e -> e.getFasiProduzione() != null && e.getFasiProduzione().size() >= 2)
                 .map(this::mapToDomain)
                 .collect(Collectors.toList());
     }

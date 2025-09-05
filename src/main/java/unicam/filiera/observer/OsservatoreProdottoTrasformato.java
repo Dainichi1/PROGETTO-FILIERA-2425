@@ -1,4 +1,4 @@
-package unicam.filiera.model.observer;
+package unicam.filiera.observer;
 
 import unicam.filiera.model.ProdottoTrasformato;
 

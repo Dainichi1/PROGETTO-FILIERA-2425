@@ -162,6 +162,71 @@
     </tbody>
 </table>
 
+<!-- ====== TRASFORMATI ====== -->
+<h3>Prodotti Trasformati in attesa di approvazione</h3>
+<table>
+    <thead>
+    <tr>
+        <th>Nome</th><th>Creatore</th><th>Descrizione</th><th>Quantità</th><th>Prezzo</th><th>Indirizzo</th>
+        <th>Certificati</th><th>Foto</th><th>Fasi Produzione</th>
+        <th>Accetta</th><th>Rifiuta</th><th>Commento</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="trasf : ${trasformati}">
+        <td th:text="${trasf.nome}">Nome</td>
+        <td th:text="${trasf.creatoDa}">Creatore</td>
+        <td th:text="${trasf.descrizione}">Descrizione</td>
+        <td th:text="${trasf.quantita}">0</td>
+        <td th:text="${trasf.prezzo}">0.00</td>
+        <td th:text="${trasf.indirizzo}">Indirizzo</td>
+        <td>
+            <ul>
+                <li th:each="cert : ${trasf.certificati}">
+                    <a th:href="@{'/file/certificati/' + ${cert}}" target="_blank" th:text="${cert}"></a>
+                </li>
+            </ul>
+        </td>
+        <td>
+            <ul>
+                <li th:each="foto : ${trasf.foto}">
+                    <a th:href="@{'/file/foto/' + ${foto}}" target="_blank" th:text="${foto}"></a>
+                </li>
+            </ul>
+        </td>
+        <td>
+            <ul>
+                <li th:each="fase : ${trasf.fasiProduzione}">
+                    <span th:text="${fase.descrizioneFase}"></span> -
+                    <span th:text="${fase.produttoreUsername}"></span> -
+                    <span th:text="${fase.prodottoOrigineId}"></span>
+                </li>
+            </ul>
+        </td>
+        <td>
+            <form th:action="@{/curatore/approvaTrasformato}" method="post">
+                <input type="hidden" name="nome" th:value="${trasf.nome}"/>
+                <input type="hidden" name="creatore" th:value="${trasf.creatoDa}"/>
+                <button type="button" class="approve-btn" th:attr="data-nome=${trasf.nome}">Accetta</button>
+            </form>
+        </td>
+        <td>
+            <form th:action="@{/curatore/rifiutaTrasformato}" method="post" th:id="'form-rifiuta-trasf-' + ${trasf.nome} + '-' + ${trasf.creatoDa}">
+                <input type="hidden" name="nome" th:value="${trasf.nome}"/>
+                <input type="hidden" name="creatore" th:value="${trasf.creatoDa}"/>
+                <button type="button" class="reject-btn" th:attr="data-nome=${trasf.nome}">Rifiuta</button>
+            </form>
+        </td>
+        <td>
+            <input type="text" name="commento" class="commento-input"
+                   placeholder="Inserisci commento"
+                   th:form="'form-rifiuta-trasf-' + ${trasf.nome} + '-' + ${trasf.creatoDa}"/>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+
 <!-- Modali -->
 <div id="approveModal" class="modal">
     <div class="modal-content">

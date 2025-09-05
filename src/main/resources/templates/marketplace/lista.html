@@ -56,11 +56,22 @@
                    onclick="caricaDettagli(this.getAttribute('data-id'), this.getAttribute('data-tipo')); return false;"></a>
             </li>
         </ul>
+
+        <h3>Prodotti trasformati approvati</h3>
+        <ul>
+            <li th:each="t : ${trasformati}">
+                <a href="#"
+                   th:data-id="${t.id}"
+                   th:data-tipo="'trasformato'"
+                   th:text="${t.nome}"
+                   onclick="caricaDettagli(this.getAttribute('data-id'), this.getAttribute('data-tipo')); return false;"></a>
+            </li>
+        </ul>
     </div>
 
     <!-- Colonna destra -->
     <div class="destra" id="dettagli">
-        <p><i>Seleziona un prodotto o pacchetto per vedere i dettagli</i></p>
+        <p><i>Seleziona un prodotto, pacchetto o prodotto trasformato per vedere i dettagli</i></p>
     </div>
 </div>
 

@@ -12,6 +12,7 @@ import java.util.List;
 public class Pacchetto extends Item {
 
     /* --- campi specifici --- */
+    private final Long id;
     private final int quantita;
     private final double prezzo;
     private final List<String> prodotti; // lista di ID o nomi prodotti inclusi
@@ -28,6 +29,7 @@ public class Pacchetto extends Item {
                 b.stato,
                 b.commento
         );
+        this.id = b.id;
         this.quantita = b.quantita;
         this.prezzo = b.prezzo;
         this.prodotti = b.prodotti;
@@ -50,11 +52,17 @@ public class Pacchetto extends Item {
         private String commento;
 
         /* campi specifici (Pacchetto) */
+        private Long id;
         private int quantita;
         private double prezzo;
         private List<String> prodotti;
 
         /* ------- metodi ‘with’ ------- */
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
+
         public Builder nome(String n) {
             this.nome = n;
             return this;

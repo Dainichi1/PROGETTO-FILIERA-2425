@@ -1,6 +1,7 @@
 package unicam.filiera.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import unicam.filiera.model.StatoProdotto;
@@ -43,11 +44,12 @@ public class ProdottoTrasformatoEntity {
     private String commento;
 
     // Relazione embedded invece del CSV
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "fasi_produzione",
             joinColumns = @JoinColumn(name = "prodotto_trasformato_id")
     )
+    @Size(min = 2, message = "Un prodotto trasformato deve contenere almeno 2 fasi di produzione")
     private List<FaseProduzioneEmbeddable> fasiProduzione = new ArrayList<>();
 
     // CSV dei nomi file

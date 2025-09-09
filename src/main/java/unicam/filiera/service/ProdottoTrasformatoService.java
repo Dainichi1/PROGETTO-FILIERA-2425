@@ -23,4 +23,6 @@ public interface ProdottoTrasformatoService {
     void eliminaProdottoTrasformato(String nome, String creatore);
 
     void cambiaStatoProdottoTrasformato(String nome, String creatore, StatoProdotto nuovoStato, String commento);
+
+    void eliminaProdottoTrasformatoById(Long id, String creatore);
 }

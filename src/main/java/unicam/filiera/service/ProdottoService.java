@@ -22,4 +22,6 @@ public interface ProdottoService {
 
     // solo prodotti approvati del produttore selezionato
     List<Prodotto> getProdottiApprovatiByProduttore(String usernameProduttore);
+
+    void eliminaProdottoById(Long id, String creatore);
 }

@@ -20,7 +20,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**"))
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers(
+                                "/h2-console/**",
+                                "/trasformatore/elimina/**",
+                                "/distributore/elimina/**",
+                                "/produttore/elimina/**"   // disabilito CSRF per DELETE prodotto
+                        )
+                )
                 .headers(h -> h.frameOptions(f -> f.sameOrigin()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/register", "/login", "/h2-console/**", "/css/**", "/static/js/**").permitAll()
@@ -29,8 +36,8 @@ public class SecurityConfig {
                 .formLogin(f -> f
                         .loginPage("/login")
                         .loginProcessingUrl("/doLogin")
-                        .successHandler(successHandler)                // verifica ruolo selezionato
-                        .failureUrl("/login?error=credenziali")        // credenziali errate
+                        .successHandler(successHandler)      // verifica ruolo selezionato
+                        .failureUrl("/login?error=credenziali")
                         .permitAll()
                 )
                 .logout(l -> l

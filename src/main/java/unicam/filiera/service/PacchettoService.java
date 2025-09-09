@@ -27,4 +27,12 @@ public interface PacchettoService {
      * @param commento eventuale commento (solo in caso di RIFIUTO)
      */
     void cambiaStatoPacchetto(String nome, String creatore, StatoProdotto nuovoStato, String commento);
+
+    /**
+     * Elimina un pacchetto usando l'ID (solo se non è APPROVATO e appartiene al distributore).
+     *
+     * @param id id del pacchetto
+     * @param creatore username del distributore
+     */
+    void eliminaPacchettoById(Long id, String creatore);
 }

@@ -15,6 +15,7 @@
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px; border-radius: 8px; text-align: center; max-width: 400px; }
         .modal-content button { margin: 10px; padding: 8px 16px; }
+        .section-separator { margin:40px 0; border:none; border-top:2px dashed #bbb; }
     </style>
 </head>
 <body>
@@ -23,76 +24,138 @@
 </h1>
 
 <h2>Dashboard Distributore</h2>
+<h2>I tuoi Pacchetti</h2>
+
+<!-- Tabella pacchetti -->
+<table border="1" style="border-collapse: collapse; width: 100%; margin-top: 20px;">
+    <thead>
+    <tr style="background-color: #f0f0f0; text-align: center;">
+        <th>Nome</th><th>Descrizione</th><th>Quantità</th><th>Prezzo</th><th>Indirizzo</th>
+        <th>Certificati</th><th>Foto</th><th>Prodotti Inclusi</th>
+        <th>Stato</th><th>Commento</th><th>Elimina</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="pacchetto : ${pacchetti}" th:attr="data-id=${pacchetto.id}">
+        <td th:text="${pacchetto.nome}">Nome</td>
+        <td th:text="${pacchetto.descrizione}">Descrizione</td>
+        <td th:text="${pacchetto.quantita}">0</td>
+        <td th:text="${pacchetto.prezzo}">0.00</td>
+        <td th:text="${pacchetto.indirizzo}">Indirizzo</td>
+
+        <td>
+            <a th:each="cert : ${pacchetto.certificati}"
+               th:href="@{'/file/certificati/' + ${cert}}"
+               target="_blank" th:text="${cert}">Certificato</a>
+        </td>
+
+        <td>
+            <a th:each="foto : ${pacchetto.foto}"
+               th:href="@{'/file/foto/' + ${foto}}"
+               target="_blank" th:text="${foto}">Foto</a>
+        </td>
+
+        <td>
+            <ul>
+                <li th:each="p : ${pacchetto.prodotti}" th:text="${p}">Prodotto</li>
+            </ul>
+        </td>
+
+        <td th:text="${pacchetto.stato}">In attesa</td>
+        <td th:text="${pacchetto.commento}">Commento</td>
+
+        <td>
+            <button type="button"
+                    th:attr="data-id=${pacchetto.id}, data-stato=${pacchetto.stato}, data-nome=${pacchetto.nome}"
+                    onclick="handleDeleteClick(this)">Elimina</button>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<!-- Modali eliminazione -->
+<div id="deleteErrorModal" class="modal">
+    <div class="modal-content">
+        <p>Puoi eliminare solo pacchetti in attesa o rifiutati.</p>
+        <button onclick="closeModal('deleteErrorModal')">OK</button>
+    </div>
+</div>
+
+<div id="deleteConfirmModal" class="modal">
+    <div class="modal-content">
+        <p id="deleteConfirmMessage"></p>
+        <button onclick="confirmDelete()">Sì</button>
+        <button onclick="closeModal('deleteConfirmModal')">No</button>
+    </div>
+</div>
+
+<div id="deleteSuccessModal" class="modal">
+    <div class="modal-content">
+        <p id="deleteSuccessMessage"></p>
+        <button onclick="closeModal('deleteSuccessModal')">OK</button>
+    </div>
+</div>
+
+<div id="deleteGenericErrorModal" class="modal">
+    <div class="modal-content">
+        <p id="deleteGenericErrorMessage"></p>
+        <button onclick="closeModal('deleteGenericErrorModal')">OK</button>
+    </div>
+</div>
+
+<!-- Separatore -->
+<hr class="section-separator"/>
 
 <button type="button" onclick="toggleForm()">Crea Pacchetto</button>
 
+<!-- FORM CREAZIONE pacchetto (già funzionante) -->
 <div id="pacchettoForm" class="form-container"
      th:style="${showForm} ? 'display:block;' : 'display:none;'">
-
     <h3>Nuovo Pacchetto</h3>
     <form id="createPackageForm"
           th:action="@{/distributore/crea}"
           th:object="${pacchettoDto}"
-          method="post"
-          enctype="multipart/form-data">
+          method="post" enctype="multipart/form-data">
 
-        <!-- Nome -->
         <label for="nome">Nome Pacchetto:</label>
-        <input type="text" th:field="*{nome}" id="nome"
-               th:classappend="${#fields.hasErrors('nome')} ? 'error'"/>
+        <input type="text" th:field="*{nome}" id="nome" th:classappend="${#fields.hasErrors('nome')} ? 'error'"/>
         <span class="error-message" th:errors="*{nome}"></span>
 
-        <!-- Descrizione -->
         <label for="descrizione">Descrizione:</label>
-        <textarea th:field="*{descrizione}" id="descrizione"
-                  th:classappend="${#fields.hasErrors('descrizione')} ? 'error'"></textarea>
+        <textarea th:field="*{descrizione}" id="descrizione" th:classappend="${#fields.hasErrors('descrizione')} ? 'error'"></textarea>
         <span class="error-message" th:errors="*{descrizione}"></span>
 
-        <!-- Indirizzo -->
         <label for="indirizzo">Indirizzo luogo vendita:</label>
-        <input type="text" th:field="*{indirizzo}" id="indirizzo"
-               th:classappend="${#fields.hasErrors('indirizzo')} ? 'error'"/>
+        <input type="text" th:field="*{indirizzo}" id="indirizzo" th:classappend="${#fields.hasErrors('indirizzo')} ? 'error'"/>
         <span class="error-message" th:errors="*{indirizzo}"></span>
 
-        <!-- Prezzo -->
         <label for="prezzo">Prezzo totale:</label>
-        <input type="number" step="0.01" th:field="*{prezzo}" id="prezzo"
-               th:classappend="${#fields.hasErrors('prezzo')} ? 'error'"/>
+        <input type="number" step="0.01" th:field="*{prezzo}" id="prezzo" th:classappend="${#fields.hasErrors('prezzo')} ? 'error'"/>
         <span class="error-message" th:errors="*{prezzo}"></span>
 
-        <!-- Quantità -->
         <label for="quantita">Quantità:</label>
-        <input type="number" th:field="*{quantita}" id="quantita"
-               th:classappend="${#fields.hasErrors('quantita')} ? 'error'"/>
+        <input type="number" th:field="*{quantita}" id="quantita" th:classappend="${#fields.hasErrors('quantita')} ? 'error'"/>
         <span class="error-message" th:errors="*{quantita}"></span>
 
-        <!-- Prodotti approvati -->
         <label>Seleziona Prodotti Approvati (minimo 2):</label>
-        <div class="checkbox-list"
-             th:classappend="${#fields.hasErrors('prodottiSelezionati')} ? ' error'">
+        <div class="checkbox-list" th:classappend="${#fields.hasErrors('prodottiSelezionati')} ? ' error'">
             <div th:each="prodotto : ${prodottiApprovati}">
                 <label>
-                    <input type="checkbox" th:field="*{prodottiSelezionati}"
-                           th:value="${prodotto.id}"/>
+                    <input type="checkbox" th:field="*{prodottiSelezionati}" th:value="${prodotto.id}"/>
                     <span th:text="${prodotto.nome}">Nome prodotto</span>
                 </label>
             </div>
         </div>
         <span class="error-message" th:errors="*{prodottiSelezionati}"></span>
 
-        <!-- Certificati -->
         <label for="certificati">Seleziona certificati:</label>
-        <input type="file" th:field="*{certificati}" id="certificati" multiple
-               th:classappend="${#fields.hasErrors('certificati')} ? 'error'"/>
+        <input type="file" th:field="*{certificati}" id="certificati" multiple th:classappend="${#fields.hasErrors('certificati')} ? 'error'"/>
         <span class="error-message" th:errors="*{certificati}"></span>
 
-        <!-- Foto -->
         <label for="foto">Seleziona foto:</label>
-        <input type="file" th:field="*{foto}" id="foto" multiple
-               th:classappend="${#fields.hasErrors('foto')} ? 'error'"/>
+        <input type="file" th:field="*{foto}" id="foto" multiple th:classappend="${#fields.hasErrors('foto')} ? 'error'"/>
         <span class="error-message" th:errors="*{foto}"></span>
 
-        <!-- Pulsanti -->
         <button type="button" onclick="openConfirmModal()">Invia Pacchetto</button>
         <button type="button" onclick="toggleForm()">Chiudi Form</button>
     </form>
@@ -107,7 +170,7 @@
     </div>
 </div>
 
-<!-- Modale successo -->
+<!-- Modale successo creazione -->
 <div id="successModal" class="modal" th:if="${successMessage}">
     <div class="modal-content">
         <p th:text="${successMessage}">Pacchetto inviato al Curatore!</p>
@@ -120,71 +183,56 @@
         const form = document.getElementById("pacchettoForm");
         form.style.display = (form.style.display === "none") ? "block" : "none";
     }
-
     function openConfirmModal() {
         document.getElementById("confirmModal").style.display = "flex";
     }
-
     function closeModal(id) {
         document.getElementById(id).style.display = "none";
     }
-
     function submitForm() {
         closeModal("confirmModal");
         document.getElementById("createPackageForm").submit();
     }
 
-    // Validazione client-side in tempo reale
-    document.querySelectorAll("#createPackageForm input, #createPackageForm textarea").forEach(el => {
-        if (el.type !== "checkbox" && el.type !== "file") {
-            el.addEventListener("input", () => {
-                if (el.value.trim() !== "") {
-                    el.classList.remove("error");
-                    const errorSpan = el.nextElementSibling;
-                    if (errorSpan && errorSpan.classList.contains("error-message")) {
-                        errorSpan.innerText = "";
-                    }
+    // Gestione eliminazione pacchetti
+    let selectedPackageId = null;
+    function handleDeleteClick(button) {
+        const stato = button.getAttribute("data-stato");
+        const nome = button.getAttribute("data-nome");
+        const id = button.getAttribute("data-id");
+        if (stato === "APPROVATO") {
+            document.getElementById("deleteErrorModal").style.display = "flex";
+        } else {
+            selectedPackageId = id;
+            document.getElementById("deleteConfirmMessage").textContent =
+                `Vuoi davvero eliminare il pacchetto "${nome}"?`;
+            document.getElementById("deleteConfirmModal").style.display = "flex";
+        }
+    }
+    function confirmDelete() {
+        fetch(`/distributore/elimina/${selectedPackageId}`, { method: "DELETE" })
+            .then(response => response.text().then(msg => {
+                if (response.ok) {
+                    const row = document.querySelector(`tr[data-id='${selectedPackageId}']`);
+                    if (row) row.remove();
+                    closeModal("deleteConfirmModal");
+                    document.getElementById("deleteSuccessMessage").textContent = msg;
+                    document.getElementById("deleteSuccessModal").style.display = "flex";
+                } else {
+                    throw new Error(msg || "Errore durante l'eliminazione");
                 }
+            }))
+            .catch(err => {
+                closeModal("deleteConfirmModal");
+                document.getElementById("deleteGenericErrorMessage").textContent = err.message;
+                document.getElementById("deleteGenericErrorModal").style.display = "flex";
             });
-        }
-    });
-
-    // Checkbox (prodotti selezionati)
-    document.querySelectorAll("#createPackageForm input[type='checkbox']").forEach(cb => {
-        cb.addEventListener("change", () => {
-            const container = document.querySelector(".checkbox-list");
-            if (document.querySelectorAll("#createPackageForm input[type='checkbox']:checked").length >= 2) {
-                container.classList.remove("error");
-                const errorSpan = container.nextElementSibling;
-                if (errorSpan && errorSpan.classList.contains("error-message")) {
-                    errorSpan.innerText = "";
-                }
-            }
-        });
-    });
-
-    // Certificati
-    document.getElementById("certificati").addEventListener("change", function () {
-        if (this.files.length > 0) {
-            this.classList.remove("error");
-            this.nextElementSibling.innerText = "";
-        }
-    });
-
-    // Foto
-    document.getElementById("foto").addEventListener("change", function () {
-        if (this.files.length > 0) {
-            this.classList.remove("error");
-            this.nextElementSibling.innerText = "";
-        }
-    });
+    }
 
     // Mostra modale successo se presente
     window.addEventListener("load", () => {
         const successModal = document.getElementById("successModal");
-        if (successModal) {
-            successModal.style.display = "flex";
-        }
+        if (successModal) successModal.style.display = "flex";
     });
 </script>
 

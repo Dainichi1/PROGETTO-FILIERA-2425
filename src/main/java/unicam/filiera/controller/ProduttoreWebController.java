@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,7 +13,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import unicam.filiera.dto.ProdottoDto;
+import unicam.filiera.model.Prodotto;
 import unicam.filiera.service.ProdottoService;
+
+import java.util.List;
 
 @Controller
 @RequestMapping("/produttore")
@@ -33,10 +37,15 @@ public class ProduttoreWebController {
     }
 
     @GetMapping("/dashboard")
-    public String dashboardProduttore(Model model) {
+    public String dashboardProduttore(Model model, Authentication authentication) {
         if (!model.containsAttribute("prodottoDto")) {
             model.addAttribute("prodottoDto", new ProdottoDto());
         }
+
+        String username = (authentication != null) ? authentication.getName() : "produttore_demo";
+        List<Prodotto> prodotti = prodottoService.getProdottiCreatiDa(username);
+        model.addAttribute("prodotti", prodotti);
+
         model.addAttribute("showForm", false);
         return "dashboard/produttore";
     }
@@ -49,35 +58,63 @@ public class ProduttoreWebController {
             RedirectAttributes redirectAttrs,
             Model model
     ) {
-        // Validazione manuale file
+        String username = (authentication != null) ? authentication.getName() : "produttore_demo";
+
         if (prodottoDto.getCertificati() == null || prodottoDto.getCertificati().isEmpty()
                 || prodottoDto.getCertificati().stream().allMatch(MultipartFile::isEmpty)) {
-            bindingResult.rejectValue("certificati", "error.certificati", "⚠ Devi caricare almeno un certificato");
+            bindingResult.rejectValue("certificati", "error.certificati", "Devi caricare almeno un certificato");
         }
         if (prodottoDto.getFoto() == null || prodottoDto.getFoto().isEmpty()
                 || prodottoDto.getFoto().stream().allMatch(MultipartFile::isEmpty)) {
-            bindingResult.rejectValue("foto", "error.foto", "⚠ Devi caricare almeno una foto");
+            bindingResult.rejectValue("foto", "error.foto", "Devi caricare almeno una foto");
         }
 
         if (bindingResult.hasErrors()) {
-            log.warn("❌ Creazione prodotto fallita per errori di validazione");
+            log.warn("Creazione prodotto fallita per errori di validazione");
+
+            List<Prodotto> prodotti = prodottoService.getProdottiCreatiDa(username);
+            model.addAttribute("prodotti", prodotti);
+
             model.addAttribute("showForm", true);
             model.addAttribute("validationFailed", true);
             return "dashboard/produttore";
         }
 
         try {
-            String username = (authentication != null) ? authentication.getName() : "produttore_demo";
             prodottoService.creaProdotto(prodottoDto, username);
 
-            redirectAttrs.addFlashAttribute("successMessage", "✅ Prodotto inviato al Curatore con successo!");
+            redirectAttrs.addFlashAttribute("successMessage", "Prodotto inviato al Curatore con successo");
             return "redirect:/produttore/dashboard";
 
         } catch (Exception ex) {
-            log.error("⚠️ Errore nella creazione del prodotto", ex);
+            log.error("Errore nella creazione del prodotto", ex);
+
+            List<Prodotto> prodotti = prodottoService.getProdottiCreatiDa(username);
+            model.addAttribute("prodotti", prodotti);
+
             model.addAttribute("errorMessage", "Errore: " + ex.getMessage());
             model.addAttribute("showForm", true);
             return "dashboard/produttore";
+        }
+    }
+
+    @DeleteMapping("/elimina/{id}")
+    @ResponseBody
+    public ResponseEntity<String> eliminaProdotto(@PathVariable Long id, Authentication authentication) {
+        String username = (authentication != null) ? authentication.getName() : "produttore_demo";
+
+        try {
+            prodottoService.eliminaProdottoById(id, username);
+            return ResponseEntity.ok("Prodotto eliminato con successo");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        } catch (Exception e) {
+            log.error("Errore durante eliminazione prodotto", e);
+            return ResponseEntity.status(500).body("Errore interno durante l'eliminazione");
         }
     }
 }

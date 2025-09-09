@@ -123,6 +123,29 @@ public class PacchettoServiceImpl implements PacchettoService {
         );
     }
 
+    @Override
+    public void eliminaPacchettoById(Long id, String creatore) {
+        PacchettoEntity entity = pacchettoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pacchetto non trovato"));
+
+        if (!entity.getCreatoDa().equals(creatore)) {
+            throw new SecurityException("Non autorizzato a eliminare questo pacchetto");
+        }
+        if (entity.getStato() == StatoProdotto.APPROVATO) {
+            throw new IllegalStateException("Non puoi eliminare un pacchetto già approvato");
+        }
+
+        // Salvo le info necessarie PRIMA del delete
+        Pacchetto pacchetto = mapToDomain(entity);
+
+        pacchettoRepository.delete(entity);
+
+        // Ora posso notificare usando pacchetto (già mappato, sessione ancora attiva)
+        notifier.notificaTutti(pacchetto, "ELIMINATO_PACCHETTO");
+    }
+
+
+
     // =======================
     // Stato Helper
     // =======================
@@ -191,6 +214,7 @@ public class PacchettoServiceImpl implements PacchettoService {
 
     private Pacchetto mapToDomain(PacchettoEntity e) {
         return new Pacchetto.Builder()
+                .id(e.getId())
                 .nome(e.getNome())
                 .descrizione(e.getDescrizione())
                 .indirizzo(e.getIndirizzo())

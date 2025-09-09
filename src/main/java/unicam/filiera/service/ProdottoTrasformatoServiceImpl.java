@@ -76,6 +76,8 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
     public List<ProdottoTrasformato> getProdottiTrasformatiCreatiDa(String creatore) {
         return repository.findByCreatoDa(creatore)
                 .stream()
+                // Filtro prodotti corrotti (meno di 2 fasi)
+                .filter(e -> e.getFasiProduzione() != null && e.getFasiProduzione().size() >= 2)
                 .map(this::mapToDomain)
                 .collect(Collectors.toList());
     }
@@ -84,6 +86,7 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
     public List<ProdottoTrasformato> getProdottiTrasformatiByStato(StatoProdotto stato) {
         return repository.findByStato(stato)
                 .stream()
+                // stesso filtro anche qui
                 .filter(e -> e.getFasiProduzione() != null && e.getFasiProduzione().size() >= 2)
                 .map(this::mapToDomain)
                 .collect(Collectors.toList());
@@ -100,6 +103,24 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
 
         repository.delete(entity);
         notifier.notificaTutti(mapToDomain(entity), "ELIMINATO_PRODOTTO_TRASFORMATO");
+    }
+
+    @Override
+    public void eliminaProdottoTrasformatoById(Long id, String creatore) {
+        ProdottoTrasformatoEntity entity = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Prodotto trasformato non trovato"));
+
+        if (!entity.getCreatoDa().equals(creatore)) {
+            throw new SecurityException("Non autorizzato a eliminare questo prodotto trasformato");
+        }
+        if (entity.getStato() == StatoProdotto.APPROVATO) {
+            throw new IllegalStateException("Non puoi eliminare un prodotto trasformato già approvato");
+        }
+
+        ProdottoTrasformato prodotto = mapToDomain(entity);
+        repository.delete(entity);
+
+        notifier.notificaTutti(prodotto, "ELIMINATO_PRODOTTO_TRASFORMATO");
     }
 
     @Override
@@ -134,22 +155,10 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
         e.setStato(prodotto.getStato());
         e.setCommento(prodotto.getCommento());
 
-        // usa helper per le fasi
         e.setFasiProduzione(toEmbeddableList(prodotto.getFasiProduzione()));
 
-        // Salvataggio fisico file
-        String certCsv = dto.getCertificati() == null ? "" :
-                dto.getCertificati().stream()
-                        .map(file -> salvaMultipartFile(file, CERT_DIR))
-                        .collect(Collectors.joining(","));
-
-        String fotoCsv = dto.getFoto() == null ? "" :
-                dto.getFoto().stream()
-                        .map(file -> salvaMultipartFile(file, FOTO_DIR))
-                        .collect(Collectors.joining(","));
-
-        e.setCertificati(certCsv);
-        e.setFoto(fotoCsv);
+        e.setCertificati(toCsv(dto.getCertificati(), CERT_DIR));
+        e.setFoto(toCsv(dto.getFoto(), FOTO_DIR));
 
         return e;
     }
@@ -175,7 +184,6 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
                 .build();
     }
 
-    // Conversion Helpers per le fasi
     private List<FaseProduzioneEmbeddable> toEmbeddableList(List<FaseProduzione> fasi) {
         return fasi == null ? List.of() :
                 fasi.stream()
@@ -199,8 +207,15 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
     }
 
     // =======================
-    // File Helper
+    // File Helpers
     // =======================
+
+    private String toCsv(List<MultipartFile> files, String dir) {
+        return files == null ? "" :
+                files.stream()
+                        .map(file -> salvaMultipartFile(file, dir))
+                        .collect(Collectors.joining(","));
+    }
 
     private String salvaMultipartFile(MultipartFile multipartFile, String destDir) {
         try {

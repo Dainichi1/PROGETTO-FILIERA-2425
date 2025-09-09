@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import unicam.filiera.dto.PacchettoViewDto;
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.Pacchetto;
 import unicam.filiera.model.ProdottoTrasformato;
@@ -37,7 +38,7 @@ public class CuratoreWebController {
     @GetMapping("/dashboard")
     public String dashboardCuratore(Model model) {
         List<Prodotto> prodottiInAttesa = prodottoService.getProdottiByStato(StatoProdotto.IN_ATTESA);
-        List<Pacchetto> pacchettiInAttesa = pacchettoService.getPacchettiByStato(StatoProdotto.IN_ATTESA);
+        List<PacchettoViewDto> pacchettiInAttesa = pacchettoService.getPacchettiViewByStato(StatoProdotto.IN_ATTESA);
         List<ProdottoTrasformato> trasformatiInAttesa = prodottoTrasformatoService.getProdottiTrasformatiByStato(StatoProdotto.IN_ATTESA);
 
         model.addAttribute("prodotti", prodottiInAttesa);

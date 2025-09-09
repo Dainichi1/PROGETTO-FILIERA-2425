@@ -2,11 +2,13 @@ package unicam.filiera.model;
 
 import lombok.Getter;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Un insieme di almeno due prodotti offerto come pacchetto.
- * <p>Estende {@link Item} ereditandone campi e logica comuni.</p>
+ * Estende {@link Item} ereditandone campi e logica comuni.
  */
 @Getter
 public class Pacchetto extends Item {
@@ -15,7 +17,7 @@ public class Pacchetto extends Item {
     private final Long id;
     private final int quantita;
     private final double prezzo;
-    private final List<String> prodotti; // lista di ID o nomi prodotti inclusi
+    private final List<Long> prodottiIds; // <-- ID dei prodotti inclusi
 
     /* --- costruttore privato, invocato dal Builder --- */
     private Pacchetto(Builder b) {
@@ -32,7 +34,10 @@ public class Pacchetto extends Item {
         this.id = b.id;
         this.quantita = b.quantita;
         this.prezzo = b.prezzo;
-        this.prodotti = b.prodotti;
+        // copia difensiva + non modificabile
+        this.prodottiIds = (b.prodottiIds == null)
+                ? List.of()
+                : Collections.unmodifiableList(b.prodottiIds);
     }
 
     /* ------------------------------------------------------------------ */
@@ -55,66 +60,24 @@ public class Pacchetto extends Item {
         private Long id;
         private int quantita;
         private double prezzo;
-        private List<String> prodotti;
+        private List<Long> prodottiIds; // <-- Long
 
         /* ------- metodi ‘with’ ------- */
-        public Builder id(Long id) {
-            this.id = id;
-            return this;
-        }
+        public Builder id(Long id) { this.id = id; return this; }
+        public Builder nome(String n) { this.nome = n; return this; }
+        public Builder descrizione(String d) { this.descrizione = d; return this; }
+        public Builder indirizzo(String i) { this.indirizzo = i; return this; }
+        public Builder certificati(List<String> c) { this.certificati = c; return this; }
+        public Builder foto(List<String> f) { this.foto = f; return this; }
+        public Builder creatoDa(String u) { this.creatoDa = u; return this; }
+        public Builder stato(StatoProdotto s) { this.stato = s; return this; }
+        public Builder commento(String c) { this.commento = c; return this; }
+        public Builder quantita(int q) { this.quantita = q; return this; }
+        public Builder prezzo(double p) { this.prezzo = p; return this; }
 
-        public Builder nome(String n) {
-            this.nome = n;
-            return this;
-        }
-
-        public Builder descrizione(String d) {
-            this.descrizione = d;
-            return this;
-        }
-
-        public Builder indirizzo(String i) {
-            this.indirizzo = i;
-            return this;
-        }
-
-        public Builder certificati(List<String> c) {
-            this.certificati = c;
-            return this;
-        }
-
-        public Builder foto(List<String> f) {
-            this.foto = f;
-            return this;
-        }
-
-        public Builder creatoDa(String u) {
-            this.creatoDa = u;
-            return this;
-        }
-
-        public Builder stato(StatoProdotto s) {
-            this.stato = s;
-            return this;
-        }
-
-        public Builder commento(String c) {
-            this.commento = c;
-            return this;
-        }
-
-        public Builder quantita(int q) {
-            this.quantita = q;
-            return this;
-        }
-
-        public Builder prezzo(double p) {
-            this.prezzo = p;
-            return this;
-        }
-
-        public Builder prodotti(List<String> p) {
-            this.prodotti = p;
+        // rinominato per chiarezza
+        public Builder prodottiIds(List<Long> ids) {
+            this.prodottiIds = ids;
             return this;
         }
 
@@ -122,10 +85,12 @@ public class Pacchetto extends Item {
         public Pacchetto build() {
             if (nome == null || descrizione == null || creatoDa == null || stato == null)
                 throw new IllegalStateException("Campi obbligatori mancanti");
-            if (prodotti == null || prodotti.size() < 2)
+            if (prodottiIds == null || prodottiIds.stream().filter(Objects::nonNull).distinct().count() < 2)
                 throw new IllegalStateException("Un pacchetto deve contenere almeno 2 prodotti");
             return new Pacchetto(this);
         }
+
+
     }
 
     /* ------------------------------------------------------------------ */
@@ -135,7 +100,7 @@ public class Pacchetto extends Item {
         return String.format(
                 "Pacchetto[nome=%s, prodotti=%d, prezzo=%.2f €, quantita=%d, stato=%s]",
                 getNome(),
-                prodotti != null ? prodotti.size() : 0,
+                prodottiIds != null ? prodottiIds.size() : 0,
                 prezzo,
                 quantita,
                 getStato() != null ? getStato().name() : "N/D"

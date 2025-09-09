@@ -3,95 +3,39 @@
 <head>
     <title>Dashboard Trasformatore</title>
     <meta charset="UTF-8"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
     <style>
-        .form-container {
-            display: none;
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            background-color: #f9f9f9;
-            max-width: 600px;
-        }
-
-        .form-container label {
-            display: block;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-
-        .form-container input, .form-container textarea, .form-container select {
-            width: 100%;
-            padding: 6px;
-            margin-top: 5px;
-        }
-
-        .form-container input.error, .form-container textarea.error, .form-container select.error {
-            border: 2px solid red;
-        }
-
-        .error-message {
-            color: red;
-            font-size: 0.9rem;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal.show {
-            display: flex;
-        }
-
-        /* gestione via classList */
-        .modal-content {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            max-width: 400px;
-        }
-
-        .modal-content button {
-            margin: 10px;
-            padding: 8px 16px;
-        }
+        .form-container { display:none; margin-top:20px; padding:15px; border:1px solid #ccc; border-radius:6px; background:#f9f9f9; max-width:600px; }
+        .form-container label { display:block; margin-top:10px; font-weight:bold; }
+        .form-container input, .form-container textarea, .form-container select { width:100%; padding:6px; margin-top:5px; }
+        .form-container input.error, .form-container textarea.error, .form-container select.error { border:2px solid red; }
+        .error-message { color:red; font-size:0.9rem; }
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; }
+        .modal-content { background:white; padding:20px; border-radius:8px; text-align:center; max-width:400px; }
+        .modal-content button { margin:10px; padding:8px 16px; }
+        .section-separator { margin:40px 0; border:none; border-top:2px dashed #bbb; }
+        ul#fasiList { padding-left: 18px; }
+        ul#fasiList li { margin: 6px 0; }
+        ul#fasiList li button { margin-left: 6px; }
     </style>
 </head>
 <body>
 
-<h1 th:text="'Benvenuto ' + ${utente != null ? utente.nome : 'Utente'} + ', il tuo ruolo è Trasformatore.'">
+<h1 th:text="'Benvenuto ' + ${utente != null ? utente.nome : 'Utente'} + ', il tuo ruolo è ' + (${utente != null ? utente.ruolo : 'Trasformatore'}) + '.'">
     Benvenuto, il tuo ruolo è Trasformatore.
 </h1>
 
-<h2>Dashboard Trasformatore</h2>
-
 <h2>I tuoi Prodotti Trasformati</h2>
 
+<!-- Tabella prodotti trasformati -->
 <table border="1" style="border-collapse: collapse; width: 100%; margin-top: 20px;">
     <thead>
     <tr style="background-color: #f0f0f0; text-align: center;">
-        <th>Nome</th>
-        <th>Descrizione</th>
-        <th>Quantità</th>
-        <th>Prezzo</th>
-        <th>Indirizzo</th>
-        <th>Certificati</th>
-        <th>Foto</th>
-        <th>Fasi Produzione</th>
-        <th>Stato</th>
-        <th>Commento</th>
-        <th>Elimina</th>
-        <th>Modifica</th>
-        <th>Social</th>
+        <th>Nome</th><th>Descrizione</th><th>Quantità</th><th>Prezzo</th><th>Indirizzo</th>
+        <th>Certificati</th><th>Foto</th><th>Fasi Produzione</th><th>Stato</th><th>Commento</th>
+        <th>Elimina</th><th>Modifica</th><th>Social</th>
     </tr>
     </thead>
     <tbody>
@@ -101,24 +45,12 @@
         <td th:text="${trasf.quantita}">0</td>
         <td th:text="${trasf.prezzo}">0.00</td>
         <td th:text="${trasf.indirizzo}">Indirizzo</td>
-
-        <!-- Certificati -->
         <td>
-            <a th:each="cert : ${trasf.certificati}"
-               th:href="@{'/file/certificati/' + ${cert}}"
-               target="_blank"
-               th:text="${cert}">Certificato</a>
+            <a th:each="cert : ${trasf.certificati}" th:href="@{'/file/certificati/' + ${cert}}" target="_blank" th:text="${cert}">Certificato</a>
         </td>
-
-        <!-- Foto -->
         <td>
-            <a th:each="foto : ${trasf.foto}"
-               th:href="@{'/file/foto/' + ${foto}}"
-               target="_blank"
-               th:text="${foto}">Foto</a>
+            <a th:each="foto : ${trasf.foto}" th:href="@{'/file/foto/' + ${foto}}" target="_blank" th:text="${foto}">Foto</a>
         </td>
-
-        <!-- Fasi Produzione -->
         <td>
             <ul>
                 <li th:each="fase : ${trasf.fasiProduzione}">
@@ -128,353 +60,352 @@
                 </li>
             </ul>
         </td>
-
         <td th:text="${trasf.stato}">In attesa</td>
         <td th:text="${trasf.commento}">Commento</td>
-
-        <!-- Bottone elimina -->
-        <td>
-            <button type="button"
-                    th:attr="data-id=${trasf.id}, data-stato=${trasf.stato}, data-nome=${trasf.nome}"
-                    onclick="handleDeleteTrasfClick(this)">
-                Elimina
-            </button>
-        </td>
-
-        <!-- Placeholder per Modifica e Social -->
-        <td>-</td>
+        <td><button type="button" th:attr="data-id=${trasf.id}, data-stato=${trasf.stato}, data-nome=${trasf.nome}" onclick="handleDeleteClick(this)">Elimina</button></td>
+        <td><button type="button" th:attr="data-id=${trasf.id}, data-stato=${trasf.stato}, data-nome=${trasf.nome}" onclick="handleEditClick(this)">Modifica</button></td>
         <td>-</td>
     </tr>
     </tbody>
 </table>
 
 <!-- Modali eliminazione -->
-<div id="deleteTrasfErrorModal" class="modal">
-    <div class="modal-content">
-        <p>Puoi eliminare solo prodotti trasformati in attesa o rifiutati.</p>
-        <button onclick="closeModal('deleteTrasfErrorModal')">OK</button>
-    </div>
-</div>
+<div id="deleteErrorModal" class="modal"><div class="modal-content"><p>Puoi eliminare solo prodotti trasformati in attesa o rifiutati.</p><button onclick="closeModal('deleteErrorModal')">OK</button></div></div>
+<div id="deleteConfirmModal" class="modal"><div class="modal-content"><p id="deleteConfirmMessage"></p><button onclick="confirmDelete()">Sì</button><button onclick="closeModal('deleteConfirmModal')">No</button></div></div>
+<div id="deleteSuccessModal" class="modal"><div class="modal-content"><p id="deleteSuccessMessage"></p><button onclick="closeModal('deleteSuccessModal')">OK</button></div></div>
+<div id="deleteGenericErrorModal" class="modal"><div class="modal-content"><p id="deleteGenericErrorMessage"></p><button onclick="closeModal('deleteGenericErrorModal')">OK</button></div></div>
+<div id="editErrorModal" class="modal"><div class="modal-content"><p>Puoi modificare solo prodotti trasformati rifiutati.</p><button onclick="closeModal('editErrorModal')">OK</button></div></div>
 
-<div id="deleteTrasfConfirmModal" class="modal">
-    <div class="modal-content">
-        <p id="deleteTrasfConfirmMessage"></p>
-        <button onclick="confirmDeleteTrasf()">Sì</button>
-        <button onclick="closeModal('deleteTrasfConfirmModal')">No</button>
-    </div>
-</div>
-
-<div id="deleteTrasfSuccessModal" class="modal">
-    <div class="modal-content">
-        <p id="deleteTrasfSuccessMessage"></p>
-        <button onclick="closeModal('deleteTrasfSuccessModal')">OK</button>
-    </div>
-</div>
-
-<div id="deleteTrasfGenericErrorModal" class="modal">
-    <div class="modal-content">
-        <p id="deleteTrasfGenericErrorMessage"></p>
-        <button onclick="closeModal('deleteTrasfGenericErrorModal')">OK</button>
-    </div>
-</div>
-
-<!-- Separatore -->
 <hr class="section-separator"/>
 
-<!-- Bottone per aprire il form -->
 <button type="button" onclick="toggleForm()">Crea Prodotto Trasformato</button>
 
-<div id="trasformatoForm" class="form-container"
-     th:style="${showForm} ? 'display:block;' : 'display:none;'">
+<!-- Form -->
+<div id="trasformatoForm" class="form-container" th:style="${showForm} ? 'display:block;' : 'display:none;'">
+    <h3 id="formTitle">Nuovo Prodotto Trasformato</h3>
 
-    <h3>Nuovo Prodotto Trasformato</h3>
-    <form id="createTrasformatoForm"
-          th:action="@{/trasformatore/crea}"
-          th:object="${trasformatoDto}"
-          method="post"
-          enctype="multipart/form-data">
+    <form id="itemForm" th:action="@{/trasformatore/crea}" th:object="${trasformatoDto}" method="post" enctype="multipart/form-data" novalidate>
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <input type="hidden" th:field="*{id}" id="itemId"/>
+        <input type="hidden" th:field="*{tipo}" id="itemTipo" value="TRASFORMATO"/>
 
-        <!-- Nome -->
-        <label for="nome">Nome Prodotto:</label>
-        <input type="text" th:field="*{nome}" id="nome"
-               th:classappend="${#fields.hasErrors('nome')} ? 'error'"/>
-        <span class="error-message" th:errors="*{nome}"></span>
+        <label for="nome">Nome:</label>
+        <input type="text" th:field="*{nome}" id="nome" th:classappend="${#fields.hasErrors('nome')} ? 'error'"/>
+        <span class="error-message" th:utext="${#fields.hasErrors('nome')} ? ${#strings.arrayJoin(#fields.errors('nome'), '<br/>')} : ''"></span>
 
-        <!-- Descrizione -->
         <label for="descrizione">Descrizione:</label>
-        <textarea th:field="*{descrizione}" id="descrizione"
-                  th:classappend="${#fields.hasErrors('descrizione')} ? 'error'"></textarea>
-        <span class="error-message" th:errors="*{descrizione}"></span>
+        <textarea th:field="*{descrizione}" id="descrizione" th:classappend="${#fields.hasErrors('descrizione')} ? 'error'"></textarea>
+        <span class="error-message" th:utext="${#fields.hasErrors('descrizione')} ? ${#strings.arrayJoin(#fields.errors('descrizione'), '<br/>')} : ''"></span>
 
-        <!-- Quantità -->
         <label for="quantita">Quantità:</label>
-        <input type="number" th:field="*{quantita}" id="quantita"
-               th:classappend="${#fields.hasErrors('quantita')} ? 'error'"/>
-        <span class="error-message" th:errors="*{quantita}"></span>
+        <input type="number" th:field="*{quantita}" id="quantita" th:classappend="${#fields.hasErrors('quantita')} ? 'error'"/>
+        <span class="error-message" th:utext="${#fields.hasErrors('quantita')} ? ${#strings.arrayJoin(#fields.errors('quantita'), '<br/>')} : ''"></span>
 
-        <!-- Prezzo -->
         <label for="prezzo">Prezzo:</label>
-        <input type="number" step="0.01" th:field="*{prezzo}" id="prezzo"
-               th:classappend="${#fields.hasErrors('prezzo')} ? 'error'"/>
-        <span class="error-message" th:errors="*{prezzo}"></span>
+        <input type="number" step="0.01" th:field="*{prezzo}" id="prezzo" th:classappend="${#fields.hasErrors('prezzo')} ? 'error'"/>
+        <span class="error-message" th:utext="${#fields.hasErrors('prezzo')} ? ${#strings.arrayJoin(#fields.errors('prezzo'), '<br/>')} : ''"></span>
 
-        <!-- Indirizzo -->
         <label for="indirizzo">Indirizzo:</label>
-        <input type="text" th:field="*{indirizzo}" id="indirizzo"
-               th:classappend="${#fields.hasErrors('indirizzo')} ? 'error'"/>
-        <span class="error-message" th:errors="*{indirizzo}"></span>
+        <input type="text" th:field="*{indirizzo}" id="indirizzo" th:classappend="${#fields.hasErrors('indirizzo')} ? 'error'"/>
+        <span class="error-message" th:utext="${#fields.hasErrors('indirizzo')} ? ${#strings.arrayJoin(#fields.errors('indirizzo'), '<br/>')} : ''"></span>
 
-        <!-- Certificati -->
-        <label for="certificati">Seleziona certificati:</label>
-        <input type="file" th:field="*{certificati}" id="certificati" multiple
-               th:classappend="${#fields.hasErrors('certificati')} ? 'error'"/>
-        <span class="error-message" th:errors="*{certificati}"></span>
+        <label for="certificati">Certificati:</label>
+        <input type="file" th:field="*{certificati}" id="certificati" multiple th:classappend="${#fields.hasErrors('certificati')} ? 'error'"/>
+        <span class="error-message" th:utext="${#fields.hasErrors('certificati')} ? ${#strings.arrayJoin(#fields.errors('certificati'), '<br/>')} : ''"></span>
 
-        <!-- Foto -->
-        <label for="foto">Seleziona foto:</label>
-        <input type="file" th:field="*{foto}" id="foto" multiple
-               th:classappend="${#fields.hasErrors('foto')} ? 'error'"/>
-        <span class="error-message" th:errors="*{foto}"></span>
+        <label for="foto">Foto:</label>
+        <input type="file" th:field="*{foto}" id="foto" multiple th:classappend="${#fields.hasErrors('foto')} ? 'error'"/>
+        <span class="error-message" th:utext="${#fields.hasErrors('foto')} ? ${#strings.arrayJoin(#fields.errors('foto'), '<br/>')} : ''"></span>
 
-        <!-- Sezione Fasi -->
         <h4>Fasi di Trasformazione</h4>
-        <div id="fasiContainer">
-            <p th:if="${trasformatoDto.fasiProduzione == null or trasformatoDto.fasiProduzione.isEmpty()}">
-                Nessuna fase aggiunta.
-            </p>
-            <ul id="fasiList">
-                <li th:each="fase : ${trasformatoDto.fasiProduzione}">
-                    <span th:text="${fase.descrizioneFase}">Descrizione fase</span> -
-                    <span th:text="${fase.produttoreUsername}">Produttore</span> -
-                    <span th:text="${fase.prodottoOrigineId}">Prodotto base</span>
-                    <button type="button" onclick="rimuoviFase(this)">Rimuovi</button>
-                </li>
-            </ul>
-        </div>
-        <span class="error-message" th:errors="*{fasiProduzione}"></span>
-
+        <ul id="fasiList"></ul>
+        <span class="error-message" th:utext="${#fields.hasErrors('fasiProduzione')} ? ${#strings.arrayJoin(#fields.errors('fasiProduzione'), '<br/>')} : ''"></span>
         <button type="button" onclick="openFaseModal()">Aggiungi Fase</button>
 
-
-        <!-- Pulsanti -->
-        <button type="button" onclick="openConfirmModal()">Invia Prodotto Trasformato</button>
+        <div id="createButtons"><button type="button" onclick="openCreateConfirmModal()">Invia</button></div>
+        <div id="updateButtons" style="display:none;"><button type="button" onclick="openUpdateConfirmModal()">Aggiorna</button></div>
         <button type="button" onclick="toggleForm()">Chiudi Form</button>
     </form>
 </div>
 
-<!-- Modale conferma invio -->
-<div id="confirmModal" class="modal">
-    <div class="modal-content">
-        <p>Inviare il prodotto trasformato al Curatore per approvazione?</p>
-        <button onclick="submitForm()">Sì</button>
-        <button type="button" onclick="closeModal('confirmModal')">No</button>
-    </div>
-</div>
+<!-- Modali creazione/modifica -->
+<div id="createConfirmModal" class="modal"><div class="modal-content"><p>Inviare il prodotto trasformato al Curatore per approvazione?</p><button onclick="submitForm()">Sì</button><button onclick="closeModal('createConfirmModal')">No</button></div></div>
+<div id="createSuccessModal" class="modal" th:if="${createSuccessMessage}"><div class="modal-content"><p th:text="${createSuccessMessage}">Prodotto trasformato inviato al Curatore!</p><button onclick="window.location.href='/trasformatore/dashboard'">OK</button></div></div>
+<div id="updateConfirmModal" class="modal"><div class="modal-content"><p>Sei sicuro di voler aggiornare e rinviare il prodotto trasformato al Curatore?</p><button onclick="submitForm()">Sì</button><button onclick="closeModal('updateConfirmModal')">No</button></div></div>
+<div id="updateSuccessModal" class="modal" th:if="${updateSuccessMessage}"><div class="modal-content"><p th:text="${updateSuccessMessage}">Prodotto trasformato aggiornato e reinviato al Curatore!</p><button onclick="window.location.href='/trasformatore/dashboard'">OK</button></div></div>
 
-<!-- Modale successo -->
-<div id="successModal" class="modal" th:if="${successMessage}">
-    <div class="modal-content">
-        <p th:text="${successMessage}">Prodotto trasformato inviato al Curatore!</p>
-        <button onclick="window.location.href='/trasformatore/dashboard'">OK</button>
-    </div>
-</div>
+<!-- Modale aggiungi fase -->
+<div id="faseModal" class="modal"><div class="modal-content">
+    <h3>Aggiungi Fase</h3>
+    <label for="faseDescrizione">Descrizione:</label><input type="text" id="faseDescrizione"/>
+    <label for="faseProduttore">Produttore:</label>
+    <select id="faseProduttore">
+        <option value="">-- Seleziona --</option>
+        <option th:each="prod : ${produttori}" th:value="${prod.username}" th:text="${prod.nome + ' ' + prod.cognome}"></option>
+    </select>
+    <label for="faseProdottoBase">Prodotto base:</label>
+    <select id="faseProdottoBase"><option value="">-- Seleziona --</option></select>
+    <button type="button" onclick="aggiungiFase()">OK</button>
+    <button type="button" onclick="closeModal('faseModal')">Annulla</button>
+</div></div>
 
-<!-- Modale Aggiungi Fase -->
-<div id="faseModal" class="modal">
-    <div class="modal-content">
-        <h3>Aggiungi Fase</h3>
-        <label for="faseDescrizione">Descrizione fase:</label>
-        <input type="text" id="faseDescrizione" required/>
-
-        <label for="faseProduttore">Produttore:</label>
-        <select id="faseProduttore" required>
-            <option value="">-- Seleziona Produttore --</option>
-            <option th:each="prod : ${produttori}"
-                    th:value="${prod.username}"
-                    th:text="${prod.nome + ' ' + prod.cognome}"></option>
-        </select>
-
-        <label for="faseProdottoBase">Prodotto base:</label>
-        <select id="faseProdottoBase" required>
-            <option value="">-- Seleziona Prodotto Base --</option>
-        </select>
-
-        <div style="margin-top:15px;">
-            <button type="button" onclick="aggiungiFase()">OK</button>
-            <button type="button" onclick="closeModal('faseModal')">Cancel</button>
-        </div>
-    </div>
-</div>
-
-<script>
+<script th:inline="javascript">
+    // ===== util =====
+    function closeModal(id) { document.getElementById(id).style.display = "none"; }
+    function openCreateConfirmModal() { document.getElementById("createConfirmModal").style.display = "flex"; }
+    function openUpdateConfirmModal() { document.getElementById("updateConfirmModal").style.display = "flex"; }
     function toggleForm() {
         const form = document.getElementById("trasformatoForm");
-        form.style.display = (form.style.display === "none") ? "block" : "none";
+        const isHidden = form.style.display === "none";
+        form.style.display = isHidden ? "block" : "none";
+        if (!isHidden) {
+            document.getElementById("formTitle").textContent = "Nuovo Prodotto Trasformato";
+            document.getElementById("itemForm").reset();
+            document.getElementById("itemId").value = "";
+            document.getElementById("itemTipo").value = "TRASFORMATO";
+            document.getElementById("fasiList").innerHTML = "";
+            document.getElementById("createButtons").style.display = "block";
+            document.getElementById("updateButtons").style.display = "none";
+            clearAllErrors();
+        }
     }
 
-    function openConfirmModal() {
-        document.getElementById("confirmModal").classList.add("show");
+    // ===== messaggi successo al load =====
+    window.addEventListener("load", () => {
+        if (document.getElementById("createSuccessModal")) document.getElementById("createSuccessModal").style.display = "flex";
+        if (document.getElementById("updateSuccessModal")) document.getElementById("updateSuccessModal").style.display = "flex";
+    });
+
+    // ===== Delete con CSRF =====
+    function getCsrf() {
+        const tokenEl = document.querySelector('meta[name="_csrf"]');
+        const headerEl = document.querySelector('meta[name="_csrf_header"]');
+        return { token: tokenEl ? tokenEl.getAttribute('content') : '', header: headerEl ? headerEl.getAttribute('content') : 'X-CSRF-TOKEN' };
     }
 
-    function closeModal(id) {
-        document.getElementById(id).classList.remove("show");
+    let selectedId = null, selectedNome = null;
+    function handleDeleteClick(button) {
+        const stato = button.getAttribute("data-stato"); selectedId = button.getAttribute("data-id"); selectedNome = button.getAttribute("data-nome");
+        if (stato !== "IN_ATTESA" && stato !== "RIFIUTATO") { document.getElementById("deleteErrorModal").style.display = "flex"; return; }
+        document.getElementById("deleteConfirmMessage").textContent = `Vuoi davvero eliminare "${selectedNome}"?`;
+        document.getElementById("deleteConfirmModal").style.display = "flex";
+    }
+    async function confirmDelete() {
+        closeModal("deleteConfirmModal");
+        const {header, token} = getCsrf();
+        try {
+            const res = await fetch(`/trasformatore/elimina/${selectedId}`, { method: "DELETE", headers: {[header]: token}, credentials: 'same-origin' });
+            const msg = await res.text();
+            if (res.ok) {
+                document.querySelector(`tr[data-id='${selectedId}']`)?.remove();
+                document.getElementById("deleteSuccessMessage").textContent = msg || `Prodotto trasformato "${selectedNome}" eliminato`;
+                document.getElementById("deleteSuccessModal").style.display = "flex";
+            } else {
+                document.getElementById("deleteGenericErrorMessage").textContent = msg || "Errore durante l'eliminazione.";
+                document.getElementById("deleteGenericErrorModal").style.display = "flex";
+            }
+        } catch {
+            document.getElementById("deleteGenericErrorMessage").textContent = "Errore di rete durante l'eliminazione.";
+            document.getElementById("deleteGenericErrorModal").style.display = "flex";
+        }
     }
 
-    function submitForm() {
-        closeModal("confirmModal");
-        document.getElementById("createTrasformatoForm").submit();
+    // ===== Modifica (preload + switch azione) =====
+    async function handleEditClick(button) {
+        const stato = button.getAttribute("data-stato"); const id = button.getAttribute("data-id");
+        if (stato !== "RIFIUTATO") { document.getElementById("editErrorModal").style.display = "flex"; return; }
+        document.getElementById("formTitle").textContent = "Modifica Prodotto Trasformato Rifiutato";
+        document.getElementById("itemForm").setAttribute("action", "/venditore/item/modifica");
+        document.getElementById("itemId").value = id;
+        document.getElementById("itemTipo").value = "TRASFORMATO";
+        document.getElementById("createButtons").style.display = "none";
+        document.getElementById("updateButtons").style.display = "block";
+        document.getElementById("trasformatoForm").style.display = "block";
+        clearAllErrors();
+
+        try {
+            const res = await fetch(`/trasformatore/api/trasformato/${id}`, {credentials: 'same-origin'});
+            if (!res.ok) throw new Error(await res.text());
+            const t = await res.json();
+
+            document.getElementById("nome").value = t.nome ?? '';
+            document.getElementById("descrizione").value = t.descrizione ?? '';
+            document.getElementById("quantita").value = t.quantita ?? '';
+            document.getElementById("prezzo").value = t.prezzo ?? '';
+            document.getElementById("indirizzo").value = t.indirizzo ?? '';
+
+            // Render fasi (con indici contigui)
+            const list = document.getElementById("fasiList");
+            list.innerHTML = "";
+            (t.fasiProduzione || []).forEach((fase, index) => appendFaseLi(index, fase.descrizioneFase, fase.produttoreUsername, fase.prodottoOrigineId, fase.descrizioneFase, fase.prodottoOrigineId));
+        } catch(e) {
+            alert("Errore caricando il prodotto trasformato: " + (e.message || 'errore'));
+        }
     }
 
-    function openFaseModal() {
-        document.getElementById("faseModal").classList.add("show");
+    // ===== Fasi: add/remove + reindex =====
+    function appendFaseLi(index, descrizione, produttoreUsername, prodottoId, produttoreText, prodottoText) {
+        const li = document.createElement("li");
+        li.innerHTML = `${descrizione} - ${produttoreText || produttoreUsername} - ${prodottoText || prodottoId}
+            <button type="button" onclick="removeFase(this)">Rimuovi</button>
+            <input type="hidden" name="fasiProduzione[${index}].descrizioneFase" value="${descrizione}"/>
+            <input type="hidden" name="fasiProduzione[${index}].produttoreUsername" value="${produttoreUsername}"/>
+            <input type="hidden" name="fasiProduzione[${index}].prodottoOrigineId" value="${prodottoId}"/>`;
+        document.getElementById("fasiList").appendChild(li);
     }
-
+    function reindexFasi() {
+        const items = document.querySelectorAll("#fasiList li");
+        items.forEach((li, i) => {
+            li.querySelectorAll("input[type='hidden']").forEach(input => {
+                input.name = input.name.replace(/fasiProduzione\[\d+\]/, `fasiProduzione[${i}]`);
+            });
+        });
+    }
+    function removeFase(btn) { btn.parentElement.remove(); reindexFasi(); }
+    function openFaseModal() { document.getElementById("faseModal").style.display = "flex"; }
     function aggiungiFase() {
         const descrizione = document.getElementById("faseDescrizione").value.trim();
-        const produttoreSelect = document.getElementById("faseProduttore");
-        const produttore = produttoreSelect.value;
-        const produttoreText = produttoreSelect.selectedOptions[0]?.text || "";
-
-        const prodottoSelect = document.getElementById("faseProdottoBase");
-        const prodottoBase = prodottoSelect.value;
-        const prodottoText = prodottoSelect.selectedOptions[0]?.text || "";
-
-        if (!descrizione || !produttore || !prodottoBase) {
-            alert("Tutti i campi della fase sono obbligatori!");
-            return;
-        }
-
-        const container = document.getElementById("fasiList");
-        const index = container.children.length;
-        const li = document.createElement("li");
-
-        li.innerHTML = `
-        ${descrizione} - Produttore: ${produttoreText} - Prodotto: ${prodottoText}
-        <button type="button" onclick="rimuoviFase(this)">Rimuovi</button>
-        <input type="hidden" name="fasiProduzione[${index}].descrizioneFase" value="${descrizione}">
-        <input type="hidden" name="fasiProduzione[${index}].produttoreUsername" value="${produttore}">
-        <input type="hidden" name="fasiProduzione[${index}].prodottoOrigineId" value="${prodottoBase}">
-    `;
-
-        container.appendChild(li);
-
+        const produttore = document.getElementById("faseProduttore").value;
+        const produttoreText = document.getElementById("faseProduttore").selectedOptions[0]?.text || "";
+        const prodotto = document.getElementById("faseProdottoBase").value;
+        const prodottoText = document.getElementById("faseProdottoBase").selectedOptions[0]?.text || "";
+        if (!descrizione || !produttore || !prodotto) { alert("Tutti i campi sono obbligatori!"); return; }
+        const index = document.querySelectorAll("#fasiList li").length;
+        appendFaseLi(index, descrizione, produttore, prodotto, produttoreText, prodottoText);
         closeModal("faseModal");
         document.getElementById("faseDescrizione").value = "";
         document.getElementById("faseProduttore").value = "";
-        document.getElementById("faseProdottoBase").innerHTML = '<option value="">-- Seleziona Prodotto Base --</option>';
+        document.getElementById("faseProdottoBase").innerHTML = "<option value=''>-- Seleziona --</option>";
     }
 
-    function rimuoviFase(button) {
-        const li = button.parentElement;
-        li.remove();
+    // Ricarico prodotti approvati in base al produttore selezionato
+    document.addEventListener('DOMContentLoaded', function() {
+        const sel = document.getElementById("faseProduttore");
+        if (sel) {
+            sel.addEventListener("change", function() {
+                const username = this.value;
+                const select = document.getElementById("faseProdottoBase");
+                select.innerHTML = "<option value=''>-- Seleziona --</option>";
+                if (!username) return;
+                fetch(`/trasformatore/prodotti/${username}`, {credentials: 'same-origin'})
+                    .then(res => res.json())
+                    .then(prodotti => prodotti.forEach(p => {
+                        const opt = document.createElement("option");
+                        opt.value = p.id;
+                        opt.textContent = p.nome;
+                        select.appendChild(opt);
+                    }))
+                    .catch(err => console.error("Errore caricando i prodotti:", err));
+            });
+        }
+    });
 
-        const container = document.getElementById("fasiList");
-        [...container.children].forEach((li, i) => {
-            const inputs = li.querySelectorAll("input[type='hidden']");
-            inputs[0].name = `fasiProduzione[${i}].descrizioneFase`;
-            inputs[1].name = `fasiProduzione[${i}].produttoreUsername`;
-            inputs[2].name = `fasiProduzione[${i}].prodottoOrigineId`;
+    // ===== Validazione client uniforme (come produttore/distributore) =====
+    function getErrorSpan(field) {
+        let el = field.nextElementSibling;
+        while (el && !el.classList.contains('error-message')) el = el.nextElementSibling;
+        return el;
+    }
+    function setFieldError(fieldId, message) {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+        field.classList.add('error');
+        const span = getErrorSpan(field);
+        if (span) span.textContent = message || 'Campo obbligatorio';
+    }
+    function clearFieldError(field) {
+        field.classList.remove('error');
+        const span = getErrorSpan(field);
+        if (span) span.textContent = '';
+    }
+    function clearAllErrors() {
+        const form = document.getElementById('itemForm');
+        if (!form) return;
+        form.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+        form.querySelectorAll('.error-message').forEach(span => { span.textContent = ''; });
+    }
+
+    function clientValidate() {
+        clearAllErrors();
+
+        const nome = document.getElementById("nome");
+        const descrizione = document.getElementById("descrizione");
+        const quantita = document.getElementById("quantita");
+        const prezzo = document.getElementById("prezzo");
+        const indirizzo = document.getElementById("indirizzo");
+        const certificati = document.getElementById("certificati");
+        const foto = document.getElementById("foto");
+
+        let ok = true;
+
+        if (!nome.value.trim()) { setFieldError("nome", "⚠ Nome obbligatorio"); ok = false; }
+        if (!descrizione.value.trim()) { setFieldError("descrizione", "⚠ Descrizione obbligatoria"); ok = false; }
+        if (!indirizzo.value.trim()) { setFieldError("indirizzo", "⚠ Indirizzo obbligatorio"); ok = false; }
+
+        const q = quantita.value !== '' ? Number(quantita.value) : NaN;
+        if (Number.isNaN(q) || q < 1) { setFieldError("quantita", "⚠ La quantità deve essere almeno 1"); ok = false; }
+
+        const p = prezzo.value !== '' ? Number(prezzo.value) : NaN;
+        if (Number.isNaN(p) || p <= 0) { setFieldError("prezzo", "⚠ Il prezzo deve essere positivo"); ok = false; }
+
+        if (!certificati.files || certificati.files.length === 0) {
+            setFieldError("certificati", "Devi caricare almeno un certificato"); ok = false;
+        }
+        if (!foto.files || foto.files.length === 0) {
+            setFieldError("foto", "Devi caricare almeno una foto"); ok = false;
+        }
+
+        // Fasi di produzione
+        const numFasi = document.querySelectorAll("#fasiList li").length;
+        if (numFasi < 2) {
+            const span = document.querySelector("span.error-message[th\\:errors='*{fasiProduzione}']")
+                || document.querySelector("#fasiList").nextElementSibling;
+            if (span) span.textContent = "⚠ Devi inserire almeno 2 fasi di produzione";
+            ok = false;
+        }
+
+        return ok;
+    }
+
+    function submitForm() {
+        // reindicizza prima di validare/inviare
+        reindexFasi();
+
+        const ok = clientValidate();
+        if (!ok) { closeModal("createConfirmModal"); closeModal("updateConfirmModal"); return; }
+
+        closeModal("createConfirmModal");
+        closeModal("updateConfirmModal");
+        document.getElementById("itemForm").submit();
+    }
+
+    // Live cleaning
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('itemForm');
+        if (!form) return;
+        form.querySelectorAll('input[type="text"], input[type="number"], textarea, select')
+            .forEach(f => {
+                f.addEventListener('input', () => clearFieldError(f));
+                f.addEventListener('change', () => clearFieldError(f));
+            });
+        form.querySelectorAll('input[type="file"]').forEach(f => f.addEventListener('change', () => clearFieldError(f)));
+    });
+
+    // ===== Riapri form in UPDATE dopo errori server =====
+    const UPDATE_MODE = /*[[${updateMode}]]*/ false;
+    const UPDATE_ID = /*[[${trasformatoDto != null ? trasformatoDto.id : null}]]*/ null;
+    if (UPDATE_MODE) {
+        document.addEventListener('DOMContentLoaded', function () {
+            // passa in modalità update (azione /venditore/item/modifica)
+            document.getElementById("formTitle").textContent = "Modifica Prodotto Trasformato Rifiutato";
+            document.getElementById("itemForm").setAttribute("action", "/venditore/item/modifica");
+            document.getElementById("itemTipo").value = "TRASFORMATO";
+            document.getElementById("createButtons").style.display = "none";
+            document.getElementById("updateButtons").style.display = "block";
+            document.getElementById("trasformatoForm").style.display = "block";
         });
-    }
-
-    document.getElementById("faseProduttore").addEventListener("change", function () {
-        const username = this.value;
-        const selectProdotti = document.getElementById("faseProdottoBase");
-        selectProdotti.innerHTML = '<option value="">-- Seleziona Prodotto Base --</option>';
-
-        if (!username) return;
-
-        fetch(`/trasformatore/prodotti/${username}`)
-            .then(response => response.json())
-            .then(prodotti => {
-                prodotti.forEach(p => {
-                    const option = document.createElement("option");
-                    option.value = p.id;
-                    option.textContent = p.nome;
-                    selectProdotti.appendChild(option);
-                });
-            })
-            .catch(err => {
-                console.error("Errore nel caricamento dei prodotti:", err);
-            });
-    });
-
-    document.querySelectorAll("#createTrasformatoForm input, #createTrasformatoForm textarea, #createTrasformatoForm select")
-        .forEach(el => {
-            el.addEventListener("input", () => {
-                if (el.value.trim() !== "") {
-                    el.classList.remove("error");
-                    const errorSpan = el.nextElementSibling;
-                    if (errorSpan && errorSpan.classList.contains("error-message")) {
-                        errorSpan.innerText = "";
-                    }
-                }
-            });
-        });
-
-    document.getElementById("certificati").addEventListener("change", function () {
-        if (this.files.length > 0) {
-            this.classList.remove("error");
-            this.nextElementSibling.innerText = "";
-        }
-    });
-    document.getElementById("foto").addEventListener("change", function () {
-        if (this.files.length > 0) {
-            this.classList.remove("error");
-            this.nextElementSibling.innerText = "";
-        }
-    });
-
-    window.addEventListener("load", () => {
-        const successModal = document.getElementById("successModal");
-        if (successModal) {
-            successModal.classList.add("show");
-        }
-    });
-
-    let selectedTrasfId = null;
-    let selectedTrasfName = null;
-
-    function handleDeleteTrasfClick(button) {
-        const stato = button.getAttribute("data-stato");
-        const nome = button.getAttribute("data-nome");
-        const id = button.getAttribute("data-id");
-
-        if (stato === "APPROVATO") {
-            document.getElementById("deleteTrasfErrorModal").classList.add("show");
-        } else {
-            selectedTrasfId = id;
-            selectedTrasfName = nome;
-            document.getElementById("deleteTrasfConfirmMessage").textContent =
-                `Vuoi davvero eliminare il prodotto trasformato "${nome}"?`;
-            document.getElementById("deleteTrasfConfirmModal").classList.add("show");
-        }
-    }
-
-    function confirmDeleteTrasf() {
-        fetch(`/trasformatore/elimina/${selectedTrasfId}`, {
-            method: "DELETE"
-        })
-            .then(response => response.text().then(msg => {
-                if (response.ok) {
-                    const row = document.querySelector(`tr[data-id='${selectedTrasfId}']`);
-                    if (row) row.remove();
-                    closeModal("deleteTrasfConfirmModal");
-                    document.getElementById("deleteTrasfSuccessMessage").textContent = msg;
-                    document.getElementById("deleteTrasfSuccessModal").classList.add("show");
-                } else {
-                    throw new Error(msg || "Errore durante l'eliminazione");
-                }
-            }))
-            .catch(err => {
-                closeModal("deleteTrasfConfirmModal");
-                document.getElementById("deleteTrasfGenericErrorMessage").textContent = err.message;
-                document.getElementById("deleteTrasfGenericErrorModal").classList.add("show");
-            });
     }
 </script>
-
-
 
 <p><a th:href="@{/}">Torna alla Home</a></p>
 </body>

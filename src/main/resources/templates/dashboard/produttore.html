@@ -3,16 +3,70 @@
 <head>
     <title>Dashboard Produttore</title>
     <meta charset="UTF-8"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <style>
-        .form-container { display:none; margin-top:20px; padding:15px; border:1px solid #ccc; border-radius:6px; background:#f9f9f9; max-width:500px; }
-        .form-container label { display:block; margin-top:10px; font-weight:bold; }
-        .form-container input, .form-container textarea { width:100%; padding:6px; margin-top:5px; }
-        .form-container input.error, .form-container textarea.error { border:2px solid red; }
-        .error-message { color:red; font-size:0.9rem; }
-        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; }
-        .modal-content { background:white; padding:20px; border-radius:8px; text-align:center; max-width:400px; }
-        .modal-content button { margin:10px; padding:8px 16px; }
-        .section-separator { margin:40px 0; border:none; border-top:2px dashed #bbb; }
+        .form-container {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background: #f9f9f9;
+            max-width: 500px;
+        }
+
+        .form-container label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .form-container input, .form-container textarea {
+            width: 100%;
+            padding: 6px;
+            margin-top: 5px;
+        }
+
+        .form-container input.error, .form-container textarea.error {
+            border: 2px solid red;
+        }
+
+        .error-message {
+            color: red;
+            font-size: 0.9rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .modal-content button {
+            margin: 10px;
+            padding: 8px 16px;
+        }
+
+        .section-separator {
+            margin: 40px 0;
+            border: none;
+            border-top: 2px dashed #bbb;
+        }
     </style>
 </head>
 <body>
@@ -23,10 +77,11 @@
 <h2>Dashboard Produttore</h2>
 <h2>I tuoi Prodotti</h2>
 
+<!-- Tabella prodotti -->
 <table border="1" style="border-collapse: collapse; width: 100%; margin-top: 20px;">
     <thead>
     <tr style="background-color: #f0f0f0; text-align: center;">
-        <th>Nome Prodotto</th>
+        <th>Nome</th>
         <th>Descrizione</th>
         <th>Quantità</th>
         <th>Prezzo</th>
@@ -48,45 +103,41 @@
         <td th:text="${prodotto.prezzo}">Prezzo</td>
         <td th:text="${prodotto.indirizzo}">Indirizzo</td>
 
-        <!-- Certificati -->
         <td>
             <a th:each="cert : ${prodotto.certificati}"
                th:href="@{'/file/certificati/' + ${cert}}"
-               target="_blank"
-               th:text="${cert}">Certificato</a>
+               target="_blank" th:text="${cert}">Certificato</a>
         </td>
 
-        <!-- Foto -->
         <td>
             <a th:each="foto : ${prodotto.foto}"
                th:href="@{'/file/foto/' + ${foto}}"
-               target="_blank"
-               th:text="${foto}">Foto</a>
+               target="_blank" th:text="${foto}">Foto</a>
         </td>
 
-        <!-- Stato approvazione -->
         <td th:text="${prodotto.stato}">In attesa</td>
-
-        <!-- Commento del Curatore -->
         <td th:text="${prodotto.commento}">Commento</td>
 
-        <!-- Bottone elimina -->
         <td>
             <button type="button"
                     th:attr="data-id=${prodotto.id}, data-stato=${prodotto.stato}, data-nome=${prodotto.nome}"
-                    onclick="handleDeleteClick(this)">
-                Elimina
+                    onclick="handleDeleteClick(this)">Elimina
             </button>
         </td>
 
-        <!-- Colonne segnaposto -->
-        <td>-</td>
+        <td>
+            <button type="button"
+                    th:attr="data-id=${prodotto.id}, data-stato=${prodotto.stato}, data-nome=${prodotto.nome}"
+                    onclick="handleEditClick(this)">Modifica
+            </button>
+        </td>
+
         <td>-</td>
     </tr>
     </tbody>
 </table>
 
-<!-- Modale errore eliminazione approvati -->
+<!-- Modali eliminazione -->
 <div id="deleteErrorModal" class="modal">
     <div class="modal-content">
         <p>Puoi eliminare solo prodotti in attesa o rifiutati.</p>
@@ -94,7 +145,6 @@
     </div>
 </div>
 
-<!-- Modale conferma eliminazione -->
 <div id="deleteConfirmModal" class="modal">
     <div class="modal-content">
         <p id="deleteConfirmMessage"></p>
@@ -103,7 +153,6 @@
     </div>
 </div>
 
-<!-- Modale successo eliminazione -->
 <div id="deleteSuccessModal" class="modal">
     <div class="modal-content">
         <p id="deleteSuccessMessage"></p>
@@ -111,7 +160,6 @@
     </div>
 </div>
 
-<!-- Modale errore generico eliminazione -->
 <div id="deleteGenericErrorModal" class="modal">
     <div class="modal-content">
         <p id="deleteGenericErrorMessage"></p>
@@ -119,155 +167,361 @@
     </div>
 </div>
 
-<!-- Separatore tra tabella e form -->
+<!-- Modale errore modifica -->
+<div id="editErrorModal" class="modal">
+    <div class="modal-content">
+        <p>Puoi modificare solo prodotti rifiutati.</p>
+        <button onclick="closeModal('editErrorModal')">OK</button>
+    </div>
+</div>
+
 <hr class="section-separator"/>
 
 <button type="button" onclick="toggleForm()">Crea Prodotto</button>
 
-<!-- FORM CREAZIONE -->
+<!-- Form creazione/modifica -->
 <div id="prodottoForm" class="form-container"
      th:style="${showForm} ? 'display:block;' : 'display:none;'">
-    <h3>Nuovo Prodotto</h3>
-    <form id="createProductForm"
+    <h3 id="formTitle">Nuovo Prodotto</h3>
+    <form id="itemForm"
           th:action="@{/produttore/crea}"
           th:object="${prodottoDto}"
-          method="post"
-          enctype="multipart/form-data">
+          method="post" enctype="multipart/form-data"
+          novalidate>
+
+    <input type="hidden" th:field="*{id}" id="itemId"/>
+        <input type="hidden" th:field="*{tipo}" id="itemTipo" value="PRODOTTO"/>
 
         <label for="nome">Nome prodotto:</label>
-        <input type="text" th:field="*{nome}" id="nome" th:classappend="${#fields.hasErrors('nome')} ? 'error'"/>
-        <span class="error-message" th:errors="*{nome}"></span>
+        <input type="text" th:field="*{nome}" id="nome"
+               th:classappend="${#fields.hasErrors('nome')} ? 'error'"/>
+        <span class="error-message"
+              th:utext="${#fields.hasErrors('nome')} ? ${#strings.arrayJoin(#fields.errors('nome'), '<br/>')} : ''"></span>
 
         <label for="descrizione">Descrizione:</label>
-        <textarea th:field="*{descrizione}" id="descrizione" th:classappend="${#fields.hasErrors('descrizione')} ? 'error'"></textarea>
-        <span class="error-message" th:errors="*{descrizione}"></span>
+        <textarea th:field="*{descrizione}" id="descrizione"
+                  th:classappend="${#fields.hasErrors('descrizione')} ? 'error'"></textarea>
+        <span class="error-message"
+              th:utext="${#fields.hasErrors('descrizione')} ? ${#strings.arrayJoin(#fields.errors('descrizione'), '<br/>')} : ''"></span>
 
         <label for="quantita">Quantità:</label>
-        <input type="number" th:field="*{quantita}" id="quantita" th:classappend="${#fields.hasErrors('quantita')} ? 'error'"/>
-        <span class="error-message" th:errors="*{quantita}"></span>
+        <input type="number" th:field="*{quantita}" id="quantita"
+               th:classappend="${#fields.hasErrors('quantita')} ? 'error'"/>
+        <span class="error-message"
+              th:utext="${#fields.hasErrors('quantita')} ? ${#strings.arrayJoin(#fields.errors('quantita'), '<br/>')} : ''"></span>
 
         <label for="prezzo">Prezzo:</label>
-        <input type="number" step="0.01" th:field="*{prezzo}" id="prezzo" th:classappend="${#fields.hasErrors('prezzo')} ? 'error'"/>
-        <span class="error-message" th:errors="*{prezzo}"></span>
+        <input type="number" step="0.01" th:field="*{prezzo}" id="prezzo"
+               th:classappend="${#fields.hasErrors('prezzo')} ? 'error'"/>
+        <span class="error-message"
+              th:utext="${#fields.hasErrors('prezzo')} ? ${#strings.arrayJoin(#fields.errors('prezzo'), '<br/>')} : ''"></span>
 
         <label for="indirizzo">Indirizzo:</label>
-        <input type="text" th:field="*{indirizzo}" id="indirizzo" th:classappend="${#fields.hasErrors('indirizzo')} ? 'error'"/>
-        <span class="error-message" th:errors="*{indirizzo}"></span>
+        <input type="text" th:field="*{indirizzo}" id="indirizzo"
+               th:classappend="${#fields.hasErrors('indirizzo')} ? 'error'"/>
+        <span class="error-message"
+              th:utext="${#fields.hasErrors('indirizzo')} ? ${#strings.arrayJoin(#fields.errors('indirizzo'), '<br/>')} : ''"></span>
 
         <label for="certificati">Seleziona certificati:</label>
-        <input type="file" th:field="*{certificati}" id="certificati" multiple th:classappend="${#fields.hasErrors('certificati')} ? 'error'"/>
-        <span class="error-message" th:errors="*{certificati}"></span>
+        <input type="file" th:field="*{certificati}" id="certificati" multiple
+               th:classappend="${#fields.hasErrors('certificati')} ? 'error'"/>
+        <span class="error-message"
+              th:utext="${#fields.hasErrors('certificati')} ? ${#strings.arrayJoin(#fields.errors('certificati'), '<br/>')} : ''"></span>
 
         <label for="foto">Seleziona foto:</label>
-        <input type="file" th:field="*{foto}" id="foto" multiple th:classappend="${#fields.hasErrors('foto')} ? 'error'"/>
-        <span class="error-message" th:errors="*{foto}"></span>
+        <input type="file" th:field="*{foto}" id="foto" multiple
+               th:classappend="${#fields.hasErrors('foto')} ? 'error'"/>
+        <span class="error-message"
+              th:utext="${#fields.hasErrors('foto')} ? ${#strings.arrayJoin(#fields.errors('foto'), '<br/>')} : ''"></span>
 
-        <button type="button" onclick="openConfirmModal()">Invia Prodotto</button>
+        <div id="createButtons">
+            <button type="button" onclick="openCreateConfirmModal()">Invia</button>
+        </div>
+        <div id="updateButtons" style="display:none;">
+            <button type="button" onclick="openUpdateConfirmModal()">Aggiorna</button>
+        </div>
         <button type="button" onclick="toggleForm()">Chiudi Form</button>
     </form>
 </div>
 
-<!-- Modale conferma invio -->
-<div id="confirmModal" class="modal">
+<!-- Modali creazione/modifica -->
+<div id="createConfirmModal" class="modal">
     <div class="modal-content">
         <p>Inviare il prodotto al Curatore per approvazione?</p>
         <button onclick="submitForm()">Sì</button>
-        <button onclick="closeModal('confirmModal')">No</button>
+        <button onclick="closeModal('createConfirmModal')">No</button>
     </div>
 </div>
 
-<!-- Modale successo creazione -->
-<div id="successModal" class="modal" th:if="${successMessage}">
+<div id="createSuccessModal" class="modal" th:if="${createSuccessMessage}">
     <div class="modal-content">
-        <p th:text="${successMessage}">Prodotto inviato al Curatore!</p>
-        <button onclick="window.location.href='/dashboard'">OK</button>
+        <p th:text="${createSuccessMessage}">Prodotto inviato al Curatore!</p>
+        <button onclick="window.location.href='/produttore/dashboard'">OK</button>
     </div>
 </div>
 
-<script>
+<div id="updateConfirmModal" class="modal">
+    <div class="modal-content">
+        <p>Sei sicuro di voler aggiornare e rinviare il prodotto al Curatore?</p>
+        <button onclick="submitForm()">Sì</button>
+        <button onclick="closeModal('updateConfirmModal')">No</button>
+    </div>
+</div>
+
+<div id="updateSuccessModal" class="modal" th:if="${updateSuccessMessage}">
+    <div class="modal-content">
+        <p th:text="${updateSuccessMessage}">Prodotto aggiornato e reinviato al Curatore!</p>
+        <button onclick="window.location.href='/produttore/dashboard'">OK</button>
+    </div>
+</div>
+
+<script th:inline="javascript">
     function toggleForm() {
         const form = document.getElementById("prodottoForm");
-        form.style.display = (form.style.display === "none") ? "block" : "none";
+        const isHidden = form.style.display === "none";
+        form.style.display = isHidden ? "block" : "none";
+
+        if (!isHidden) {
+            document.getElementById("formTitle").textContent = "Nuovo Prodotto";
+            document.getElementById("itemForm").reset();
+            document.getElementById("itemId").value = "";
+            document.getElementById("itemTipo").value = "PRODOTTO";
+            document.getElementById("createButtons").style.display = "block";
+            document.getElementById("updateButtons").style.display = "none";
+        }
+        if (typeof clearAllErrors === 'function') clearAllErrors();
     }
 
-    function openConfirmModal() {
-        document.getElementById("confirmModal").style.display = "flex";
+    function openCreateConfirmModal() {
+        document.getElementById("createConfirmModal").style.display = "flex";
+    }
+
+    function openUpdateConfirmModal() {
+        document.getElementById("updateConfirmModal").style.display = "flex";
     }
 
     function closeModal(id) {
         document.getElementById(id).style.display = "none";
     }
 
+    // ====== VALIDAZIONE CLIENT ======
+    function getErrorSpan(field) {
+        let el = field.nextElementSibling;
+        while (el && !el.classList.contains('error-message')) el = el.nextElementSibling;
+        return el;
+    }
+
+    function setFieldError(fieldId, message) {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+        field.classList.add('error');
+        const span = getErrorSpan(field);
+        if (span) span.textContent = message || 'Campo obbligatorio';
+    }
+
+    function clearFieldError(field) {
+        field.classList.remove('error');
+        const span = getErrorSpan(field);
+        if (span) span.textContent = '';
+    }
+
+    function clearAllErrors() {
+        const form = document.getElementById('itemForm');
+        if (!form) return;
+        form.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+        form.querySelectorAll('.error-message').forEach(span => { span.textContent = ''; });
+    }
+
+    function clientValidate() {
+        clearAllErrors();
+
+        const nome = document.getElementById("nome");
+        const descrizione = document.getElementById("descrizione");
+        const quantita = document.getElementById("quantita");
+        const prezzo = document.getElementById("prezzo");
+        const indirizzo = document.getElementById("indirizzo");
+        const certificati = document.getElementById("certificati");
+        const foto = document.getElementById("foto");
+
+        let ok = true;
+
+        if (!nome.value.trim()) { setFieldError("nome", "⚠ Nome obbligatorio"); ok = false; }
+        if (!descrizione.value.trim()) { setFieldError("descrizione", "⚠ Descrizione obbligatoria"); ok = false; }
+        if (!indirizzo.value.trim()) { setFieldError("indirizzo", "⚠ Indirizzo obbligatorio"); ok = false; }
+
+        const q = quantita.value !== '' ? Number(quantita.value) : NaN;
+        if (Number.isNaN(q) || q < 1) { setFieldError("quantita", "⚠ La quantità deve essere almeno 1"); ok = false; }
+
+        const p = prezzo.value !== '' ? Number(prezzo.value) : NaN;
+        if (Number.isNaN(p) || p <= 0) { setFieldError("prezzo", "⚠ Il prezzo deve essere positivo"); ok = false; }
+
+        if (!certificati.files || certificati.files.length === 0) {
+            setFieldError("certificati", "Devi caricare almeno un certificato"); ok = false;
+        }
+        if (!foto.files || foto.files.length === 0) {
+            setFieldError("foto", "Devi caricare almeno una foto"); ok = false;
+        }
+
+        return ok;
+    }
+
+
     function submitForm() {
-        closeModal("confirmModal");
-        document.getElementById("createProductForm").submit();
+        // Non chiudere le modali finché non validiamo
+        const isUpdate = document.getElementById("updateButtons").style.display === "block";
+
+        // valida sempre (sia crea che update)
+        const ok = clientValidate();
+        if (!ok) {
+            // lascia la modale chiusa e il form aperto con gli errori evidenziati
+            closeModal("createConfirmModal");
+            closeModal("updateConfirmModal");
+            return;
+        }
+
+        // tutto ok -> chiudi modali e invia
+        closeModal("createConfirmModal");
+        closeModal("updateConfirmModal");
+        document.getElementById("itemForm").submit();
     }
 
     window.addEventListener("load", () => {
-        const successModal = document.getElementById("successModal");
-        if (successModal) {
-            successModal.style.display = "flex";
-        }
+        const createSuccessModal = document.getElementById("createSuccessModal");
+        const updateSuccessModal = document.getElementById("updateSuccessModal");
+        if (createSuccessModal) createSuccessModal.style.display = "flex";
+        if (updateSuccessModal) updateSuccessModal.style.display = "flex";
     });
 
-    // ======================
-    // Gestione eliminazione
-    // ======================
-    let selectedProductId = null;
-    let selectedProductName = null;
+    // ====== MODIFICA: fetch + prefill ======
+    function setUpdateModeForm(id) {
+        document.getElementById("formTitle").textContent = "Modifica Prodotto Rifiutato";
+        const form = document.getElementById("itemForm");
+        form.setAttribute("action", "/venditore/item/modifica");
+        document.getElementById("itemId").value = id || "";
+        document.getElementById("itemTipo").value = "PRODOTTO";
+        document.getElementById("createButtons").style.display = "none";
+        document.getElementById("updateButtons").style.display = "block";
+        document.getElementById("prodottoForm").style.display = "block";
+    }
+
+    async function handleEditClick(button) {
+        const stato = button.getAttribute("data-stato");
+        const id = button.getAttribute("data-id");
+
+        if (stato !== "RIFIUTATO") {
+            document.getElementById("editErrorModal").style.display = "flex";
+            return;
+        }
+
+        setUpdateModeForm(id);
+        if (typeof clearAllErrors === 'function') clearAllErrors();
+
+        try {
+            const res = await fetch(`/produttore/api/prodotto/${id}`, { credentials: 'same-origin' });
+            if (!res.ok) throw new Error(await res.text());
+            const p = await res.json();
+
+            document.getElementById("nome").value = p.nome ?? '';
+            document.getElementById("descrizione").value = p.descrizione ?? '';
+            document.getElementById("quantita").value = (p.quantita ?? '');
+            document.getElementById("prezzo").value = (p.prezzo ?? '');
+            document.getElementById("indirizzo").value = p.indirizzo ?? '';
+        } catch (e) {
+            alert("Impossibile caricare il prodotto: " + (e.message || 'errore'));
+        }
+    }
+
+    // ===== Delete con CSRF =====
+    function getCsrf() {
+        const tokenEl = document.querySelector('meta[name="_csrf"]');
+        const headerEl = document.querySelector('meta[name="_csrf_header"]');
+        return { token: tokenEl ? tokenEl.getAttribute('content') : '', header: headerEl ? headerEl.getAttribute('content') : 'X-CSRF-TOKEN' };
+    }
+
+    let toDelete = { id: null, nome: null };
 
     function handleDeleteClick(button) {
         const stato = button.getAttribute("data-stato");
-        const nome = button.getAttribute("data-nome");
         const id = button.getAttribute("data-id");
-
-        if (stato === "APPROVATO") {
+        const nome = button.getAttribute("data-nome");
+        if (stato !== "IN_ATTESA" && stato !== "RIFIUTATO") {
             document.getElementById("deleteErrorModal").style.display = "flex";
-        } else {
-            selectedProductId = id;
-            selectedProductName = nome;
-            document.getElementById("deleteConfirmMessage").textContent =
-                `Vuoi davvero eliminare il prodotto "${nome}"?`;
-            document.getElementById("deleteConfirmModal").style.display = "flex";
+            return;
+        }
+        toDelete = { id, nome };
+        document.getElementById("deleteConfirmMessage").textContent = `Eliminare il prodotto "${nome}"?`;
+        document.getElementById("deleteConfirmModal").style.display = "flex";
+    }
+
+    async function confirmDelete() {
+        closeModal('deleteConfirmModal');
+        const { header, token } = getCsrf();
+        try {
+            const res = await fetch(`/produttore/elimina/${toDelete.id}`, {
+                method: 'DELETE',
+                headers: { [header]: token },
+                credentials: 'same-origin'
+            });
+            const text = await res.text();
+            if (res.ok) {
+                const row = document.querySelector(`tr[data-id="${toDelete.id}"]`);
+                if (row && row.parentNode) row.parentNode.removeChild(row);
+                document.getElementById("deleteSuccessMessage").textContent = text || `Prodotto "${toDelete.nome}" eliminato con successo`;
+                document.getElementById("deleteSuccessModal").style.display = "flex";
+            } else {
+                document.getElementById("deleteGenericErrorMessage").textContent = text || "Errore durante l'eliminazione.";
+                document.getElementById("deleteGenericErrorModal").style.display = "flex";
+            }
+        } catch {
+            document.getElementById("deleteGenericErrorMessage").textContent = "Errore di rete durante l'eliminazione.";
+            document.getElementById("deleteGenericErrorModal").style.display = "flex";
         }
     }
 
-    function confirmDelete() {
-        fetch(`/produttore/elimina/${selectedProductId}`, {
-            method: "DELETE"
-        })
-            .then(response => {
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.includes("application/json")) {
-                    return response.json().then(err => {
-                        throw new Error(err.message || "Errore sconosciuto");
-                    });
-                } else {
-                    return response.text().then(msg => {
-                        if (response.ok) {
-                            // Rimuovi riga dalla tabella
-                            const row = document.querySelector(`tr[data-id='${selectedProductId}']`);
-                            if (row) row.remove();
-
-                            // Mostra modale successo
-                            closeModal("deleteConfirmModal");
-                            document.getElementById("deleteSuccessMessage").textContent = msg;
-                            document.getElementById("deleteSuccessModal").style.display = "flex";
-                        } else {
-                            throw new Error(msg || "Errore generico");
-                        }
-                    });
-                }
-            })
-            .catch(err => {
-                closeModal("deleteConfirmModal");
-                document.getElementById("deleteGenericErrorMessage").textContent = err.message;
-                document.getElementById("deleteGenericErrorModal").style.display = "flex";
-            });
+    // ===== Live validation (pulizia in tempo reale) =====
+    function validateAndClearIfOk(field) {
+        const name = field.getAttribute('id');
+        if (field.type === 'file') {
+            if (field.files && field.files.length > 0) clearFieldError(field);
+            return;
+        }
+        if (field.tagName === 'TEXTAREA' || field.type === 'text') {
+            if (field.value && field.value.trim().length > 0) clearFieldError(field);
+            return;
+        }
+        if (field.type === 'number') {
+            const v = field.value !== '' ? Number(field.value) : NaN;
+            if (name === 'quantita') { if (!Number.isNaN(v) && v >= 1) clearFieldError(field); }
+            else if (name === 'prezzo') { if (!Number.isNaN(v) && v > 0) clearFieldError(field); }
+            else { if (!Number.isNaN(v)) clearFieldError(field); }
+        }
     }
 
+    function attachLiveValidation() {
+        const form = document.getElementById('itemForm');
+        if (!form) return;
+        form.querySelectorAll('input[type="text"], input[type="number"], textarea')
+            .forEach(f => {
+                f.addEventListener('input', () => validateAndClearIfOk(f));
+                f.addEventListener('change', () => validateAndClearIfOk(f));
+            });
+        form.querySelectorAll('input[type="file"]')
+            .forEach(f => f.addEventListener('change', () => validateAndClearIfOk(f)));
+    }
 
+    window.addEventListener('DOMContentLoaded', attachLiveValidation);
+
+    // ===== Riapri form in UPDATE dopo errori server =====
+    const UPDATE_MODE = /*[[${updateMode}]]*/ false;
+    const UPDATE_ID = /*[[${prodottoDto != null ? prodottoDto.id : null}]]*/ null;
+    if (UPDATE_MODE) {
+        document.addEventListener('DOMContentLoaded', function() {
+            setUpdateModeForm(UPDATE_ID);
+        });
+    }
 </script>
+
+
 
 <p><a th:href="@{/}">Torna alla Home</a></p>
 </body>

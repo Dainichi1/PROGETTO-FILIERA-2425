@@ -1,102 +1,72 @@
 package unicam.filiera.factory;
 
-import unicam.filiera.dto.PacchettoDto;
-import unicam.filiera.dto.ProdottoDto;
-import unicam.filiera.dto.ProdottoTrasformatoDto;
+import unicam.filiera.dto.*;
 import unicam.filiera.model.*;
 import unicam.filiera.model.StatoProdotto;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * Factory centralizzata per la creazione di {@link Item} (Prodotto, Pacchetto, ProdottoTrasformato)
- * a partire dai rispettivi DTO.
- *
- * Usa un registry di strategie (Strategy + Factory Method).
- */
 public final class ItemFactory {
 
     private ItemFactory() {}
 
-    public enum TipoItem {
-        PRODOTTO,
-        PACCHETTO,
-        PRODOTTO_TRASFORMATO
-    }
+    // Tipizza su BaseItemDto per evitare Object
+    public static record Data(BaseItemDto dto, String creatore) {}
 
-    public static record Data(Object dto, String creatore) {}
-
-    private static final Map<TipoItem, Function<Data, Item>> registry =
-            new EnumMap<>(TipoItem.class);
+    private static final Map<ItemTipo, Function<Data, Item>> registry = new EnumMap<>(ItemTipo.class);
 
     static {
-        // --- Strategia: PRODOTTO ---
-        registry.put(TipoItem.PRODOTTO, data -> {
+        // --- PRODOTTO ---
+        registry.put(ItemTipo.PRODOTTO, data -> {
             if (!(data.dto() instanceof ProdottoDto dto)) {
                 throw new IllegalArgumentException("DTO non valido per PRODOTTO");
             }
-
             return new Prodotto.Builder()
                     .nome(dto.getNome())
                     .descrizione(dto.getDescrizione())
                     .quantita(dto.getQuantita())
                     .prezzo(dto.getPrezzo())
                     .indirizzo(dto.getIndirizzo())
-                    .certificati(dto.getCertificati() == null ?
-                            java.util.List.of() : dto.getCertificati().stream()
-                            .map(MultipartFile::getOriginalFilename)
-                            .collect(Collectors.toList()))
-                    .foto(dto.getFoto() == null ?
-                            java.util.List.of() : dto.getFoto().stream()
-                            .map(MultipartFile::getOriginalFilename)
-                            .collect(Collectors.toList()))
+                    .certificati(toOriginalNames(dto.getCertificati()))
+                    .foto(toOriginalNames(dto.getFoto()))
                     .creatoDa(data.creatore())
                     .stato(StatoProdotto.IN_ATTESA)
                     .commento(null)
                     .build();
         });
 
-        // --- Strategia: PACCHETTO ---
-        registry.put(TipoItem.PACCHETTO, data -> {
+        // --- PACCHETTO ---
+        registry.put(ItemTipo.PACCHETTO, data -> {
             if (!(data.dto() instanceof PacchettoDto dto)) {
                 throw new IllegalArgumentException("DTO non valido per PACCHETTO");
             }
-
             return new Pacchetto.Builder()
                     .nome(dto.getNome())
                     .descrizione(dto.getDescrizione())
                     .quantita(dto.getQuantita())
                     .prezzo(dto.getPrezzo())
                     .indirizzo(dto.getIndirizzo())
-                    .prodotti(dto.getProdottiSelezionati() == null
-                            ? java.util.List.of()
-                            : dto.getProdottiSelezionati().stream()
-                            .map(Object::toString)
-                            .collect(Collectors.toList()))
-                    .certificati(dto.getCertificati() == null ?
-                            java.util.List.of() : dto.getCertificati().stream()
-                            .map(MultipartFile::getOriginalFilename)
-                            .collect(Collectors.toList()))
-                    .foto(dto.getFoto() == null ?
-                            java.util.List.of() : dto.getFoto().stream()
-                            .map(MultipartFile::getOriginalFilename)
-                            .collect(Collectors.toList()))
+                    .prodottiIds( // <-- usa gli ID Long del DTO
+                            dto.getProdottiSelezionati() == null ? java.util.List.of() : dto.getProdottiSelezionati()
+                    )
+                    .certificati(toOriginalNames(dto.getCertificati()))
+                    .foto(toOriginalNames(dto.getFoto()))
                     .creatoDa(data.creatore())
                     .stato(StatoProdotto.IN_ATTESA)
                     .commento(null)
                     .build();
         });
 
-        // --- Strategia: PRODOTTO_TRASFORMATO ---
-        registry.put(TipoItem.PRODOTTO_TRASFORMATO, data -> {
+        // --- TRASFORMATO ---
+        registry.put(ItemTipo.TRASFORMATO, data -> {
             if (!(data.dto() instanceof ProdottoTrasformatoDto dto)) {
-                throw new IllegalArgumentException("DTO non valido per PRODOTTO_TRASFORMATO");
+                throw new IllegalArgumentException("DTO non valido per TRASFORMATO");
             }
-
             return new ProdottoTrasformato.Builder()
                     .nome(dto.getNome())
                     .descrizione(dto.getDescrizione())
@@ -104,18 +74,17 @@ public final class ItemFactory {
                     .prezzo(dto.getPrezzo())
                     .indirizzo(dto.getIndirizzo())
                     .fasiProduzione(dto.getFasiProduzione() == null
-                            ? java.util.List.of()
+                            ? List.of()
                             : dto.getFasiProduzione().stream()
-                            .map(FaseProduzione::fromDto)   // usa il convertitore corretto
+                            .filter(java.util.Objects::nonNull)
+                            .map(FaseProduzione::fromDto)
+                            .filter(f -> f != null
+                                    && f.getDescrizioneFase() != null && !f.getDescrizioneFase().isBlank()
+                                    && f.getProduttoreUsername() != null && !f.getProduttoreUsername().isBlank()
+                                    && f.getProdottoOrigineId() != null)
                             .collect(Collectors.toList()))
-                    .certificati(dto.getCertificati() == null ?
-                            java.util.List.of() : dto.getCertificati().stream()
-                            .map(MultipartFile::getOriginalFilename)
-                            .collect(Collectors.toList()))
-                    .foto(dto.getFoto() == null ?
-                            java.util.List.of() : dto.getFoto().stream()
-                            .map(MultipartFile::getOriginalFilename)
-                            .collect(Collectors.toList()))
+                    .certificati(toOriginalNames(dto.getCertificati()))
+                    .foto(toOriginalNames(dto.getFoto()))
                     .creatoDa(data.creatore())
                     .stato(StatoProdotto.IN_ATTESA)
                     .commento(null)
@@ -123,28 +92,44 @@ public final class ItemFactory {
         });
     }
 
-    public static void register(TipoItem tipo, Function<Data, Item> creator) {
-        registry.put(tipo, creator);
+    // Ignora file null, vuoti o con filename blank
+    private static List<String> toOriginalNames(List<MultipartFile> files) {
+        return (files == null)
+                ? List.of()
+                : files.stream()
+                .filter(f -> f != null && !f.isEmpty())
+                .map(MultipartFile::getOriginalFilename)
+                .filter(n -> n != null && !n.isBlank())
+                .collect(Collectors.toList());
     }
 
-    public static Item creaItem(TipoItem tipo, Object dto, String creatore) {
-        Data d = new Data(dto, creatore);
+    public static Item creaItem(BaseItemDto dto, String creatore) {
+        if (dto == null || dto.getTipo() == null) {
+            throw new IllegalArgumentException("DTO o tipo null");
+        }
+        Function<Data, Item> creator = registry.get(dto.getTipo());
+        if (creator == null) {
+            throw new UnsupportedOperationException("Tipo Item non supportato: " + dto.getTipo());
+        }
+        return creator.apply(new Data(dto, creatore));
+    }
+
+    // Overload opzionale
+    public static Item creaItem(ItemTipo tipo, BaseItemDto dto, String creatore) {
         Function<Data, Item> creator = registry.get(tipo);
         if (creator == null) {
             throw new UnsupportedOperationException("Tipo Item non supportato: " + tipo);
         }
-        return creator.apply(d);
+        return creator.apply(new Data(dto, creatore));
     }
 
     public static Prodotto creaProdotto(ProdottoDto dto, String creatore) {
-        return (Prodotto) creaItem(TipoItem.PRODOTTO, dto, creatore);
+        return (Prodotto) creaItem(dto, creatore);
     }
-
     public static Pacchetto creaPacchetto(PacchettoDto dto, String creatore) {
-        return (Pacchetto) creaItem(TipoItem.PACCHETTO, dto, creatore);
+        return (Pacchetto) creaItem(dto, creatore);
     }
-
     public static ProdottoTrasformato creaProdottoTrasformato(ProdottoTrasformatoDto dto, String creatore) {
-        return (ProdottoTrasformato) creaItem(TipoItem.PRODOTTO_TRASFORMATO, dto, creatore);
+        return (ProdottoTrasformato) creaItem(dto, creatore);
     }
 }

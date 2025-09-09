@@ -9,10 +9,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import unicam.filiera.dto.ItemTipo;
 import unicam.filiera.dto.PacchettoDto;
+import unicam.filiera.entity.PacchettoEntity;
 import unicam.filiera.model.Pacchetto;
 import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.service.PacchettoService;
@@ -38,7 +41,9 @@ public class DistributoreWebController {
 
     @ModelAttribute("pacchettoDto")
     public PacchettoDto pacchettoDto() {
-        return new PacchettoDto();
+        PacchettoDto d = new PacchettoDto();
+        d.setTipo(ItemTipo.PACCHETTO);
+        return d;
     }
 
     @GetMapping("/dashboard")
@@ -49,18 +54,14 @@ public class DistributoreWebController {
 
         String username = (authentication != null) ? authentication.getName() : "distributore_demo";
 
-        // Carico SOLO i pacchetti creati dal distributore loggato
-        List<Pacchetto> pacchetti = pacchettoService.getPacchettiCreatiDa(username);
+        model.addAttribute("pacchetti", pacchettoService.getPacchettiViewByCreatore(username));
 
-        model.addAttribute("pacchetti", pacchetti);
-
-        // Prodotti approvati per il form
-        model.addAttribute("prodottiApprovati",
-                prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
-
+        model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
         model.addAttribute("showForm", false);
+
         return "dashboard/distributore";
     }
+
 
     @PostMapping("/crea")
     public String creaPacchetto(
@@ -72,47 +73,35 @@ public class DistributoreWebController {
     ) {
         String username = (authentication != null) ? authentication.getName() : "distributore_demo";
 
-        if (pacchettoDto.getCertificati() == null || pacchettoDto.getCertificati().isEmpty()
-                || pacchettoDto.getCertificati().stream().allMatch(MultipartFile::isEmpty)) {
-            bindingResult.rejectValue("certificati", "error.certificati", "Devi caricare almeno un certificato");
-        }
-        if (pacchettoDto.getFoto() == null || pacchettoDto.getFoto().isEmpty()
-                || pacchettoDto.getFoto().stream().allMatch(MultipartFile::isEmpty)) {
-            bindingResult.rejectValue("foto", "error.foto", "Devi caricare almeno una foto");
-        }
-        if (pacchettoDto.getProdottiSelezionati() == null || pacchettoDto.getProdottiSelezionati().size() < 2) {
-            bindingResult.rejectValue("prodottiSelezionati", "error.prodottiSelezionati", "Devi selezionare almeno 2 prodotti");
-        }
+        validaPacchetto(pacchettoDto, bindingResult);
 
         if (bindingResult.hasErrors()) {
             log.warn("Creazione pacchetto fallita per errori di validazione");
 
-            List<Pacchetto> pacchetti = pacchettoService.getPacchettiCreatiDa(username);
-            model.addAttribute("pacchetti", pacchetti);
-            model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
-
+            model.addAttribute("pacchetti", pacchettoService.getPacchettiCreatiDa(username));
+            model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO)); // <-- QUI
             model.addAttribute("showForm", true);
             model.addAttribute("validationFailed", true);
+
             return "dashboard/distributore";
         }
 
         try {
             pacchettoService.creaPacchetto(pacchettoDto, username);
-
-            redirectAttrs.addFlashAttribute("successMessage", "Pacchetto inviato al Curatore con successo");
+            redirectAttrs.addFlashAttribute("createSuccessMessage", "Pacchetto inviato al Curatore con successo");
             return "redirect:/distributore/dashboard";
 
         } catch (Exception ex) {
             log.error("Errore nella creazione del pacchetto", ex);
 
-            List<Pacchetto> pacchetti = pacchettoService.getPacchettiCreatiDa(username);
-            model.addAttribute("pacchetti", pacchetti);
-            model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
-
+            model.addAttribute("pacchetti", pacchettoService.getPacchettiCreatiDa(username));
+            model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO)); // <-- QUI
             model.addAttribute("errorMessage", "Errore: " + ex.getMessage());
             model.addAttribute("showForm", true);
+
             return "dashboard/distributore";
         }
+
     }
 
     @DeleteMapping("/elimina/{id}")
@@ -132,6 +121,66 @@ public class DistributoreWebController {
         } catch (Exception e) {
             log.error("Errore durante eliminazione pacchetto", e);
             return ResponseEntity.status(500).body("Errore interno durante l'eliminazione");
+        }
+    }
+
+    // === NUOVO: endpoint JSON per pre-popolare in modifica ===
+    // === NUOVO: endpoint JSON per pre-popolare il form in modifica ===
+    @GetMapping("/api/pacchetto/{id}")
+    @ResponseBody
+    public ResponseEntity<?> getPacchetto(@PathVariable Long id, Authentication authentication) {
+        String username = (authentication != null) ? authentication.getName() : "distributore_demo";
+
+        return pacchettoService.findEntityById(id) // <-- aggiungiamo questo in PacchettoService
+                .map(entity -> {
+                    if (!entity.getCreatoDa().equals(username)) {
+                        return ResponseEntity.status(403).body("Non autorizzato");
+                    }
+                    record PacchettoView(
+                            Long id, String nome, String descrizione,
+                            Integer quantita, Double prezzo, String indirizzo,
+                            String stato, String commento,
+                            java.util.List<Long> prodottiSelezionati,
+                            java.util.List<String> certificati,
+                            java.util.List<String> foto
+                    ) {}
+                    var view = new PacchettoView(
+                            entity.getId(),
+                            entity.getNome(),
+                            entity.getDescrizione(),
+                            entity.getQuantita(),
+                            entity.getPrezzo(),
+                            entity.getIndirizzo(),
+                            entity.getStato().name(),
+                            entity.getCommento(),
+                            entity.getProdotti() == null ? java.util.List.of()
+                                    : entity.getProdotti().stream().map(p -> p.getId()).toList(),
+                            (entity.getCertificati() == null || entity.getCertificati().isBlank())
+                                    ? java.util.List.of()
+                                    : java.util.List.of(entity.getCertificati().split(",")),
+                            (entity.getFoto() == null || entity.getFoto().isBlank())
+                                    ? java.util.List.of()
+                                    : java.util.List.of(entity.getFoto().split(","))
+                    );
+                    return ResponseEntity.ok(view);
+                })
+                .orElseGet(() -> ResponseEntity.status(404).body("Pacchetto non trovato"));
+    }
+
+
+    // --- Validazione centralizzata (OBBLIGATORI anche in update) ---
+    private void validaPacchetto(PacchettoDto pacchettoDto, BindingResult bindingResult) {
+        if (pacchettoDto.getCertificati() == null || pacchettoDto.getCertificati().isEmpty()
+                || pacchettoDto.getCertificati().stream().allMatch(MultipartFile::isEmpty)) {
+            bindingResult.rejectValue("certificati", "error.certificati", "Devi caricare almeno un certificato");
+        }
+        if (pacchettoDto.getFoto() == null || pacchettoDto.getFoto().isEmpty()
+                || pacchettoDto.getFoto().stream().allMatch(MultipartFile::isEmpty)) {
+            bindingResult.rejectValue("foto", "error.foto", "Devi caricare almeno una foto");
+        }
+        if (pacchettoDto.getProdottiSelezionati() == null || pacchettoDto.getProdottiSelezionati().size() < 2) {
+            bindingResult.rejectValue("prodottiSelezionati", "error.prodottiSelezionati",
+                    "Devi selezionare almeno 2 prodotti per creare il pacchetto");
         }
     }
 }

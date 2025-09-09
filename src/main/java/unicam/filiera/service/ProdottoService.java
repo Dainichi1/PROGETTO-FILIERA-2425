@@ -1,27 +1,30 @@
 package unicam.filiera.service;
 
 import unicam.filiera.dto.ProdottoDto;
+import unicam.filiera.entity.ProdottoEntity;
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.StatoProdotto;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ProdottoService {
 
     void creaProdotto(ProdottoDto dto, String creatore);
 
-    void aggiornaProdotto(String nomeOriginale, ProdottoDto dto, String creatore);
+    void aggiornaProdotto(Long id, ProdottoDto dto, String creatore);
 
     List<Prodotto> getProdottiCreatiDa(String creatore);
 
     List<Prodotto> getProdottiByStato(StatoProdotto stato);
 
-    void eliminaProdotto(String nome, String creatore);
+    void eliminaProdottoById(Long id, String creatore);
 
     void cambiaStatoProdotto(String nome, String creatore, StatoProdotto nuovoStato, String commento);
 
-    // solo prodotti approvati del produttore selezionato
     List<Prodotto> getProdottiApprovatiByProduttore(String usernameProduttore);
 
-    void eliminaProdottoById(Long id, String creatore);
+    // serve per pre-popolare il form (mantiene nomi file) ===
+    Optional<ProdottoEntity> findEntityById(Long id);
+
 }

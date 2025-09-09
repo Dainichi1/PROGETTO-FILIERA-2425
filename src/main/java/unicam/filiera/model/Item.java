@@ -1,13 +1,18 @@
 package unicam.filiera.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.List;
 
 /**
  * Super‑classe astratta per gli elementi commercializzabili (Prodotto, Pacchetto, …).
  * Raccoglie i campi e la logica condivisa, così da evitare duplicazioni.
  */
+@Getter
 public abstract class Item {
 
+    // ---- Getter ----
     private final String nome;
     private final String descrizione;
     private final String indirizzo;
@@ -15,7 +20,17 @@ public abstract class Item {
     private final List<String> foto;
     private final String creatoDa;
 
+    /**
+     * -- SETTER --
+     *  Permette al Curatore di aggiornare lo stato.
+     */
+    @Setter
     private StatoProdotto stato;
+    /**
+     * -- SETTER --
+     *  Permette al Curatore di aggiungere un commento di rifiuto o approvazione.
+     */
+    @Setter
     private String commento;
 
     /**
@@ -37,53 +52,6 @@ public abstract class Item {
         this.foto = foto;
         this.creatoDa = creatoDa;
         this.stato = stato;
-        this.commento = commento;
-    }
-
-    // ---- Getter ----
-    public String getNome() {
-        return nome;
-    }
-
-    public String getDescrizione() {
-        return descrizione;
-    }
-
-    public String getIndirizzo() {
-        return indirizzo;
-    }
-
-    public List<String> getCertificati() {
-        return certificati;
-    }
-
-    public List<String> getFoto() {
-        return foto;
-    }
-
-    public String getCreatoDa() {
-        return creatoDa;
-    }
-
-    public StatoProdotto getStato() {
-        return stato;
-    }
-
-    public String getCommento() {
-        return commento;
-    }
-
-    /**
-     * Permette al Curatore di aggiornare lo stato.
-     */
-    public void setStato(StatoProdotto stato) {
-        this.stato = stato;
-    }
-
-    /**
-     * Permette al Curatore di aggiungere un commento di rifiuto o approvazione.
-     */
-    public void setCommento(String commento) {
         this.commento = commento;
     }
 

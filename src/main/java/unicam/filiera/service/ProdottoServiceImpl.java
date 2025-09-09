@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Optional; // <-- import
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -36,7 +37,6 @@ public class ProdottoServiceImpl implements ProdottoService {
         this.repository = repository;
         this.notifier = notifier;
 
-        // crea le cartelle se non esistono
         new File(CERT_DIR).mkdirs();
         new File(FOTO_DIR).mkdirs();
     }
@@ -52,10 +52,13 @@ public class ProdottoServiceImpl implements ProdottoService {
     }
 
     @Override
-    public void aggiornaProdotto(String nomeOriginale, ProdottoDto dto, String creatore) {
-        ProdottoEntity existing = repository.findByNomeAndCreatoDa(nomeOriginale, creatore)
+    public void aggiornaProdotto(Long id, ProdottoDto dto, String creatore) {
+        ProdottoEntity existing = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Prodotto non trovato per la modifica"));
 
+        if (!existing.getCreatoDa().equals(creatore)) {
+            throw new SecurityException("Non autorizzato a modificare questo prodotto");
+        }
         if (existing.getStato() != StatoProdotto.RIFIUTATO) {
             throw new IllegalStateException("Puoi modificare solo prodotti con stato RIFIUTATO");
         }
@@ -64,7 +67,20 @@ public class ProdottoServiceImpl implements ProdottoService {
         updated.setCommento(null);
         updated.setStato(StatoProdotto.IN_ATTESA);
 
+        // Mappo dai nuovi dati
         ProdottoEntity entity = mapToEntity(updated, dto, existing.getId());
+
+        // === PRESERVAZIONE FILE: se non sono stati ricaricati, mantieni quelli esistenti ===
+        boolean nessunCertNuovo = dto.getCertificati()==null || dto.getCertificati().stream().allMatch(MultipartFile::isEmpty);
+        boolean nessunaFotoNuova = dto.getFoto()==null || dto.getFoto().stream().allMatch(MultipartFile::isEmpty);
+
+        if (nessunCertNuovo) {
+            entity.setCertificati(existing.getCertificati());
+        }
+        if (nessunaFotoNuova) {
+            entity.setFoto(existing.getFoto());
+        }
+
         repository.save(entity);
 
         notifier.notificaTutti(updated, "NUOVO_PRODOTTO");
@@ -95,35 +111,6 @@ public class ProdottoServiceImpl implements ProdottoService {
     }
 
     @Override
-    public void eliminaProdotto(String nome, String creatore) {
-        ProdottoEntity entity = repository.findByNomeAndCreatoDa(nome, creatore)
-                .orElseThrow(() -> new IllegalArgumentException("Prodotto non trovato"));
-
-        if (entity.getStato() == StatoProdotto.APPROVATO) {
-            throw new IllegalStateException("Non puoi eliminare un prodotto già approvato");
-        }
-
-        repository.delete(entity);
-        notifier.notificaTutti(mapToDomain(entity), "ELIMINATO_PRODOTTO");
-    }
-
-    @Override
-    public void cambiaStatoProdotto(String nome, String creatore, StatoProdotto nuovoStato, String commento) {
-        ProdottoEntity entity = repository.findByNomeAndCreatoDa(nome, creatore)
-                .orElseThrow(() -> new IllegalArgumentException("Prodotto non trovato"));
-
-        aggiornaStatoECommento(entity, nuovoStato, commento);
-
-        repository.save(entity);
-
-        Prodotto prodotto = mapToDomain(entity);
-        notifier.notificaTutti(
-                prodotto,
-                nuovoStato == StatoProdotto.APPROVATO ? "APPROVATO" : "RIFIUTATO"
-        );
-    }
-
-    @Override
     public void eliminaProdottoById(Long id, String creatore) {
         ProdottoEntity entity = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Prodotto non trovato"));
@@ -135,27 +122,41 @@ public class ProdottoServiceImpl implements ProdottoService {
             throw new IllegalStateException("Non puoi eliminare un prodotto già approvato");
         }
 
+        Prodotto prodotto = mapToDomain(entity);
         repository.delete(entity);
-        notifier.notificaTutti(mapToDomain(entity), "ELIMINATO_PRODOTTO");
+
+        notifier.notificaTutti(prodotto, "ELIMINATO_PRODOTTO");
     }
 
+    @Override
+    public void cambiaStatoProdotto(String nome, String creatore, StatoProdotto nuovoStato, String commento) {
+        ProdottoEntity entity = repository.findByNomeAndCreatoDa(nome, creatore)
+                .orElseThrow(() -> new IllegalArgumentException("Prodotto non trovato"));
+
+        aggiornaStatoECommento(entity, nuovoStato, commento);
+        repository.save(entity);
+
+        Prodotto prodotto = mapToDomain(entity);
+        notifier.notificaTutti(prodotto,
+                nuovoStato == StatoProdotto.APPROVATO ? "APPROVATO" : "RIFIUTATO");
+    }
+
+    // === NUOVO: finder per l'entity (serve per prefill JSON) ===
+    @Override
+    public Optional<ProdottoEntity> findEntityById(Long id) {
+        return repository.findById(id);
+    }
 
     // =======================
-    // Stato Helper
+    // Helpers
     // =======================
 
     private void aggiornaStatoECommento(ProdottoEntity entity, StatoProdotto nuovoStato, String commento) {
         entity.setStato(nuovoStato);
-        if (nuovoStato == StatoProdotto.RIFIUTATO) {
-            entity.setCommento((commento != null && !commento.isBlank()) ? commento : null);
-        } else {
-            entity.setCommento(null);
-        }
+        entity.setCommento(nuovoStato == StatoProdotto.RIFIUTATO
+                ? (commento != null && !commento.isBlank() ? commento : null)
+                : null);
     }
-
-    // =======================
-    // File Helper
-    // =======================
 
     private String salvaMultipartFile(MultipartFile multipartFile, String destDir) {
         try {
@@ -168,9 +169,13 @@ public class ProdottoServiceImpl implements ProdottoService {
         }
     }
 
-    // =======================
-    // Mapping Helpers
-    // =======================
+    private String toCsv(List<MultipartFile> files, String dir) {
+        return files == null ? "" :
+                files.stream()
+                        .filter(f -> f != null && !f.isEmpty()) // <-- evita stringhe vuote
+                        .map(file -> salvaMultipartFile(file, dir))
+                        .collect(Collectors.joining(","));
+    }
 
     private ProdottoEntity mapToEntity(Prodotto prodotto, ProdottoDto dto, Long id) {
         ProdottoEntity e = new ProdottoEntity();
@@ -183,10 +188,8 @@ public class ProdottoServiceImpl implements ProdottoService {
         e.setCreatoDa(prodotto.getCreatoDa());
         e.setStato(prodotto.getStato());
         e.setCommento(prodotto.getCommento());
-
         e.setCertificati(toCsv(dto.getCertificati(), CERT_DIR));
         e.setFoto(toCsv(dto.getFoto(), FOTO_DIR));
-
         return e;
     }
 
@@ -208,13 +211,5 @@ public class ProdottoServiceImpl implements ProdottoService {
                         ? List.of()
                         : List.of(e.getFoto().split(",")))
                 .build();
-    }
-
-    // helper per conversione fileList → CSV
-    private String toCsv(List<MultipartFile> files, String dir) {
-        return files == null ? "" :
-                files.stream()
-                        .map(file -> salvaMultipartFile(file, dir))
-                        .collect(Collectors.joining(","));
     }
 }

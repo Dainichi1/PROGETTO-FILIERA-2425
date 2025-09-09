@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import unicam.filiera.dto.PacchettoDto;
+import unicam.filiera.dto.PacchettoViewDto;
 import unicam.filiera.entity.PacchettoEntity;
 import unicam.filiera.entity.ProdottoEntity;
 import unicam.filiera.factory.ItemFactory;
@@ -44,7 +45,6 @@ public class PacchettoServiceImpl implements PacchettoService {
         this.prodottoRepository = prodottoRepository;
         this.notifier = notifier;
 
-        // crea le cartelle se non esistono
         new File(CERT_DIR).mkdirs();
         new File(FOTO_DIR).mkdirs();
     }
@@ -60,9 +60,13 @@ public class PacchettoServiceImpl implements PacchettoService {
     }
 
     @Override
-    public void aggiornaPacchetto(String nomeOriginale, PacchettoDto dto, String creatore) {
-        PacchettoEntity existing = pacchettoRepository.findByNomeAndCreatoDa(nomeOriginale, creatore)
+    public void aggiornaPacchetto(Long id, PacchettoDto dto, String creatore) {
+        PacchettoEntity existing = pacchettoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pacchetto non trovato per la modifica"));
+
+        if (!existing.getCreatoDa().equals(creatore)) {
+            throw new SecurityException("Non autorizzato a modificare questo pacchetto");
+        }
 
         if (existing.getStato() != StatoProdotto.RIFIUTATO) {
             throw new IllegalStateException("Puoi modificare solo pacchetti con stato RIFIUTATO");
@@ -73,6 +77,18 @@ public class PacchettoServiceImpl implements PacchettoService {
         updated.setStato(StatoProdotto.IN_ATTESA);
 
         PacchettoEntity entity = mapToEntity(updated, dto, existing.getId());
+
+        // === PRESERVAZIONE FILE: se non sono stati caricati nuovi file, mantieni quelli vecchi ===
+        boolean nessunCertNuovo = dto.getCertificati() == null || dto.getCertificati().stream().allMatch(MultipartFile::isEmpty);
+        boolean nessunaFotoNuova = dto.getFoto() == null || dto.getFoto().stream().allMatch(MultipartFile::isEmpty);
+
+        if (nessunCertNuovo) {
+            entity.setCertificati(existing.getCertificati());
+        }
+        if (nessunaFotoNuova) {
+            entity.setFoto(existing.getFoto());
+        }
+
         pacchettoRepository.save(entity);
 
         notifier.notificaTutti(updated, "NUOVO_PACCHETTO");
@@ -95,35 +111,6 @@ public class PacchettoServiceImpl implements PacchettoService {
     }
 
     @Override
-    public void eliminaPacchetto(String nome, String creatore) {
-        PacchettoEntity entity = pacchettoRepository.findByNomeAndCreatoDa(nome, creatore)
-                .orElseThrow(() -> new IllegalArgumentException("Pacchetto non trovato"));
-
-        if (entity.getStato() == StatoProdotto.APPROVATO) {
-            throw new IllegalStateException("Non puoi eliminare un pacchetto già approvato");
-        }
-
-        pacchettoRepository.delete(entity);
-        notifier.notificaTutti(mapToDomain(entity), "ELIMINATO_PACCHETTO");
-    }
-
-    @Override
-    public void cambiaStatoPacchetto(String nome, String creatore, StatoProdotto nuovoStato, String commento) {
-        PacchettoEntity entity = pacchettoRepository.findByNomeAndCreatoDa(nome, creatore)
-                .orElseThrow(() -> new IllegalArgumentException("Pacchetto non trovato"));
-
-        aggiornaStatoECommento(entity, nuovoStato, commento);
-
-        pacchettoRepository.save(entity);
-
-        Pacchetto pacchetto = mapToDomain(entity);
-        notifier.notificaTutti(
-                pacchetto,
-                nuovoStato == StatoProdotto.APPROVATO ? "APPROVATO" : "RIFIUTATO"
-        );
-    }
-
-    @Override
     public void eliminaPacchettoById(Long id, String creatore) {
         PacchettoEntity entity = pacchettoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pacchetto non trovato"));
@@ -135,21 +122,97 @@ public class PacchettoServiceImpl implements PacchettoService {
             throw new IllegalStateException("Non puoi eliminare un pacchetto già approvato");
         }
 
-        // Salvo le info necessarie PRIMA del delete
         Pacchetto pacchetto = mapToDomain(entity);
-
         pacchettoRepository.delete(entity);
 
-        // Ora posso notificare usando pacchetto (già mappato, sessione ancora attiva)
         notifier.notificaTutti(pacchetto, "ELIMINATO_PACCHETTO");
+    }
+
+    @Override
+    public void cambiaStatoPacchetto(String nome, String creatore, StatoProdotto nuovoStato, String commento) {
+        PacchettoEntity entity = pacchettoRepository.findByNomeAndCreatoDa(nome, creatore)
+                .orElseThrow(() -> new IllegalArgumentException("Pacchetto non trovato"));
+
+        aggiornaStatoECommento(entity, nuovoStato, commento);
+        pacchettoRepository.save(entity);
+
+        Pacchetto pacchetto = mapToDomain(entity);
+        notifier.notificaTutti(pacchetto,
+                nuovoStato == StatoProdotto.APPROVATO ? "APPROVATO" : "RIFIUTATO");
+    }
+
+
+    public Optional<PacchettoEntity> findEntityById(Long id) {
+        return pacchettoRepository.findById(id);
+    }
+
+    @Override
+    public List<PacchettoViewDto> getPacchettiViewByStato(StatoProdotto stato) {
+        return pacchettoRepository.findByStato(stato).stream()
+                .map(e -> {
+                    List<String> prodottiNomi = e.getProdotti() == null ? List.of() :
+                            e.getProdotti().stream()
+                                    .map(ProdottoEntity::getNome)
+                                    .toList();
+
+                    return new PacchettoViewDto(
+                            e.getId(),
+                            e.getNome(),
+                            e.getDescrizione(),
+                            e.getQuantita(),
+                            e.getPrezzo(),
+                            e.getIndirizzo(),
+                            e.getCreatoDa(),
+                            e.getStato().name(),
+                            e.getCommento(),
+                            e.getCertificati() == null || e.getCertificati().isBlank()
+                                    ? List.of()
+                                    : List.of(e.getCertificati().split(",")),
+                            e.getFoto() == null || e.getFoto().isBlank()
+                                    ? List.of()
+                                    : List.of(e.getFoto().split(",")),
+                            prodottiNomi
+                    );
+                })
+                .toList();
+    }
+
+    @Override
+    public List<PacchettoViewDto> getPacchettiViewByCreatore(String creatore) {
+        return pacchettoRepository.findByCreatoDa(creatore).stream()
+                .map(e -> {
+                    List<String> prodottiNomi = e.getProdotti() == null ? List.of() :
+                            e.getProdotti().stream()
+                                    .map(ProdottoEntity::getNome)
+                                    .toList();
+
+                    return new PacchettoViewDto(
+                            e.getId(),
+                            e.getNome(),
+                            e.getDescrizione(),
+                            e.getQuantita(),
+                            e.getPrezzo(),
+                            e.getIndirizzo(),
+                            e.getCreatoDa(),
+                            e.getStato().name(),
+                            e.getCommento(),
+                            e.getCertificati() == null || e.getCertificati().isBlank()
+                                    ? List.of()
+                                    : List.of(e.getCertificati().split(",")),
+                            e.getFoto() == null || e.getFoto().isBlank()
+                                    ? List.of()
+                                    : List.of(e.getFoto().split(",")),
+                            prodottiNomi
+                    );
+                })
+                .toList();
     }
 
 
 
     // =======================
-    // Stato Helper
+    // Helpers
     // =======================
-
     private void aggiornaStatoECommento(PacchettoEntity entity, StatoProdotto nuovoStato, String commento) {
         entity.setStato(nuovoStato);
         if (nuovoStato == StatoProdotto.RIFIUTATO) {
@@ -158,10 +221,6 @@ public class PacchettoServiceImpl implements PacchettoService {
             entity.setCommento(null);
         }
     }
-
-    // =======================
-    // File Helper
-    // =======================
 
     private String salvaMultipartFile(MultipartFile multipartFile, String destDir) {
         try {
@@ -177,13 +236,10 @@ public class PacchettoServiceImpl implements PacchettoService {
     private String toCsv(List<MultipartFile> files, String dir) {
         return files == null ? "" :
                 files.stream()
+                        .filter(f -> f != null && !f.isEmpty())
                         .map(file -> salvaMultipartFile(file, dir))
                         .collect(Collectors.joining(","));
     }
-
-    // =======================
-    // Mapping Helpers
-    // =======================
 
     private PacchettoEntity mapToEntity(Pacchetto pacchetto, PacchettoDto dto, Long id) {
         PacchettoEntity e = new PacchettoEntity();
@@ -197,7 +253,7 @@ public class PacchettoServiceImpl implements PacchettoService {
         e.setStato(pacchetto.getStato());
         e.setCommento(pacchetto.getCommento());
 
-        // Associa i prodotti selezionati
+        // Prodotti selezionati
         Set<ProdottoEntity> prodotti = dto.getProdottiSelezionati() == null ? Set.of() :
                 dto.getProdottiSelezionati().stream()
                         .map(prodottoRepository::findById)
@@ -229,11 +285,12 @@ public class PacchettoServiceImpl implements PacchettoService {
                 .foto(e.getFoto() == null || e.getFoto().isBlank()
                         ? List.of()
                         : List.of(e.getFoto().split(",")))
-                .prodotti(e.getProdotti() == null
+                .prodottiIds(e.getProdotti() == null
                         ? List.of()
                         : e.getProdotti().stream()
-                        .map(ProdottoEntity::getNome)
-                        .collect(Collectors.toList()))
+                        .map(ProdottoEntity::getId)
+                        .collect(java.util.stream.Collectors.toList()))
                 .build();
     }
+
 }

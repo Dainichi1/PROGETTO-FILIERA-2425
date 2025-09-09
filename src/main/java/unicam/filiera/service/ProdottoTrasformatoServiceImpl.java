@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -47,17 +48,28 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
     public void creaProdottoTrasformato(ProdottoTrasformatoDto dto, String creatore) {
         ProdottoTrasformato prodottoTrasformato = ItemFactory.creaProdottoTrasformato(dto, creatore);
 
+        // Forza lo stato a IN_ATTESA
+        prodottoTrasformato.setStato(StatoProdotto.IN_ATTESA);
+        prodottoTrasformato.setCommento(null);
+
         ProdottoTrasformatoEntity entity = mapToEntity(prodottoTrasformato, dto, null);
         repository.save(entity);
+
+        // Log per debug
+        System.out.println("📨 Notifico Curatore nuovo prodotto trasformato: " + prodottoTrasformato.getNome());
 
         notifier.notificaTutti(prodottoTrasformato, "NUOVO_PRODOTTO_TRASFORMATO");
     }
 
+
     @Override
-    public void aggiornaProdottoTrasformato(String nomeOriginale, ProdottoTrasformatoDto dto, String creatore) {
-        ProdottoTrasformatoEntity existing = repository.findByNomeAndCreatoDa(nomeOriginale, creatore)
+    public void aggiornaProdottoTrasformato(Long id, ProdottoTrasformatoDto dto, String creatore) {
+        ProdottoTrasformatoEntity existing = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Prodotto trasformato non trovato per la modifica"));
 
+        if (!existing.getCreatoDa().equals(creatore)) {
+            throw new SecurityException("Non autorizzato a modificare questo prodotto trasformato");
+        }
         if (existing.getStato() != StatoProdotto.RIFIUTATO) {
             throw new IllegalStateException("Puoi modificare solo prodotti trasformati con stato RIFIUTATO");
         }
@@ -76,7 +88,6 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
     public List<ProdottoTrasformato> getProdottiTrasformatiCreatiDa(String creatore) {
         return repository.findByCreatoDa(creatore)
                 .stream()
-                // Filtro prodotti corrotti (meno di 2 fasi)
                 .filter(e -> e.getFasiProduzione() != null && e.getFasiProduzione().size() >= 2)
                 .map(this::mapToDomain)
                 .collect(Collectors.toList());
@@ -86,23 +97,14 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
     public List<ProdottoTrasformato> getProdottiTrasformatiByStato(StatoProdotto stato) {
         return repository.findByStato(stato)
                 .stream()
-                // stesso filtro anche qui
                 .filter(e -> e.getFasiProduzione() != null && e.getFasiProduzione().size() >= 2)
                 .map(this::mapToDomain)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public void eliminaProdottoTrasformato(String nome, String creatore) {
-        ProdottoTrasformatoEntity entity = repository.findByNomeAndCreatoDa(nome, creatore)
-                .orElseThrow(() -> new IllegalArgumentException("Prodotto trasformato non trovato"));
-
-        if (entity.getStato() == StatoProdotto.APPROVATO) {
-            throw new IllegalStateException("Non puoi eliminare un prodotto trasformato già approvato");
-        }
-
-        repository.delete(entity);
-        notifier.notificaTutti(mapToDomain(entity), "ELIMINATO_PRODOTTO_TRASFORMATO");
+    public Optional<ProdottoTrasformatoEntity> findEntityById(Long id) {
+        return repository.findById(id);
     }
 
     @Override
@@ -129,14 +131,11 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
                 .orElseThrow(() -> new IllegalArgumentException("Prodotto trasformato non trovato"));
 
         aggiornaStatoECommento(entity, nuovoStato, commento);
-
         repository.save(entity);
 
         ProdottoTrasformato prodotto = mapToDomain(entity);
-        notifier.notificaTutti(
-                prodotto,
-                nuovoStato == StatoProdotto.APPROVATO ? "APPROVATO" : "RIFIUTATO"
-        );
+        notifier.notificaTutti(prodotto,
+                nuovoStato == StatoProdotto.APPROVATO ? "APPROVATO" : "RIFIUTATO");
     }
 
     // =======================
@@ -154,12 +153,9 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
         e.setCreatoDa(prodotto.getCreatoDa());
         e.setStato(prodotto.getStato());
         e.setCommento(prodotto.getCommento());
-
         e.setFasiProduzione(toEmbeddableList(prodotto.getFasiProduzione()));
-
         e.setCertificati(toCsv(dto.getCertificati(), CERT_DIR));
         e.setFoto(toCsv(dto.getFoto(), FOTO_DIR));
-
         return e;
     }
 
@@ -185,8 +181,12 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
     }
 
     private List<FaseProduzioneEmbeddable> toEmbeddableList(List<FaseProduzione> fasi) {
-        return fasi == null ? List.of() :
+        return (fasi == null) ? List.of() :
                 fasi.stream()
+                        .filter(f -> f != null
+                                && f.getDescrizioneFase() != null && !f.getDescrizioneFase().isBlank()
+                                && f.getProduttoreUsername() != null && !f.getProduttoreUsername().isBlank()
+                                && f.getProdottoOrigineId() != null)
                         .map(f -> new FaseProduzioneEmbeddable(
                                 f.getDescrizioneFase(),
                                 f.getProduttoreUsername(),
@@ -234,10 +234,8 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
 
     private void aggiornaStatoECommento(ProdottoTrasformatoEntity entity, StatoProdotto nuovoStato, String commento) {
         entity.setStato(nuovoStato);
-        if (nuovoStato == StatoProdotto.RIFIUTATO) {
-            entity.setCommento((commento != null && !commento.isBlank()) ? commento : null);
-        } else {
-            entity.setCommento(null);
-        }
+        entity.setCommento(nuovoStato == StatoProdotto.RIFIUTATO
+                ? (commento != null && !commento.isBlank() ? commento : null)
+                : null);
     }
 }

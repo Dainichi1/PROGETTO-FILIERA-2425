@@ -5,248 +5,51 @@
     <meta charset="UTF-8"/>
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-    <style>
-        .form-container {
-            display: none;
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            background-color: #f9f9f9;
-            max-width: 600px;
-        }
-
-        .form-container label {
-            display: block;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-
-        .form-container input, .form-container textarea {
-            width: 100%;
-            padding: 6px;
-            margin-top: 5px;
-        }
-
-        .form-container input.error, .form-container textarea.error {
-            border: 2px solid red;
-        }
-
-        .checkbox-list {
-            margin-top: 10px;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            background: #fff;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .checkbox-list.error {
-            border: 2px solid red;
-            background-color: #ffeaea;
-        }
-
-        .checkbox-list label {
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .error-message {
-            color: red;
-            font-size: 0.9rem;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            max-width: 400px;
-        }
-
-        .modal-content button {
-            margin: 10px;
-            padding: 8px 16px;
-        }
-
-        .section-separator {
-            margin: 40px 0;
-            border: none;
-            border-top: 2px dashed #bbb;
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
 </head>
 <body>
-<h1 th:text="'Benvenuto ' + ${utente != null ? utente.nome : 'Utente'} + ', il tuo ruolo è ' + (${utente != null ? utente.ruolo : 'Distributore'}) + '.'">
+<h1 th:text="'Benvenuto ' + (${utente?.nome ?: 'Utente'}) +
+              ', il tuo ruolo è ' + (${utente?.ruolo ?: 'Distributore'}) + '.'">
     Benvenuto, il tuo ruolo è Distributore.
 </h1>
+<h2>I tuoi Prodotti</h2>
+
+
+<button type="button" onclick="crudUtils.openSocialFeed()">📢 Visualizza Social Network</button>
+
 
 <h2>I tuoi Pacchetti</h2>
 
 <!-- Tabella pacchetti -->
-<table border="1" style="border-collapse: collapse; width: 100%; margin-top: 20px;">
-    <thead>
-    <tr style="background-color: #f0f0f0; text-align: center;">
-        <th>Nome</th>
-        <th>Descrizione</th>
-        <th>Quantità</th>
-        <th>Prezzo</th>
-        <th>Indirizzo</th>
-        <th>Certificati</th>
-        <th>Foto</th>
-        <th>Prodotti Inclusi</th>
-        <th>Stato</th>
-        <th>Commento</th>
-        <th>Elimina</th>
-        <th>Modifica</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="pacchetto : ${pacchetti}" th:attr="data-id=${pacchetto.id}">
-        <td th:text="${pacchetto.nome}">Nome</td>
-        <td th:text="${pacchetto.descrizione}">Descrizione</td>
-        <td th:text="${pacchetto.quantita}">0</td>
-        <td th:text="${pacchetto.prezzo}">0.00</td>
-        <td th:text="${pacchetto.indirizzo}">Indirizzo</td>
+<div th:replace="fragments/table :: dashboard-table(${pacchetti}, 'pacchetto')"></div>
 
-        <td>
-            <a th:each="cert : ${pacchetto.certificati}"
-               th:href="@{'/file/certificati/' + ${cert}}"
-               target="_blank" th:text="${cert}">Certificato</a>
-        </td>
-
-        <td>
-            <a th:each="foto : ${pacchetto.foto}"
-               th:href="@{'/file/foto/' + ${foto}}"
-               target="_blank" th:text="${foto}">Foto</a>
-        </td>
-
-        <td>
-
-            <ul>
-                <li th:each="nome : ${pacchetto.prodottiNomi}" th:text="${nome}"></li>
-            </ul>
-
-        </td>
-
-        <td th:text="${pacchetto.stato}">In attesa</td>
-        <td th:text="${pacchetto.commento}">Commento</td>
-
-        <td>
-            <button type="button"
-                    th:attr="data-id=${pacchetto.id}, data-stato=${pacchetto.stato}, data-nome=${pacchetto.nome}"
-                    onclick="handleDeleteClick(this)">Elimina
-            </button>
-        </td>
-
-        <td>
-            <button type="button"
-                    th:attr="data-id=${pacchetto.id}, data-stato=${pacchetto.stato}, data-nome=${pacchetto.nome}"
-                    onclick="handleEditClick(this)">Modifica
-            </button>
-        </td>
-    </tr>
-    </tbody>
-</table>
-
-<!-- Modali eliminazione -->
-<div id="deleteErrorModal" class="modal">
-    <div class="modal-content">
-        <p>Puoi eliminare solo pacchetti in attesa o rifiutati.</p>
-        <button onclick="closeModal('deleteErrorModal')">OK</button>
-    </div>
-</div>
-
-<div id="deleteConfirmModal" class="modal">
-    <div class="modal-content">
-        <p id="deleteConfirmMessage"></p>
-        <button onclick="confirmDelete()">Sì</button>
-        <button onclick="closeModal('deleteConfirmModal')">No</button>
-    </div>
-</div>
-
-<div id="deleteSuccessModal" class="modal">
-    <div class="modal-content">
-        <p id="deleteSuccessMessage"></p>
-        <button onclick="closeModal('deleteSuccessModal')">OK</button>
-    </div>
-</div>
-
-<div id="deleteGenericErrorModal" class="modal">
-    <div class="modal-content">
-        <p id="deleteGenericErrorMessage"></p>
-        <button onclick="closeModal('deleteGenericErrorModal')">OK</button>
-    </div>
-</div>
-
-<div id="editErrorModal" class="modal">
-    <div class="modal-content">
-        <p>Puoi modificare solo pacchetti rifiutati.</p>
-        <button onclick="closeModal('editErrorModal')">OK</button>
-    </div>
-</div>
+<!-- Modali comuni -->
+<div th:replace="fragments/modals :: delete-modals('pacchetti')"></div>
+<div th:replace="fragments/modals :: edit-error-modal('pacchetti')"></div>
+<div th:replace="fragments/modals :: social-modal"></div> <!-- modale avviso -->
+<div th:replace="fragments/modals :: social-feed-modal"></div>
 
 <hr class="section-separator"/>
 
-<button type="button" onclick="toggleForm()">Crea Pacchetto</button>
+<button type="button" onclick="crudUtils.toggleForm()">Crea Pacchetto</button>
 
 <!-- Form creazione/modifica -->
 <div id="pacchettoForm" class="form-container"
      th:style="${showForm} ? 'display:block;' : 'display:none;'">
     <h3 id="formTitle">Nuovo Pacchetto</h3>
-    <form id="packageForm"
-          th:action="@{/distributore/crea}"
-          th:object="${pacchettoDto}"
+    <form id="packageForm" th:action="@{/distributore/crea}" th:object="${pacchettoDto}"
           method="post" enctype="multipart/form-data" novalidate>
 
         <input type="hidden" th:field="*{id}" id="itemId"/>
         <input type="hidden" th:field="*{tipo}" id="itemTipo" value="PACCHETTO"/>
 
-        <label for="nome">Nome Pacchetto:</label>
-        <input type="text" th:field="*{nome}" id="nome"
-               th:classappend="${#fields.hasErrors('nome')} ? 'error'"/>
-        <span class="error-message"
-              th:utext="${#fields.hasErrors('nome')} ? ${#strings.arrayJoin(#fields.errors('nome'), '<br/>')} : ''"></span>
+        <!-- Campi standard -->
+        <div th:replace="fragments/form-fields :: base-fields('pacchettoDto')"></div>
 
-        <label for="descrizione">Descrizione:</label>
-        <textarea th:field="*{descrizione}" id="descrizione"
-                  th:classappend="${#fields.hasErrors('descrizione')} ? 'error'"></textarea>
-        <span class="error-message"
-              th:utext="${#fields.hasErrors('descrizione')} ? ${#strings.arrayJoin(#fields.errors('descrizione'), '<br/>')} : ''"></span>
-
-        <label for="indirizzo">Indirizzo:</label>
-        <input type="text" th:field="*{indirizzo}" id="indirizzo"
-               th:classappend="${#fields.hasErrors('indirizzo')} ? 'error'"/>
-        <span class="error-message"
-              th:utext="${#fields.hasErrors('indirizzo')} ? ${#strings.arrayJoin(#fields.errors('indirizzo'), '<br/>')} : ''"></span>
-
-        <label for="prezzo">Prezzo:</label>
-        <input type="number" step="0.01" th:field="*{prezzo}" id="prezzo"
-               th:classappend="${#fields.hasErrors('prezzo')} ? 'error'"/>
-        <span class="error-message"
-              th:utext="${#fields.hasErrors('prezzo')} ? ${#strings.arrayJoin(#fields.errors('prezzo'), '<br/>')} : ''"></span>
-
-        <label for="quantita">Quantità:</label>
-        <input type="number" th:field="*{quantita}" id="quantita"
-               th:classappend="${#fields.hasErrors('quantita')} ? 'error'"/>
-        <span class="error-message"
-              th:utext="${#fields.hasErrors('quantita')} ? ${#strings.arrayJoin(#fields.errors('quantita'), '<br/>')} : ''"></span>
-
+        <!-- Campo specifico Pacchetto -->
         <label>Seleziona Prodotti Approvati (minimo 2):</label>
-        <div class="checkbox-list" th:classappend="${#fields.hasErrors('prodottiSelezionati')} ? ' error'">
+        <div class="checkbox-list"
+             th:classappend="${#fields.hasErrors('prodottiSelezionati')} ? 'error'">
             <div th:each="prodotto : ${prodottiApprovati}">
                 <label>
                     <input type="checkbox" th:field="*{prodottiSelezionati}" th:value="${prodotto.id}"/>
@@ -255,344 +58,22 @@
             </div>
         </div>
         <span class="error-message"
-              th:utext="${#fields.hasErrors('prodottiSelezionati')} ? ${#strings.arrayJoin(#fields.errors('prodottiSelezionati'), '<br/>')} : ''"></span>
+              th:utext="${#fields.hasErrors('prodottiSelezionati')} ?
+                        ${#strings.arrayJoin(#fields.errors('prodottiSelezionati'), '<br/>')} : ''">
+        </span>
 
-        <label for="certificati">Seleziona certificati:</label>
-        <input type="file" th:field="*{certificati}" id="certificati" multiple
-               th:classappend="${#fields.hasErrors('certificati')} ? 'error'"/>
-        <span class="error-message"
-              th:utext="${#fields.hasErrors('certificati')} ? ${#strings.arrayJoin(#fields.errors('certificati'), '<br/>')} : ''"></span>
-
-        <label for="foto">Seleziona foto:</label>
-        <input type="file" th:field="*{foto}" id="foto" multiple
-               th:classappend="${#fields.hasErrors('foto')} ? 'error'"/>
-        <span class="error-message"
-              th:utext="${#fields.hasErrors('foto')} ? ${#strings.arrayJoin(#fields.errors('foto'), '<br/>')} : ''"></span>
-
-        <div id="createButtons">
-            <button type="button" onclick="openCreateConfirmModal()">Invia</button>
-        </div>
-        <div id="updateButtons" style="display:none;">
-            <button type="button" onclick="openUpdateConfirmModal()">Aggiorna</button>
-        </div>
-        <button type="button" onclick="toggleForm()">Chiudi Form</button>
+        <!-- Pulsanti -->
+        <div th:replace="fragments/form-fields :: form-buttons('pacchetto','/distributore/dashboard')"></div>
     </form>
 </div>
 
-<!-- Modali creazione/modifica -->
-<div id="createConfirmModal" class="modal">
-    <div class="modal-content">
-        <p>Inviare il pacchetto al Curatore per approvazione?</p>
-        <button onclick="submitForm()">Sì</button>
-        <button onclick="closeModal('createConfirmModal')">No</button>
-    </div>
-</div>
-
-<div id="createSuccessModal" class="modal" th:if="${createSuccessMessage}">
-    <div class="modal-content">
-        <p th:text="${createSuccessMessage}">Pacchetto inviato al Curatore!</p>
-        <button onclick="window.location.href='/distributore/dashboard'">OK</button>
-    </div>
-</div>
-
-<div id="updateConfirmModal" class="modal">
-    <div class="modal-content">
-        <p>Sei sicuro di voler aggiornare e rinviare il pacchetto al Curatore?</p>
-        <button onclick="submitForm()">Sì</button>
-        <button onclick="closeModal('updateConfirmModal')">No</button>
-    </div>
-</div>
-
-<div id="updateSuccessModal" class="modal" th:if="${updateSuccessMessage}">
-    <div class="modal-content">
-        <p th:text="${updateSuccessMessage}">Pacchetto aggiornato e reinviato al Curatore!</p>
-        <button onclick="window.location.href='/distributore/dashboard'">OK</button>
-    </div>
-</div>
-
-<script th:inline="javascript">
-    function toggleForm() {
-        const form = document.getElementById("pacchettoForm");
-        const isHidden = form.style.display === "none";
-        form.style.display = isHidden ? "block" : "none";
-
-        if (!isHidden) {
-            document.getElementById("formTitle").textContent = "Nuovo Pacchetto";
-            document.getElementById("packageForm").reset();
-            document.getElementById("itemId").value = "";
-            document.getElementById("itemTipo").value = "PACCHETTO";
-            document.getElementById("createButtons").style.display = "block";
-            document.getElementById("updateButtons").style.display = "none";
-        }
-        if (typeof clearAllErrors === 'function') clearAllErrors();
-    }
-
-    function openCreateConfirmModal() {
-        document.getElementById("createConfirmModal").style.display = "flex";
-    }
-
-    function openUpdateConfirmModal() {
-        document.getElementById("updateConfirmModal").style.display = "flex";
-    }
-
-    function closeModal(id) {
-        document.getElementById(id).style.display = "none";
-    }
-
-    // ===== VALIDAZIONE CLIENT =====
-    function getErrorSpan(field) {
-        let el = field.nextElementSibling;
-        while (el && !el.classList.contains('error-message')) el = el.nextElementSibling;
-        return el;
-    }
-
-    function setFieldError(fieldId, message) {
-        const field = document.getElementById(fieldId);
-        if (!field) return;
-        field.classList.add('error');
-        const span = getErrorSpan(field);
-        if (span) span.textContent = message || 'Campo obbligatorio';
-    }
-
-    function clearFieldError(field) {
-        field.classList.remove('error');
-        const span = getErrorSpan(field);
-        if (span) span.textContent = '';
-    }
-
-    function clearAllErrors() {
-        const form = document.getElementById('packageForm');
-        if (!form) return;
-        form.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
-        form.querySelectorAll('.error-message').forEach(span => {
-            span.textContent = '';
-        });
-    }
-
-    function clientValidate() {
-        clearAllErrors();
-
-        const nome = document.getElementById("nome");
-        const descrizione = document.getElementById("descrizione");
-        const indirizzo = document.getElementById("indirizzo");
-        const quantita = document.getElementById("quantita");
-        const prezzo = document.getElementById("prezzo");
-        const certificati = document.getElementById("certificati");
-        const foto = document.getElementById("foto");
-
-        let ok = true;
-
-        if (!nome.value.trim()) {
-            setFieldError("nome", "⚠ Nome obbligatorio");
-            ok = false;
-        }
-        if (!descrizione.value.trim()) {
-            setFieldError("descrizione", "⚠ Descrizione obbligatoria");
-            ok = false;
-        }
-        if (!indirizzo.value.trim()) {
-            setFieldError("indirizzo", "⚠ Indirizzo obbligatorio");
-            ok = false;
-        }
-
-        const q = quantita.value !== '' ? Number(quantita.value) : NaN;
-        if (Number.isNaN(q) || q < 1) {
-            setFieldError("quantita", "⚠ La quantità deve essere almeno 1");
-            ok = false;
-        }
-
-        const p = prezzo.value !== '' ? Number(prezzo.value) : NaN;
-        if (Number.isNaN(p) || p <= 0) {
-            setFieldError("prezzo", "⚠ Il prezzo deve essere positivo");
-            ok = false;
-        }
-
-        if (!certificati.files || certificati.files.length === 0) {
-            setFieldError("certificati", "Devi caricare almeno un certificato");
-            ok = false;
-        }
-        if (!foto.files || foto.files.length === 0) {
-            setFieldError("foto", "Devi caricare almeno una foto");
-            ok = false;
-        }
-
-        // Prodotti selezionati
-        const prodotti = document.querySelectorAll("input[name='prodottiSelezionati']:checked");
-        if (prodotti.length < 2) {
-            const span = document.querySelector("span.error-message[th\\:errors='*{prodottiSelezionati}']")
-                || document.querySelector(".checkbox-list + .error-message");
-            if (span) span.textContent = "⚠ Devi selezionare almeno 2 prodotti approvati";
-            ok = false;
-        }
-
-        return ok;
-    }
-
-
-    function submitForm() {
-        const ok = clientValidate();
-        if (!ok) {
-            closeModal("createConfirmModal");
-            closeModal("updateConfirmModal");
-            return;
-        }
-
-        closeModal("createConfirmModal");
-        closeModal("updateConfirmModal");
-        document.getElementById("packageForm").submit();
-    }
-
-    // ===== MODIFICA pacchetto =====
-    function setUpdateModeForm(id) {
-        document.getElementById("formTitle").textContent = "Modifica Pacchetto Rifiutato";
-        const form = document.getElementById("packageForm");
-        form.setAttribute("action", "/venditore/item/modifica");
-        document.getElementById("itemId").value = id || "";
-        document.getElementById("itemTipo").value = "PACCHETTO";
-        document.getElementById("createButtons").style.display = "none";
-        document.getElementById("updateButtons").style.display = "block";
-        document.getElementById("pacchettoForm").style.display = "block";
-    }
-
-    async function handleEditClick(button) {
-        const stato = button.getAttribute("data-stato");
-        const id = button.getAttribute("data-id");
-
-        if (stato !== "RIFIUTATO") {
-            document.getElementById("editErrorModal").style.display = "flex";
-            return;
-        }
-
-        setUpdateModeForm(id);
-        if (typeof clearAllErrors === 'function') clearAllErrors();
-
-        try {
-            const res = await fetch(`/distributore/api/pacchetto/${id}`, {credentials: 'same-origin'});
-            if (!res.ok) throw new Error(await res.text());
-            const p = await res.json();
-
-            document.getElementById("nome").value = p.nome ?? '';
-            document.getElementById("descrizione").value = p.descrizione ?? '';
-            document.getElementById("quantita").value = (p.quantita ?? '');
-            document.getElementById("prezzo").value = (p.prezzo ?? '');
-            document.getElementById("indirizzo").value = p.indirizzo ?? '';
-
-            // pre-seleziona i prodotti inclusi
-            if (p.prodottiSelezionati && Array.isArray(p.prodottiSelezionati)) {
-                document.querySelectorAll("input[name='prodottiSelezionati']").forEach(cb => {
-                    cb.checked = p.prodottiSelezionati.includes(Number(cb.value));
-                });
-            }
-        } catch (e) {
-            alert("Impossibile caricare il pacchetto: " + (e.message || 'errore'));
-        }
-    }
-
-    // ===== Delete con CSRF =====
-    function getCsrf() {
-        const tokenEl = document.querySelector('meta[name="_csrf"]');
-        const headerEl = document.querySelector('meta[name="_csrf_header"]');
-        return {
-            token: tokenEl ? tokenEl.getAttribute('content') : '',
-            header: headerEl ? headerEl.getAttribute('content') : 'X-CSRF-TOKEN'
-        };
-    }
-
-    let toDelete = {id: null, nome: null};
-
-    function handleDeleteClick(button) {
-        const stato = button.getAttribute("data-stato");
-        const id = button.getAttribute("data-id");
-        const nome = button.getAttribute("data-nome");
-        if (stato !== "IN_ATTESA" && stato !== "RIFIUTATO") {
-            document.getElementById("deleteErrorModal").style.display = "flex";
-            return;
-        }
-        toDelete = {id, nome};
-        document.getElementById("deleteConfirmMessage").textContent = `Eliminare il pacchetto "${nome}"?`;
-        document.getElementById("deleteConfirmModal").style.display = "flex";
-    }
-
-    async function confirmDelete() {
-        closeModal('deleteConfirmModal');
-        const {header, token} = getCsrf();
-        try {
-            const res = await fetch(`/distributore/elimina/${toDelete.id}`, {
-                method: 'DELETE',
-                headers: {[header]: token},
-                credentials: 'same-origin'
-            });
-            const text = await res.text();
-            if (res.ok) {
-                const row = document.querySelector(`tr[data-id="${toDelete.id}"]`);
-                if (row && row.parentNode) row.parentNode.removeChild(row);
-                document.getElementById("deleteSuccessMessage").textContent = text || `Pacchetto "${toDelete.nome}" eliminato con successo`;
-                document.getElementById("deleteSuccessModal").style.display = "flex";
-            } else {
-                document.getElementById("deleteGenericErrorMessage").textContent = text || "Errore durante l'eliminazione.";
-                document.getElementById("deleteGenericErrorModal").style.display = "flex";
-            }
-        } catch {
-            document.getElementById("deleteGenericErrorMessage").textContent = "Errore di rete durante l'eliminazione.";
-            document.getElementById("deleteGenericErrorModal").style.display = "flex";
-        }
-    }
-
-    // ===== Live validation (pulizia in tempo reale) =====
-    function validateAndClearIfOk(field) {
-        const name = field.getAttribute('id');
-        if (field.type === 'file') {
-            if (field.files && field.files.length > 0) clearFieldError(field);
-            return;
-        }
-        if (field.tagName === 'TEXTAREA' || field.type === 'text') {
-            if (field.value && field.value.trim().length > 0) clearFieldError(field);
-            return;
-        }
-        if (field.type === 'number') {
-            const v = field.value !== '' ? Number(field.value) : NaN;
-            if (name === 'quantita') {
-                if (!Number.isNaN(v) && v >= 1) clearFieldError(field);
-            } else if (name === 'prezzo') {
-                if (!Number.isNaN(v) && v > 0) clearFieldError(field);
-            } else {
-                if (!Number.isNaN(v)) clearFieldError(field);
-            }
-        }
-    }
-
-    function attachLiveValidation() {
-        const form = document.getElementById('packageForm');
-        if (!form) return;
-        form.querySelectorAll('input[type="text"], input[type="number"], textarea')
-            .forEach(f => {
-                f.addEventListener('input', () => validateAndClearIfOk(f));
-                f.addEventListener('change', () => validateAndClearIfOk(f));
-            });
-        form.querySelectorAll('input[type="file"]')
-            .forEach(f => f.addEventListener('change', () => validateAndClearIfOk(f)));
-    }
-
-    window.addEventListener('DOMContentLoaded', attachLiveValidation);
-
-    // ===== Riapri form in UPDATE dopo errori server =====
-    const UPDATE_MODE = /*[[${updateMode}]]*/ false;
-    const UPDATE_ID = /*[[${pacchettoDto != null ? pacchettoDto.id : null}]]*/ null;
-    if (UPDATE_MODE) {
-        document.addEventListener('DOMContentLoaded', function () {
-            setUpdateModeForm(UPDATE_ID);
-        });
-    }
-
-    // Mostra modali successo se presenti
-    window.addEventListener("load", () => {
-        const createSuccessModal = document.getElementById("createSuccessModal");
-        const updateSuccessModal = document.getElementById("updateSuccessModal");
-        if (createSuccessModal) createSuccessModal.style.display = "flex";
-        if (updateSuccessModal) updateSuccessModal.style.display = "flex";
-    });
-</script>
-
 <p><a th:href="@{/}">Torna alla Home</a></p>
+
+<!-- Script -->
+<script src="/js/utils/form-utils.js" defer></script>
+<script src="/js/utils/modal-utils.js" defer></script>
+<script src="/js/utils/csrf-utils.js" defer></script>
+<script src="/js/utils/crud-utils.js" defer></script>
+<script src="/js/pages/distributore.js" defer></script>
 </body>
 </html>

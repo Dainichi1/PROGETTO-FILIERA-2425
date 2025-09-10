@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Modali eliminazione -->
+<div th:fragment="delete-modals(itemName)">
+    <div id="deleteErrorModal" class="modal">
+        <div class="modal-content">
+            <p>Puoi eliminare solo [[${itemName}]] in attesa o rifiutati.</p>
+            <button type="button" onclick="modalUtils.closeModal('deleteErrorModal')">OK</button>
+        </div>
+    </div>
+
+    <div id="deleteConfirmModal" class="modal">
+        <div class="modal-content">
+            <p id="deleteConfirmMessage"></p>
+            <button type="button" onclick="crudUtils.confirmDelete()">Sì</button>
+            <button type="button" onclick="modalUtils.closeModal('deleteConfirmModal')">No</button>
+        </div>
+    </div>
+
+    <div id="deleteSuccessModal" class="modal">
+        <div class="modal-content">
+            <p id="deleteSuccessMessage"></p>
+            <button type="button" onclick="modalUtils.closeModal('deleteSuccessModal')">OK</button>
+        </div>
+    </div>
+
+    <div id="deleteGenericErrorModal" class="modal">
+        <div class="modal-content">
+            <p id="deleteGenericErrorMessage"></p>
+            <button type="button" onclick="modalUtils.closeModal('deleteGenericErrorModal')">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modali modifica -->
+<div th:fragment="edit-error-modal(itemName)">
+    <div id="editErrorModal" class="modal">
+        <div class="modal-content">
+            <p>Puoi modificare solo [[${itemName}]] rifiutati.</p>
+            <button type="button" onclick="modalUtils.closeModal('editErrorModal')">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modali creazione/aggiornamento -->
+<div th:fragment="create-update-modals(entityName, redirectPath)">
+    <!-- Creazione -->
+    <div id="createConfirmModal" class="modal">
+        <div class="modal-content">
+            <p th:text="|Inviare ${entityName} al Curatore per approvazione?|"></p>
+            <button type="button" onclick="crudUtils.submitForm()">Sì</button>
+            <button type="button" onclick="modalUtils.closeModal('createConfirmModal')">No</button>
+        </div>
+    </div>
+
+    <div id="createSuccessModal" class="modal">
+        <div class="modal-content">
+            <p id="createSuccessMessage"><!-- testo aggiornato da JS --></p>
+            <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+        </div>
+    </div>
+
+    <!-- Aggiornamento -->
+    <div id="updateConfirmModal" class="modal">
+        <div class="modal-content">
+            <p th:text="|Sei sicuro di voler aggiornare e rinviare ${entityName} al Curatore?|"></p>
+            <button type="button" onclick="crudUtils.submitForm()">Sì</button>
+            <button type="button" onclick="modalUtils.closeModal('updateConfirmModal')">No</button>
+        </div>
+    </div>
+
+    <div id="updateSuccessModal" class="modal">
+        <div class="modal-content">
+            <p id="updateSuccessMessage"><!-- testo aggiornato da JS --></p>
+            <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modale Social non disponibile -->
+<div th:fragment="social-modal">
+    <div id="socialNotAvailableModal" class="modal">
+        <div class="modal-content">
+            <p id="socialNotAvailableMessage">
+                L'opzione è disponibile solo per prodotti approvati.
+            </p>
+            <button type="button" onclick="modalUtils.closeModal('socialNotAvailableModal')">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modali per pubblicazione Social -->
+<div th:fragment="social-post-modals(redirectPath)">
+    <!-- Step 1: compilazione titolo e testo -->
+    <div id="socialPostModal" class="modal">
+        <div class="modal-content">
+            <h3>Pubblica sui Social</h3>
+
+            <form id="socialPostForm">
+                <label for="postTitle">Titolo* (max 100):</label>
+                <input type="text" id="postTitle" name="title" maxlength="100" required />
+                <span class="error-message"></span>
+
+                <label for="postText">Testo* (max 1000):</label>
+                <textarea id="postText" name="text" maxlength="1000" required></textarea>
+                <span class="error-message"></span>
+
+                <div class="modal-buttons">
+                    <button type="button" onclick="crudUtils.openSocialConfirm()">OK</button>
+                    <button type="button" onclick="modalUtils.closeModal('socialPostModal')">Annulla</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Step 2: conferma pubblicazione -->
+    <div id="socialConfirmModal" class="modal">
+        <div class="modal-content">
+            <p>Sei sicuro di voler pubblicare l'annuncio sui social?</p>
+            <button type="button" onclick="crudUtils.submitSocialPost()">Sì</button>
+            <button type="button" onclick="modalUtils.closeModal('socialConfirmModal')">No</button>
+        </div>
+    </div>
+
+    <!-- Step 3: successo -->
+    <div id="socialSuccessModal" class="modal">
+        <div class="modal-content">
+            <p>✅ Annuncio pubblicato con successo!</p>
+            <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modale Social Feed -->
+<div th:fragment="social-feed-modal">
+    <div id="socialFeedModal" class="modal">
+        <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
+            <h3>📢 Social Network</h3>
+            <div id="socialPostsContainer">
+                <!-- I post verranno inseriti via JS -->
+            </div>
+            <div style="margin-top: 15px; text-align: right;">
+                <button type="button" onclick="modalUtils.closeModal('socialFeedModal')">Chiudi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("click", function(e) {
+        if (e.target && e.target.classList.contains("redirect-btn")) {
+            modalUtils.closeModal("socialSuccessModal");
+            modalUtils.closeModal("createSuccessModal");
+            modalUtils.closeModal("updateSuccessModal");
+
+            const url = e.target.getAttribute("data-redirect");
+            if (url) {
+                window.location.href = url;
+            }
+        }
+    });
+</script>
+</body>
+</html>

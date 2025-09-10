@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="fasi-produzione">
+    <h4>Fasi di Trasformazione</h4>
+
+    <!-- Lista fasi già aggiunte -->
+    <ul id="fasiList"
+        th:classappend="${#fields.hasErrors('fasiProduzione')} ? 'error'">
+    </ul>
+    <span class="error-message"
+          th:utext="${#fields.hasErrors('fasiProduzione')} ?
+                    ${#strings.arrayJoin(#fields.errors('fasiProduzione'), '<br/>')} : ''">
+    </span>
+
+    <!-- Bottone apre modale -->
+    <button type="button" onclick="modalUtils.openModal('faseModal')">
+        ➕ Aggiungi Fase
+    </button>
+
+    <!-- Modale aggiungi fase -->
+    <div id="faseModal" class="modal">
+        <div class="modal-content">
+            <h3>Aggiungi Fase</h3>
+
+            <label for="faseDescrizione">Descrizione:</label>
+            <input type="text" id="faseDescrizione"/>
+
+            <label for="faseProduttore">Produttore:</label>
+            <select id="faseProduttore" onchange="caricaProdottiPerProduttore(this.value)">
+                <option value="">-- Seleziona --</option>
+                <option th:each="prod : ${produttori}"
+                        th:value="${prod.username}"
+                        th:text="|${prod.nome} ${prod.cognome}|">
+                </option>
+            </select>
+
+            <label for="faseProdottoBase">Prodotto base:</label>
+            <select id="faseProdottoBase">
+                <option value="">-- Seleziona prima un produttore --</option>
+            </select>
+
+            <div style="margin-top: 15px;">
+                <button type="button" onclick="aggiungiFase()">OK</button>
+                <button type="button" onclick="modalUtils.closeModal('faseModal')">Annulla</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="dashboard-table(items, itemType)">
+    <table border="1" style="border-collapse: collapse; width: 100%; margin-top: 20px;">
+        <thead>
+        <tr style="background-color: #f0f0f0; text-align: center;">
+            <th>Nome</th>
+            <th>Descrizione</th>
+            <th>Quantità</th>
+            <th>Prezzo</th>
+            <th>Indirizzo</th>
+            <th>Certificati</th>
+            <th>Foto</th>
+            <th th:if="${itemType == 'pacchetto'}">Prodotti Inclusi</th>
+            <th th:if="${itemType == 'trasformato'}">Fasi Produzione</th>
+            <th>Stato</th>
+            <th>Commento</th>
+            <th>Elimina</th>
+            <th>Modifica</th>
+            <th>Social</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="item : ${items}" th:attr="data-id=${item.id}">
+            <td th:text="${item.nome}">Nome</td>
+            <td th:text="${item.descrizione}">Descrizione</td>
+            <td th:text="${item.quantita}">0</td>
+            <td th:text="${item.prezzo}">0.00</td>
+            <td th:text="${item.indirizzo}">Indirizzo</td>
+            <td>
+                <a th:each="cert : ${item.certificati}" th:href="@{'/file/certificati/' + ${cert}}"
+                   target="_blank" th:text="${cert}">Certificato</a>
+            </td>
+            <td>
+                <a th:each="foto : ${item.foto}" th:href="@{'/file/foto/' + ${foto}}"
+                   target="_blank" th:text="${foto}">Foto</a>
+            </td>
+            <td th:if="${itemType == 'pacchetto'}">
+                <ul>
+                    <li th:each="nome : ${item.prodottiNomi}" th:text="${nome}"></li>
+                </ul>
+            </td>
+            <td th:if="${itemType == 'trasformato'}">
+                <ul>
+                    <li th:each="fase : ${item.fasiProduzione}">
+                        <span th:text="${fase.descrizioneFase}"></span> -
+                        <span th:text="${fase.produttoreUsername}"></span> -
+                        <span th:text="${fase.prodottoOrigineId}"></span>
+                    </li>
+                </ul>
+            </td>
+            <td th:text="${item.stato}">In attesa</td>
+            <td th:text="${item.commento}">Commento</td>
+
+            <!-- Pulsanti con stato e nome -->
+            <td>
+                <button type="button"
+                        th:attr="data-id=${item.id},
+                                 data-stato=${item.stato},
+                                 data-nome=${item.nome}"
+                        onclick="crudUtils.handleDeleteClick(this)">
+                    Elimina
+                </button>
+            </td>
+            <td>
+                <button type="button"
+                        th:attr="data-id=${item.id},
+                                 data-stato=${item.stato},
+                                 data-nome=${item.nome}"
+                        onclick="crudUtils.handleEditClick(this)">
+                    Modifica
+                </button>
+            </td>
+            <td>
+                <button type="button" class="btn-social"
+                        th:attr="data-id=${item.id},
+                     data-nome=${item.nome},
+                     data-stato=${item.stato},
+                     data-type=${itemType}"
+                        onclick="crudUtils.handleSocialClick(this)">
+                    Pubblica sui Social
+                </button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

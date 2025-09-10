@@ -25,4 +25,6 @@ public interface ProdottoTrasformatoService {
      * Recupera l'entità completa per pre-popolare il form in modifica.
      */
     Optional<ProdottoTrasformatoEntity> findEntityById(Long id);
+
+    void eliminaById(Long id, String username);
 }

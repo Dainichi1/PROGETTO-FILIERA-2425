@@ -121,9 +121,8 @@ public class TrasformatoreWebController {
     @ResponseBody
     public ResponseEntity<String> eliminaTrasformato(@PathVariable Long id, Authentication authentication) {
         String username = (authentication != null) ? authentication.getName() : "trasformatore_demo";
-
         try {
-            trasformatoService.eliminaProdottoTrasformatoById(id, username);
+            trasformatoService.eliminaById(id, username);
             return ResponseEntity.ok("Prodotto trasformato eliminato con successo");
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

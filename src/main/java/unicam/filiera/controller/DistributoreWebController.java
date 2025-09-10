@@ -9,14 +9,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import unicam.filiera.dto.ItemTipo;
 import unicam.filiera.dto.PacchettoDto;
-import unicam.filiera.entity.PacchettoEntity;
-import unicam.filiera.model.Pacchetto;
 import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.service.PacchettoService;
 import unicam.filiera.service.ProdottoService;
@@ -55,13 +52,11 @@ public class DistributoreWebController {
         String username = (authentication != null) ? authentication.getName() : "distributore_demo";
 
         model.addAttribute("pacchetti", pacchettoService.getPacchettiViewByCreatore(username));
-
         model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
         model.addAttribute("showForm", false);
 
         return "dashboard/distributore";
     }
-
 
     @PostMapping("/crea")
     public String creaPacchetto(
@@ -77,12 +72,10 @@ public class DistributoreWebController {
 
         if (bindingResult.hasErrors()) {
             log.warn("Creazione pacchetto fallita per errori di validazione");
-
             model.addAttribute("pacchetti", pacchettoService.getPacchettiCreatiDa(username));
-            model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO)); // <-- QUI
+            model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
             model.addAttribute("showForm", true);
             model.addAttribute("validationFailed", true);
-
             return "dashboard/distributore";
         }
 
@@ -90,27 +83,22 @@ public class DistributoreWebController {
             pacchettoService.creaPacchetto(pacchettoDto, username);
             redirectAttrs.addFlashAttribute("createSuccessMessage", "Pacchetto inviato al Curatore con successo");
             return "redirect:/distributore/dashboard";
-
         } catch (Exception ex) {
             log.error("Errore nella creazione del pacchetto", ex);
-
             model.addAttribute("pacchetti", pacchettoService.getPacchettiCreatiDa(username));
-            model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO)); // <-- QUI
+            model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
             model.addAttribute("errorMessage", "Errore: " + ex.getMessage());
             model.addAttribute("showForm", true);
-
             return "dashboard/distributore";
         }
-
     }
 
     @DeleteMapping("/elimina/{id}")
     @ResponseBody
     public ResponseEntity<String> eliminaPacchetto(@PathVariable Long id, Authentication authentication) {
         String username = (authentication != null) ? authentication.getName() : "distributore_demo";
-
         try {
-            pacchettoService.eliminaPacchettoById(id, username);
+            pacchettoService.eliminaById(id, username);
             return ResponseEntity.ok("Pacchetto eliminato con successo");
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -124,14 +112,12 @@ public class DistributoreWebController {
         }
     }
 
-    // === NUOVO: endpoint JSON per pre-popolare in modifica ===
-    // === NUOVO: endpoint JSON per pre-popolare il form in modifica ===
     @GetMapping("/api/pacchetto/{id}")
     @ResponseBody
     public ResponseEntity<?> getPacchetto(@PathVariable Long id, Authentication authentication) {
         String username = (authentication != null) ? authentication.getName() : "distributore_demo";
 
-        return pacchettoService.findEntityById(id) // <-- aggiungiamo questo in PacchettoService
+        return pacchettoService.findEntityById(id)
                 .map(entity -> {
                     if (!entity.getCreatoDa().equals(username)) {
                         return ResponseEntity.status(403).body("Non autorizzato");
@@ -167,8 +153,7 @@ public class DistributoreWebController {
                 .orElseGet(() -> ResponseEntity.status(404).body("Pacchetto non trovato"));
     }
 
-
-    // --- Validazione centralizzata (OBBLIGATORI anche in update) ---
+    // --- Validazione centralizzata ---
     private void validaPacchetto(PacchettoDto pacchettoDto, BindingResult bindingResult) {
         if (pacchettoDto.getCertificati() == null || pacchettoDto.getCertificati().isEmpty()
                 || pacchettoDto.getCertificati().stream().allMatch(MultipartFile::isEmpty)) {

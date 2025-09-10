@@ -7,6 +7,7 @@ import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.beans.PropertyValues;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity; // <-- aggiunto
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,7 +28,6 @@ import unicam.filiera.model.ProdottoTrasformato;
 
 import java.util.List;
 import java.util.Set;
-
 
 @Controller
 @RequestMapping("/venditore/item")
@@ -57,6 +57,9 @@ public class ItemController {
         this.utenteService = utenteService;
     }
 
+    // =========================
+    // MODIFICA
+    // =========================
     @PostMapping("/modifica")
     public String modificaItemRifiutato(
             @RequestParam("tipo") ItemTipo tipo,
@@ -109,33 +112,25 @@ public class ItemController {
             case TRASFORMATO -> validaTrasformato((ProdottoTrasformatoDto) dto, br);
         }
 
-        // 6) Se ci sono errori: restituisci la DASHBOARD del tipo con form aperto in update
+        // 6) Errori -> ritorna alla dashboard del tipo
         if (br.hasErrors()) {
-            // dto + bindingresult per Thymeleaf
             model.addAttribute(attrName, dto);
             model.addAttribute("org.springframework.validation.BindingResult." + attrName, br);
-
-            // carica la lista per la tabella (adatta i nomi se la tua view usa altri attributi)
             loadDashboardLists(model, tipo, username);
-
-            // flag per far aprire il form in modalità update lato view
             model.addAttribute("showForm", true);
             model.addAttribute("updateMode", true);
-
-            return viewFor(tipo); // es. "dashboard/produttore"
+            return viewFor(tipo);
         }
 
         // 7) Business logic
         try {
             itemService.modificaRifiutato(dto, username);
-
             String tipoLabel = switch (tipo) {
                 case PRODOTTO -> "Prodotto";
                 case PACCHETTO -> "Pacchetto";
                 case TRASFORMATO -> "Prodotto trasformato";
             };
             ra.addFlashAttribute("updateSuccessMessage", tipoLabel + " aggiornato e reinviato al Curatore");
-
         } catch (Exception e) {
             br.reject("update.error", (e.getMessage() == null ? "Errore durante l'aggiornamento" : e.getMessage()));
             model.addAttribute(attrName, dto);
@@ -145,8 +140,32 @@ public class ItemController {
             model.addAttribute("updateMode", true);
             return viewFor(tipo);
         }
-
         return "redirect:" + redirectFor(tipo);
+    }
+
+    // =========================
+    // ELIMINAZIONE
+    // =========================
+    @DeleteMapping("/elimina/{tipo}/{id}")
+    @ResponseBody
+    public ResponseEntity<String> eliminaItem(
+            @PathVariable ItemTipo tipo,
+            @PathVariable Long id,
+            Authentication auth
+    ) {
+        String username = (auth != null) ? auth.getName() : "demo_user";
+        try {
+            itemService.eliminaNonApprovato(tipo, id, username);
+            return ResponseEntity.ok("Item eliminato con successo");
+        } catch (IllegalStateException e) {          // stato APPROVATO o non eliminabile
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (SecurityException e) {              // non è il creatore
+            return ResponseEntity.status(403).body(e.getMessage());
+        } catch (IllegalArgumentException e) {       // id inesistente
+            return ResponseEntity.status(404).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Errore interno durante l'eliminazione");
+        }
     }
 
     // --- Helpers ---
@@ -199,8 +218,6 @@ public class ItemController {
                 List<ProdottoTrasformato> trasformati =
                         trasformatoService.getProdottiTrasformatiCreatiDa(username);
                 model.addAttribute("trasformati", trasformati);
-
-                // allineiamo agli attributi attesi dalla view 'dashboard/trasformatore'
                 model.addAttribute("prodottiApprovati",
                         prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
                 model.addAttribute("produttori", utenteService.getProduttori());
@@ -264,5 +281,4 @@ public class ItemController {
             br.rejectValue("fasiProduzione", "error.fasiProduzione", "Devi inserire almeno 2 fasi di produzione");
         }
     }
-
 }

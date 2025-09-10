@@ -99,9 +99,9 @@ public class ProduttoreWebController {
     @ResponseBody
     public ResponseEntity<String> eliminaProdotto(@PathVariable Long id, Authentication authentication) {
         String username = (authentication != null) ? authentication.getName() : "produttore_demo";
-
         try {
-            prodottoService.eliminaProdottoById(id, username);
+            // strada B: policy nel service specifico
+            prodottoService.eliminaById(id, username);
             return ResponseEntity.ok("Prodotto eliminato con successo");
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

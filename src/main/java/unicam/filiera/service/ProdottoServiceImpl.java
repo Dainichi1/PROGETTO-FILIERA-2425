@@ -147,6 +147,23 @@ public class ProdottoServiceImpl implements ProdottoService {
         return repository.findById(id);
     }
 
+    @Override
+    public void eliminaById(Long id, String username) {
+        ProdottoEntity entity = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Prodotto non trovato"));
+
+        if (!username.equals(entity.getCreatoDa())) {
+            throw new SecurityException("Non autorizzato a eliminare questo prodotto");
+        }
+        if (entity.getStato() == StatoProdotto.APPROVATO) {
+            throw new IllegalStateException("Si possono eliminare solo prodotti IN_ATTESA o RIFIUTATO");
+        }
+
+        Prodotto dominio = mapToDomain(entity);
+        repository.delete(entity);
+        notifier.notificaTutti(dominio, "ELIMINATO_PRODOTTO");
+    }
+
     // =======================
     // Helpers
     // =======================

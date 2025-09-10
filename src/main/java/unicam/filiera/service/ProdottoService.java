@@ -27,4 +27,6 @@ public interface ProdottoService {
     // serve per pre-popolare il form (mantiene nomi file) ===
     Optional<ProdottoEntity> findEntityById(Long id);
 
+    void eliminaById(Long id, String username);
+
 }

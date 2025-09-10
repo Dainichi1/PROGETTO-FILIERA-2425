@@ -52,10 +52,8 @@ public class PacchettoServiceImpl implements PacchettoService {
     @Override
     public void creaPacchetto(PacchettoDto dto, String creatore) {
         Pacchetto pacchetto = ItemFactory.creaPacchetto(dto, creatore);
-
         PacchettoEntity entity = mapToEntity(pacchetto, dto, null);
         pacchettoRepository.save(entity);
-
         notifier.notificaTutti(pacchetto, "NUOVO_PACCHETTO");
     }
 
@@ -67,7 +65,6 @@ public class PacchettoServiceImpl implements PacchettoService {
         if (!existing.getCreatoDa().equals(creatore)) {
             throw new SecurityException("Non autorizzato a modificare questo pacchetto");
         }
-
         if (existing.getStato() != StatoProdotto.RIFIUTATO) {
             throw new IllegalStateException("Puoi modificare solo pacchetti con stato RIFIUTATO");
         }
@@ -78,54 +75,26 @@ public class PacchettoServiceImpl implements PacchettoService {
 
         PacchettoEntity entity = mapToEntity(updated, dto, existing.getId());
 
-        // === PRESERVAZIONE FILE: se non sono stati caricati nuovi file, mantieni quelli vecchi ===
+        // preserva file esistenti se non sostituiti
         boolean nessunCertNuovo = dto.getCertificati() == null || dto.getCertificati().stream().allMatch(MultipartFile::isEmpty);
         boolean nessunaFotoNuova = dto.getFoto() == null || dto.getFoto().stream().allMatch(MultipartFile::isEmpty);
-
-        if (nessunCertNuovo) {
-            entity.setCertificati(existing.getCertificati());
-        }
-        if (nessunaFotoNuova) {
-            entity.setFoto(existing.getFoto());
-        }
+        if (nessunCertNuovo) entity.setCertificati(existing.getCertificati());
+        if (nessunaFotoNuova) entity.setFoto(existing.getFoto());
 
         pacchettoRepository.save(entity);
-
         notifier.notificaTutti(updated, "NUOVO_PACCHETTO");
     }
 
     @Override
     public List<Pacchetto> getPacchettiCreatiDa(String creatore) {
         return pacchettoRepository.findByCreatoDa(creatore)
-                .stream()
-                .map(this::mapToDomain)
-                .collect(Collectors.toList());
+                .stream().map(this::mapToDomain).toList();
     }
 
     @Override
     public List<Pacchetto> getPacchettiByStato(StatoProdotto stato) {
         return pacchettoRepository.findByStato(stato)
-                .stream()
-                .map(this::mapToDomain)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public void eliminaPacchettoById(Long id, String creatore) {
-        PacchettoEntity entity = pacchettoRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Pacchetto non trovato"));
-
-        if (!entity.getCreatoDa().equals(creatore)) {
-            throw new SecurityException("Non autorizzato a eliminare questo pacchetto");
-        }
-        if (entity.getStato() == StatoProdotto.APPROVATO) {
-            throw new IllegalStateException("Non puoi eliminare un pacchetto già approvato");
-        }
-
-        Pacchetto pacchetto = mapToDomain(entity);
-        pacchettoRepository.delete(entity);
-
-        notifier.notificaTutti(pacchetto, "ELIMINATO_PACCHETTO");
+                .stream().map(this::mapToDomain).toList();
     }
 
     @Override
@@ -137,11 +106,10 @@ public class PacchettoServiceImpl implements PacchettoService {
         pacchettoRepository.save(entity);
 
         Pacchetto pacchetto = mapToDomain(entity);
-        notifier.notificaTutti(pacchetto,
-                nuovoStato == StatoProdotto.APPROVATO ? "APPROVATO" : "RIFIUTATO");
+        notifier.notificaTutti(pacchetto, (nuovoStato == StatoProdotto.APPROVATO) ? "APPROVATO" : "RIFIUTATO");
     }
 
-
+    @Override
     public Optional<PacchettoEntity> findEntityById(Long id) {
         return pacchettoRepository.findById(id);
     }
@@ -150,26 +118,14 @@ public class PacchettoServiceImpl implements PacchettoService {
     public List<PacchettoViewDto> getPacchettiViewByStato(StatoProdotto stato) {
         return pacchettoRepository.findByStato(stato).stream()
                 .map(e -> {
-                    List<String> prodottiNomi = e.getProdotti() == null ? List.of() :
-                            e.getProdotti().stream()
-                                    .map(ProdottoEntity::getNome)
-                                    .toList();
-
+                    List<String> prodottiNomi = (e.getProdotti() == null) ? List.of()
+                            : e.getProdotti().stream().map(ProdottoEntity::getNome).toList();
                     return new PacchettoViewDto(
-                            e.getId(),
-                            e.getNome(),
-                            e.getDescrizione(),
-                            e.getQuantita(),
-                            e.getPrezzo(),
-                            e.getIndirizzo(),
-                            e.getCreatoDa(),
-                            e.getStato().name(),
-                            e.getCommento(),
-                            e.getCertificati() == null || e.getCertificati().isBlank()
-                                    ? List.of()
+                            e.getId(), e.getNome(), e.getDescrizione(), e.getQuantita(), e.getPrezzo(),
+                            e.getIndirizzo(), e.getCreatoDa(), e.getStato().name(), e.getCommento(),
+                            e.getCertificati() == null || e.getCertificati().isBlank() ? List.of()
                                     : List.of(e.getCertificati().split(",")),
-                            e.getFoto() == null || e.getFoto().isBlank()
-                                    ? List.of()
+                            e.getFoto() == null || e.getFoto().isBlank() ? List.of()
                                     : List.of(e.getFoto().split(",")),
                             prodottiNomi
                     );
@@ -181,26 +137,14 @@ public class PacchettoServiceImpl implements PacchettoService {
     public List<PacchettoViewDto> getPacchettiViewByCreatore(String creatore) {
         return pacchettoRepository.findByCreatoDa(creatore).stream()
                 .map(e -> {
-                    List<String> prodottiNomi = e.getProdotti() == null ? List.of() :
-                            e.getProdotti().stream()
-                                    .map(ProdottoEntity::getNome)
-                                    .toList();
-
+                    List<String> prodottiNomi = (e.getProdotti() == null) ? List.of()
+                            : e.getProdotti().stream().map(ProdottoEntity::getNome).toList();
                     return new PacchettoViewDto(
-                            e.getId(),
-                            e.getNome(),
-                            e.getDescrizione(),
-                            e.getQuantita(),
-                            e.getPrezzo(),
-                            e.getIndirizzo(),
-                            e.getCreatoDa(),
-                            e.getStato().name(),
-                            e.getCommento(),
-                            e.getCertificati() == null || e.getCertificati().isBlank()
-                                    ? List.of()
+                            e.getId(), e.getNome(), e.getDescrizione(), e.getQuantita(), e.getPrezzo(),
+                            e.getIndirizzo(), e.getCreatoDa(), e.getStato().name(), e.getCommento(),
+                            e.getCertificati() == null || e.getCertificati().isBlank() ? List.of()
                                     : List.of(e.getCertificati().split(",")),
-                            e.getFoto() == null || e.getFoto().isBlank()
-                                    ? List.of()
+                            e.getFoto() == null || e.getFoto().isBlank() ? List.of()
                                     : List.of(e.getFoto().split(",")),
                             prodottiNomi
                     );
@@ -208,7 +152,22 @@ public class PacchettoServiceImpl implements PacchettoService {
                 .toList();
     }
 
+    @Override
+    public void eliminaById(Long id, String username) {
+        PacchettoEntity entity = pacchettoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pacchetto non trovato"));
 
+        if (!entity.getCreatoDa().equals(username)) {
+            throw new SecurityException("Non autorizzato a eliminare questo pacchetto");
+        }
+        if (entity.getStato() == StatoProdotto.APPROVATO) {
+            throw new IllegalStateException("Si possono eliminare solo pacchetti IN_ATTESA o RIFIUTATO");
+        }
+
+        Pacchetto pacchetto = mapToDomain(entity); // per la notifica
+        pacchettoRepository.delete(entity);
+        notifier.notificaTutti(pacchetto, "ELIMINATO_PACCHETTO");
+    }
 
     // =======================
     // Helpers
@@ -253,18 +212,16 @@ public class PacchettoServiceImpl implements PacchettoService {
         e.setStato(pacchetto.getStato());
         e.setCommento(pacchetto.getCommento());
 
-        // Prodotti selezionati
-        Set<ProdottoEntity> prodotti = dto.getProdottiSelezionati() == null ? Set.of() :
-                dto.getProdottiSelezionati().stream()
-                        .map(prodottoRepository::findById)
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .collect(Collectors.toSet());
+        Set<ProdottoEntity> prodotti = dto.getProdottiSelezionati() == null ? Set.of()
+                : dto.getProdottiSelezionati().stream()
+                .map(prodottoRepository::findById)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toSet());
         e.setProdotti(prodotti);
 
         e.setCertificati(toCsv(dto.getCertificati(), CERT_DIR));
         e.setFoto(toCsv(dto.getFoto(), FOTO_DIR));
-
         return e;
     }
 
@@ -280,17 +237,11 @@ public class PacchettoServiceImpl implements PacchettoService {
                 .stato(e.getStato())
                 .commento(e.getCommento())
                 .certificati(e.getCertificati() == null || e.getCertificati().isBlank()
-                        ? List.of()
-                        : List.of(e.getCertificati().split(",")))
+                        ? List.of() : List.of(e.getCertificati().split(",")))
                 .foto(e.getFoto() == null || e.getFoto().isBlank()
-                        ? List.of()
-                        : List.of(e.getFoto().split(",")))
-                .prodottiIds(e.getProdotti() == null
-                        ? List.of()
-                        : e.getProdotti().stream()
-                        .map(ProdottoEntity::getId)
-                        .collect(java.util.stream.Collectors.toList()))
+                        ? List.of() : List.of(e.getFoto().split(",")))
+                .prodottiIds(e.getProdotti() == null ? List.of()
+                        : e.getProdotti().stream().map(ProdottoEntity::getId).toList())
                 .build();
     }
-
 }

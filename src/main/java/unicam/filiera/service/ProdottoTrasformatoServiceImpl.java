@@ -138,6 +138,25 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
                 nuovoStato == StatoProdotto.APPROVATO ? "APPROVATO" : "RIFIUTATO");
     }
 
+    @Override
+    public void eliminaById(Long id, String username) {
+        ProdottoTrasformatoEntity entity = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Prodotto trasformato non trovato"));
+
+        if (!username.equals(entity.getCreatoDa())) {
+            throw new SecurityException("Non autorizzato a eliminare questo prodotto trasformato");
+        }
+        if (entity.getStato() == StatoProdotto.APPROVATO) {
+            throw new IllegalStateException("Si possono eliminare solo item IN_ATTESA o RIFIUTATO");
+        }
+
+        ProdottoTrasformato dominio = mapToDomain(entity);
+        repository.delete(entity);
+        notifier.notificaTutti(dominio, "ELIMINATO_PRODOTTO_TRASFORMATO");
+    }
+
+
+
     // =======================
     // Mapping Helpers
     // =======================

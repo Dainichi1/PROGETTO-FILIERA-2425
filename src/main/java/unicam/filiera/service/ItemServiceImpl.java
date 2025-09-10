@@ -25,9 +25,9 @@ public class ItemServiceImpl implements ItemService {
     public void creaItem(BaseItemDto dto, String creatore) {
         requireTipo(dto);
         switch (dto.getTipo()) {
-            case PRODOTTO -> prodottoService.creaProdotto((ProdottoDto) dto, creatore);
-            case PACCHETTO -> pacchettoService.creaPacchetto((PacchettoDto) dto, creatore);
-            case TRASFORMATO -> trasformatoService.creaProdottoTrasformato((ProdottoTrasformatoDto) dto, creatore);
+            case PRODOTTO   -> prodottoService.creaProdotto((ProdottoDto) dto, creatore);
+            case PACCHETTO  -> pacchettoService.creaPacchetto((PacchettoDto) dto, creatore);
+            case TRASFORMATO-> trasformatoService.creaProdottoTrasformato((ProdottoTrasformatoDto) dto, creatore);
             default -> throw new IllegalArgumentException("Tipo item non supportato: " + dto.getTipo());
         }
     }
@@ -37,22 +37,22 @@ public class ItemServiceImpl implements ItemService {
         requireTipo(dto);
         requireId(dto);
         switch (dto.getTipo()) {
-            case PRODOTTO -> prodottoService.aggiornaProdotto(dto.getId(), (ProdottoDto) dto, creatore);
-            case PACCHETTO -> pacchettoService.aggiornaPacchetto(dto.getId(), (PacchettoDto) dto, creatore);
-            case TRASFORMATO -> trasformatoService.aggiornaProdottoTrasformato(dto.getId(), (ProdottoTrasformatoDto) dto, creatore);
+            case PRODOTTO   -> prodottoService.aggiornaProdotto(dto.getId(), (ProdottoDto) dto, creatore);
+            case PACCHETTO  -> pacchettoService.aggiornaPacchetto(dto.getId(), (PacchettoDto) dto, creatore);
+            case TRASFORMATO-> trasformatoService.aggiornaProdottoTrasformato(dto.getId(), (ProdottoTrasformatoDto) dto, creatore);
             default -> throw new IllegalArgumentException("Tipo item non supportato: " + dto.getTipo());
         }
     }
 
     @Override
-    public void eliminaById(Long id, ItemTipo tipo, String creatore) {
+    public void eliminaNonApprovato(ItemTipo tipo, Long id, String username) {
         if (id == null) throw new IllegalArgumentException("ID obbligatorio");
         if (tipo == null) throw new IllegalArgumentException("Tipo item obbligatorio");
 
         switch (tipo) {
-            case PRODOTTO -> prodottoService.eliminaProdottoById(id, creatore);
-            case PACCHETTO -> pacchettoService.eliminaPacchettoById(id, creatore);
-            case TRASFORMATO -> trasformatoService.eliminaProdottoTrasformatoById(id, creatore);
+            case PRODOTTO   -> prodottoService.eliminaById(id, username);
+            case PACCHETTO  -> pacchettoService.eliminaById(id, username);
+            case TRASFORMATO-> trasformatoService.eliminaById(id, username);
             default -> throw new IllegalArgumentException("Tipo item non supportato: " + tipo);
         }
     }
@@ -63,22 +63,21 @@ public class ItemServiceImpl implements ItemService {
         if (nome == null || nome.isBlank()) throw new IllegalArgumentException("Nome item obbligatorio");
 
         switch (tipo) {
-            case PRODOTTO -> prodottoService.cambiaStatoProdotto(nome, creatore, nuovoStato, commento);
-            case PACCHETTO -> pacchettoService.cambiaStatoPacchetto(nome, creatore, nuovoStato, commento);
-            case TRASFORMATO -> trasformatoService.cambiaStatoProdottoTrasformato(nome, creatore, nuovoStato, commento);
+            case PRODOTTO   -> prodottoService.cambiaStatoProdotto(nome, creatore, nuovoStato, commento);
+            case PACCHETTO  -> pacchettoService.cambiaStatoPacchetto(nome, creatore, nuovoStato, commento);
+            case TRASFORMATO-> trasformatoService.cambiaStatoProdottoTrasformato(nome, creatore, nuovoStato, commento);
             default -> throw new IllegalArgumentException("Tipo item non supportato: " + tipo);
         }
     }
 
+    // --- helpers ---
     private void requireTipo(BaseItemDto dto) {
-        if (dto == null || dto.getTipo() == null) {
+        if (dto == null || dto.getTipo() == null)
             throw new IllegalArgumentException("Tipo item obbligatorio");
-        }
     }
 
     private void requireId(BaseItemDto dto) {
-        if (dto.getId() == null) {
+        if (dto.getId() == null)
             throw new IllegalArgumentException("ID obbligatorio per la modifica");
-        }
     }
 }

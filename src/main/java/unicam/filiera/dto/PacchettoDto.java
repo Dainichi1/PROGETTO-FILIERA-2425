@@ -1,5 +1,6 @@
 package unicam.filiera.dto;
 
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 /**
@@ -16,7 +17,7 @@ public class PacchettoDto extends BaseItemDto {
 
     /**
      * Prodotti selezionati che compongono il pacchetto (>= 2).
-     * Validazione di cardinalità e stato nei controller/service.
      */
+    @Size(min = 2, message = "⚠ Devi selezionare almeno 2 prodotti approvati")
     private java.util.List<Long> prodottiSelezionati;
 }

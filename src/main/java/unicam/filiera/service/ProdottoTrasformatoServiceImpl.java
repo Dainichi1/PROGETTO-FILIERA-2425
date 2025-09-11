@@ -163,6 +163,8 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
 
     private ProdottoTrasformatoEntity mapToEntity(ProdottoTrasformato prodotto, ProdottoTrasformatoDto dto, Long id) {
         ProdottoTrasformatoEntity e = new ProdottoTrasformatoEntity();
+        String certs = toCsv(dto.getCertificati(), CERT_DIR);
+        String fotos = toCsv(dto.getFoto(), FOTO_DIR);
         e.setId(id);
         e.setNome(prodotto.getNome());
         e.setDescrizione(prodotto.getDescrizione());
@@ -173,8 +175,8 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
         e.setStato(prodotto.getStato());
         e.setCommento(prodotto.getCommento());
         e.setFasiProduzione(toEmbeddableList(prodotto.getFasiProduzione()));
-        e.setCertificati(toCsv(dto.getCertificati(), CERT_DIR));
-        e.setFoto(toCsv(dto.getFoto(), FOTO_DIR));
+        e.setCertificati((certs == null || certs.isBlank()) ? null : certs);
+        e.setFoto((fotos == null || fotos.isBlank()) ? null : fotos);
         return e;
     }
 
@@ -230,10 +232,12 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
     // =======================
 
     private String toCsv(List<MultipartFile> files, String dir) {
-        return files == null ? "" :
-                files.stream()
-                        .map(file -> salvaMultipartFile(file, dir))
-                        .collect(Collectors.joining(","));
+        return (files == null || files.isEmpty())
+                ? null
+                : files.stream()
+                .filter(f -> f != null && !f.isEmpty())
+                .map(file -> salvaMultipartFile(file, dir))
+                .collect(Collectors.joining(","));
     }
 
     private String salvaMultipartFile(MultipartFile multipartFile, String destDir) {

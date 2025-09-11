@@ -111,24 +111,6 @@ public class ProdottoServiceImpl implements ProdottoService {
     }
 
     @Override
-    public void eliminaProdottoById(Long id, String creatore) {
-        ProdottoEntity entity = repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Prodotto non trovato"));
-
-        if (!entity.getCreatoDa().equals(creatore)) {
-            throw new SecurityException("Non autorizzato a eliminare questo prodotto");
-        }
-        if (entity.getStato() == StatoProdotto.APPROVATO) {
-            throw new IllegalStateException("Non puoi eliminare un prodotto già approvato");
-        }
-
-        Prodotto prodotto = mapToDomain(entity);
-        repository.delete(entity);
-
-        notifier.notificaTutti(prodotto, "ELIMINATO_PRODOTTO");
-    }
-
-    @Override
     public void cambiaStatoProdotto(String nome, String creatore, StatoProdotto nuovoStato, String commento) {
         ProdottoEntity entity = repository.findByNomeAndCreatoDa(nome, creatore)
                 .orElseThrow(() -> new IllegalArgumentException("Prodotto non trovato"));
@@ -187,11 +169,12 @@ public class ProdottoServiceImpl implements ProdottoService {
     }
 
     private String toCsv(List<MultipartFile> files, String dir) {
-        return files == null ? "" :
-                files.stream()
-                        .filter(f -> f != null && !f.isEmpty()) // <-- evita stringhe vuote
-                        .map(file -> salvaMultipartFile(file, dir))
-                        .collect(Collectors.joining(","));
+        return (files == null || files.isEmpty())
+                ? null
+                : files.stream()
+                .filter(f -> f != null && !f.isEmpty())
+                .map(file -> salvaMultipartFile(file, dir))
+                .collect(Collectors.joining(","));
     }
 
     private ProdottoEntity mapToEntity(Prodotto prodotto, ProdottoDto dto, Long id) {

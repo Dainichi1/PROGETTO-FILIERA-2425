@@ -29,14 +29,30 @@ import unicam.filiera.model.ProdottoTrasformato;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Controller centralizzato per la gestione degli {@link unicam.filiera.dto.BaseItemDto} (Prodotto, Pacchetto, Trasformato)
+ * in fase di modifica o eliminazione.
+ *
+ * Responsabilità principali:
+ *
+ * Permette la modifica e il reinvio di item con stato RIFIUTATO<,
+ * con validazioni aggiuntive (certificati, foto, fasi di produzione, ecc.).
+ * Gestisce l’eliminazionedi item non approvati (IN_ATTESA o RIFIUTATO).
+ * Popola dinamicamente i DTO corretti ({@link unicam.filiera.dto.ProdottoDto},
+ * {@link unicam.filiera.dto.PacchettoDto}, {@link unicam.filiera.dto.ProdottoTrasformatoDto})
+ * in base al tipo.
+ * Integra validazione JSR-380 e regole di dominio personalizzate.
+ *
+ *
+ * Nota: questo controller è complementare a {@link VenditoreController},
+ * che fornisce API di fetch/update centralizzate lato frontend.</p>
+ */
 @Controller
 @RequestMapping("/venditore/item")
 public class ItemController {
 
     private final ItemService itemService;
     private final Validator validator;
-
-    // Inject per popolare le liste in dashboard
     private final ProdottoService prodottoService;
     private final PacchettoService pacchettoService;
     private final ProdottoTrasformatoService trasformatoService;
@@ -48,7 +64,7 @@ public class ItemController {
                           ProdottoService prodottoService,
                           PacchettoService pacchettoService,
                           ProdottoTrasformatoService trasformatoService,
-                          UtenteService utenteService){
+                          UtenteService utenteService) {
         this.itemService = itemService;
         this.validator = validator;
         this.prodottoService = prodottoService;
@@ -57,10 +73,8 @@ public class ItemController {
         this.utenteService = utenteService;
     }
 
-    // =========================
-    // MODIFICA
-    // =========================
-    @PostMapping("/modifica")
+    // ========== MODIFICA SOLO RIFIUTATI ==========
+    @PostMapping("/modifica-rifiutato")
     public String modificaItemRifiutato(
             @RequestParam("tipo") ItemTipo tipo,
             @RequestParam(value = "id", required = false) Long id,

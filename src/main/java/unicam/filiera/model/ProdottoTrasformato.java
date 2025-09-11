@@ -1,7 +1,9 @@
 package unicam.filiera.model;
 
 import lombok.Getter;
+import unicam.filiera.dto.ItemTipo;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -13,7 +15,7 @@ public class ProdottoTrasformato extends Item {
 
     private final Long id;
 
-    // Fasi di produzione (almeno 2)
+    // Fasi di produzione (almeno 2) -> immutabile
     private final List<FaseProduzione> fasiProduzione;
 
     // Quantità totale prodotta (es. lotti)
@@ -28,19 +30,22 @@ public class ProdottoTrasformato extends Item {
                 b.nome,
                 b.descrizione,
                 b.indirizzo,
-                b.certificati,
-                b.foto,
+                b.certificati == null ? List.of() : Collections.unmodifiableList(b.certificati),
+                b.foto == null ? List.of() : Collections.unmodifiableList(b.foto),
                 b.creatoDa,
                 b.stato,
-                b.commento
+                b.commento,
+                ItemTipo.TRASFORMATO
         );
         this.id = b.id;
-        this.fasiProduzione = b.fasiProduzione;
         this.quantita = b.quantita;
         this.prezzo = b.prezzo;
+
+        // Copia difensiva + immutabilità
+        this.fasiProduzione = (b.fasiProduzione == null)
+                ? List.of()
+                : Collections.unmodifiableList(List.copyOf(b.fasiProduzione));
     }
-
-
 
     /* --- Builder --- */
     public static class Builder {
@@ -69,7 +74,6 @@ public class ProdottoTrasformato extends Item {
         public Builder creatoDa(String u) { this.creatoDa = u; return this; }
         public Builder stato(StatoProdotto s) { this.stato = s; return this; }
         public Builder commento(String c) { this.commento = c; return this; }
-
         public Builder fasiProduzione(List<FaseProduzione> fasi) { this.fasiProduzione = fasi; return this; }
         public Builder quantita(int q) { this.quantita = q; return this; }
         public Builder prezzo(double p) { this.prezzo = p; return this; }
@@ -79,6 +83,10 @@ public class ProdottoTrasformato extends Item {
                 throw new IllegalStateException("Campi obbligatori mancanti");
             if (fasiProduzione == null || fasiProduzione.size() < 2)
                 throw new IllegalStateException("Un prodotto trasformato deve contenere almeno 2 fasi di produzione");
+            if (quantita <= 0)
+                throw new IllegalStateException("La quantità deve essere maggiore di 0");
+            if (prezzo <= 0)
+                throw new IllegalStateException("Il prezzo deve essere maggiore di 0");
             return new ProdottoTrasformato(this);
         }
     }

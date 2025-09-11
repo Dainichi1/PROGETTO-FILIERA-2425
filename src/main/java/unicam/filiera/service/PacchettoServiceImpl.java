@@ -193,11 +193,12 @@ public class PacchettoServiceImpl implements PacchettoService {
     }
 
     private String toCsv(List<MultipartFile> files, String dir) {
-        return files == null ? "" :
-                files.stream()
-                        .filter(f -> f != null && !f.isEmpty())
-                        .map(file -> salvaMultipartFile(file, dir))
-                        .collect(Collectors.joining(","));
+        return (files == null || files.isEmpty())
+                ? null
+                : files.stream()
+                .filter(f -> f != null && !f.isEmpty())
+                .map(file -> salvaMultipartFile(file, dir))
+                .collect(Collectors.joining(","));
     }
 
     private PacchettoEntity mapToEntity(Pacchetto pacchetto, PacchettoDto dto, Long id) {
@@ -220,8 +221,12 @@ public class PacchettoServiceImpl implements PacchettoService {
                 .collect(Collectors.toSet());
         e.setProdotti(prodotti);
 
-        e.setCertificati(toCsv(dto.getCertificati(), CERT_DIR));
-        e.setFoto(toCsv(dto.getFoto(), FOTO_DIR));
+        String certs = toCsv(dto.getCertificati(), CERT_DIR);
+        String fotos = toCsv(dto.getFoto(), FOTO_DIR);
+
+        e.setCertificati((certs == null || certs.isBlank()) ? null : certs);
+        e.setFoto((fotos == null || fotos.isBlank()) ? null : fotos);
+
         return e;
     }
 

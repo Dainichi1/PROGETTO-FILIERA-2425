@@ -201,6 +201,14 @@ const crudUtils = (() => {
             return;
         }
 
+        // differenzia endpoint se rifiutato
+        const form = document.getElementById(config.formId);
+        if (stato === "RIFIUTATO") {
+            form.setAttribute("action", config.updateRejectedAction); // nuovo campo
+        } else {
+            form.setAttribute("action", config.updateAction);
+        }
+
         setUpdateModeForm(id);
         if (typeof clearAllErrors === "function") clearAllErrors();
 

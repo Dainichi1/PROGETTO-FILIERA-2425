@@ -17,10 +17,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 public class ProdottoTrasformatoDto extends BaseItemDto {
 
-    /**
-     * Elenco delle fasi di produzione del prodotto trasformato.
-     * Validazione su numero e completezza nei controller/service.
-     */
+    @Size(min = 2, message = "⚠ Devi inserire almeno 2 fasi di produzione")
     private List<FaseProduzioneDto> fasiProduzione;
 
     @Getter

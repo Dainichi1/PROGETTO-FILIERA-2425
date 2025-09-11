@@ -1,6 +1,7 @@
 package unicam.filiera.model;
 
 import lombok.Getter;
+import unicam.filiera.dto.ItemTipo;
 
 import java.util.Collections;
 import java.util.List;
@@ -25,11 +26,12 @@ public class Pacchetto extends Item {
                 b.nome,
                 b.descrizione,
                 b.indirizzo,
-                b.certificati,
-                b.foto,
+                b.certificati == null ? List.of() : Collections.unmodifiableList(List.copyOf(b.certificati)),
+                b.foto == null ? List.of() : Collections.unmodifiableList(List.copyOf(b.foto)),
                 b.creatoDa,
                 b.stato,
-                b.commento
+                b.commento,
+                ItemTipo.PACCHETTO
         );
         this.id = b.id;
         this.quantita = b.quantita;
@@ -37,7 +39,7 @@ public class Pacchetto extends Item {
         // copia difensiva + non modificabile
         this.prodottiIds = (b.prodottiIds == null)
                 ? List.of()
-                : Collections.unmodifiableList(b.prodottiIds);
+                : Collections.unmodifiableList(List.copyOf(b.prodottiIds));
     }
 
     /* ------------------------------------------------------------------ */
@@ -74,12 +76,7 @@ public class Pacchetto extends Item {
         public Builder commento(String c) { this.commento = c; return this; }
         public Builder quantita(int q) { this.quantita = q; return this; }
         public Builder prezzo(double p) { this.prezzo = p; return this; }
-
-        // rinominato per chiarezza
-        public Builder prodottiIds(List<Long> ids) {
-            this.prodottiIds = ids;
-            return this;
-        }
+        public Builder prodottiIds(List<Long> ids) { this.prodottiIds = ids; return this; }
 
         /* ------- build() ------- */
         public Pacchetto build() {
@@ -87,10 +84,12 @@ public class Pacchetto extends Item {
                 throw new IllegalStateException("Campi obbligatori mancanti");
             if (prodottiIds == null || prodottiIds.stream().filter(Objects::nonNull).distinct().count() < 2)
                 throw new IllegalStateException("Un pacchetto deve contenere almeno 2 prodotti");
+            if (quantita <= 0)
+                throw new IllegalStateException("La quantità deve essere maggiore di 0");
+            if (prezzo <= 0)
+                throw new IllegalStateException("Il prezzo deve essere maggiore di 0");
             return new Pacchetto(this);
         }
-
-
     }
 
     /* ------------------------------------------------------------------ */

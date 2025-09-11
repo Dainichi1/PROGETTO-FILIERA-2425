@@ -170,7 +170,8 @@ crudUtils.init({
     createTitle: "Nuovo Prodotto Trasformato",
     updateTitle: "Modifica Prodotto Trasformato Rifiutato",
     createAction: "/trasformatore/crea",
-    updateAction: "/venditore/item/modifica", // centralizzato
+    updateAction: "/venditore/item/modifica",
+    updateRejectedAction: "/venditore/item/modifica-rifiutato",
 
     deleteUrl: (id) => `/venditore/item/elimina/${id}?tipo=TRASFORMATO`,
     fetchUrl: (id) => `/venditore/item/fetch/${id}?tipo=TRASFORMATO`,

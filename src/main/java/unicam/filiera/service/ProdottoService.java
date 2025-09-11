@@ -18,7 +18,6 @@ public interface ProdottoService {
 
     List<Prodotto> getProdottiByStato(StatoProdotto stato);
 
-    void eliminaProdottoById(Long id, String creatore);
 
     void cambiaStatoProdotto(String nome, String creatore, StatoProdotto nuovoStato, String commento);
 

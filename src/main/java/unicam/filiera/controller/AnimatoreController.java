@@ -10,7 +10,7 @@ import unicam.filiera.service.FieraService;
 import unicam.filiera.service.FieraServiceImpl;
 import unicam.filiera.service.VisitaInvitoService;
 import unicam.filiera.service.VisitaInvitoServiceImpl;
-import unicam.filiera.util.ValidatoreAnnuncioEvento;
+
 
 import javax.swing.*;
 import java.util.List;
@@ -96,54 +96,7 @@ public class AnimatoreController {
         }
     }
 
-    public void pubblicaAnnuncioEvento(JComponent parent, AnnuncioEventoDto annuncio) {
-        try {
-            // validazioni
-            ValidatoreAnnuncioEvento.validaCampiBase(annuncio);
-            ValidatoreAnnuncioEvento.validaCoerenzaEvento(
-                    annuncio,
-                    organizzatore,
-                    JdbcFieraDAO.getInstance(),
-                    JdbcVisitaInvitoDAO.getInstance()
-            );
 
-            int choice = JOptionPane.showConfirmDialog(
-                    parent,
-                    "Sei sicuro di voler pubblicare l’annuncio sul Social?",
-                    "Conferma pubblicazione",
-                    JOptionPane.YES_NO_OPTION
-            );
-            if (choice != JOptionPane.YES_OPTION) {
-                SwingUtilities.getWindowAncestor(parent).dispose();
-                return;
-            }
-
-            // mapping su PostSocialDto (idAcquisto lasciato NULL!)
-            PostSocialDto post = new PostSocialDto();
-            post.setAutoreUsername(organizzatore);
-            post.setTitolo(annuncio.getTitolo());
-            post.setTesto(annuncio.getTesto());
-            post.setTipoItem("Evento");
-            String nome = ("FIERA".equalsIgnoreCase(annuncio.getTipoEvento()) ? "Fiera" : "Visita")
-                    + " #" + annuncio.getEventoId();
-            post.setNomeItem(nome);
-
-            try (var conn = DatabaseManager.getConnection()) {
-                new JdbcSocialPostDAO(conn).pubblicaPost(post);
-            }
-
-            JOptionPane.showMessageDialog(parent, "Annuncio pubblicato con successo!",
-                    "Successo", JOptionPane.INFORMATION_MESSAGE);
-
-        } catch (IllegalArgumentException ex) {
-            JOptionPane.showMessageDialog(parent, ex.getMessage(),
-                    "Errore di validazione", JOptionPane.WARNING_MESSAGE);
-        } catch (RuntimeException | java.sql.SQLException ex) {
-            JOptionPane.showMessageDialog(parent, "Errore durante la pubblicazione dell’annuncio",
-                    "Errore", JOptionPane.ERROR_MESSAGE);
-            ex.printStackTrace();
-        }
-    }
 
     public List<VisitaInvito> getVisiteInvitoCreateDaMe() {
         return visitaService.getVisiteCreateDa(organizzatore);

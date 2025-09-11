@@ -61,7 +61,8 @@ crudUtils.init({
     createTitle: "Nuovo Prodotto",
     updateTitle: "Modifica Prodotto Rifiutato",
     createAction: "/produttore/crea",
-    updateAction: "/venditore/item/modifica",   // centralizzato
+    updateAction: "/venditore/item/modifica",
+    updateRejectedAction: "/venditore/item/modifica-rifiutato",
 
     deleteUrl: (id) => `/venditore/item/elimina/${id}?tipo=PRODOTTO`,
     fetchUrl: (id) => `/venditore/item/fetch/${id}?tipo=PRODOTTO`,

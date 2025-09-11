@@ -3,31 +3,47 @@
 <head>
     <meta charset="UTF-8"/>
     <title>Pannello Principale - Filiera Agricola</title>
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
 </head>
 <body>
 <h1>🌱 Benvenuto nella Filiera Agricola</h1>
 
 <p>Da qui puoi accedere ai servizi della piattaforma:</p>
 
-<ul>
-    <li><a th:href="@{/register}">📝 Registrati come nuovo utente</a></li>
-    <li><a th:href="@{/login}">🔑 Accedi (Login)</a></li>
-    <li>
-        <a th:href="@{/marketplace}">
-            🛒 Visualizza Marketplace
-        </a>
-    </li>
-</ul>
+<div class="button-container">
+    <button type="button" onclick="window.location.href='/register'">📝 Registrati come nuovo utente</button>
+    <button type="button" onclick="window.location.href='/login'">🔑 Accedi (Login)</button>
+    <button type="button" onclick="window.location.href='/marketplace'">🛒 Visualizza Marketplace</button>
+    <button type="button" onclick="crudUtils.openSocialFeed()">📢 Visualizza Social Network</button>
+</div>
 
 <hr/>
+
+<!-- Modale feed globale -->
+<div id="socialFeedModal" class="modal">
+    <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
+        <h3>📢 Social Network - Feed Globale</h3>
+        <div id="socialPostsContainer">
+            <!-- Post caricati via JS -->
+        </div>
+        <div style="margin-top: 15px; text-align: right;">
+            <button type="button" onclick="modalUtils.closeModal('socialFeedModal')">Chiudi</button>
+        </div>
+    </div>
+</div>
 
 <p>
     <small>Questa piattaforma permette la gestione, valorizzazione e tracciabilità dei prodotti agricoli locali.</small>
 </p>
-<!-- Script per popup di successo -->
+
+<!-- Script per eventuale messaggio di successo -->
 <script th:if="${success}" th:inline="javascript">
     alert([[${success}]]);
-    window.location.href = '/'; // torna alla home
+    window.location.href = '/';
 </script>
+
+<!-- Script comuni -->
+<script src="/js/utils/modal-utils.js" defer></script>
+<script src="/js/utils/crud-utils.js" defer></script>
 </body>
 </html>

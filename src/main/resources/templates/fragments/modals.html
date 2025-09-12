@@ -43,7 +43,7 @@
     </div>
 </div>
 
-<!-- Modali creazione/aggiornamento -->
+<!-- Modali creazione/aggiornamento per Produttore/Distributore/Trasformatore -->
 <div th:fragment="create-update-modals(entityName, redirectPath)">
     <!-- Creazione -->
     <div id="createConfirmModal" class="modal">
@@ -78,7 +78,27 @@
     </div>
 </div>
 
-<!-- Modale Social non disponibile -->
+<!-- ================== MODALI SPECIFICI PER FIERE ================== -->
+<div th:fragment="fiera-create-modals(redirectPath)">
+    <!-- Conferma pubblicazione Fiera -->
+    <div id="createConfirmModalFiera" class="modal">
+        <div class="modal-content">
+            <p>Vuoi pubblicare la fiera?</p>
+            <button type="button" onclick="crudUtils.submitForm()">Sì</button>
+            <button type="button" onclick="modalUtils.closeModal('createConfirmModalFiera')">No</button>
+        </div>
+    </div>
+
+    <!-- Successo pubblicazione Fiera -->
+    <div id="createSuccessModalFiera" class="modal">
+        <div class="modal-content">
+            <p>✅ Fiera pubblicata con successo!</p>
+            <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modali Social -->
 <div th:fragment="social-modal">
     <div id="socialNotAvailableModal" class="modal">
         <div class="modal-content">
@@ -90,13 +110,10 @@
     </div>
 </div>
 
-<!-- Modali per pubblicazione Social -->
 <div th:fragment="social-post-modals(redirectPath)">
-    <!-- Step 1: compilazione titolo e testo -->
     <div id="socialPostModal" class="modal">
         <div class="modal-content">
             <h3>Pubblica sui Social</h3>
-
             <form id="socialPostForm">
                 <label for="postTitle">Titolo* (max 100):</label>
                 <input type="text" id="postTitle" name="title" maxlength="100" required />
@@ -114,7 +131,6 @@
         </div>
     </div>
 
-    <!-- Step 2: conferma pubblicazione -->
     <div id="socialConfirmModal" class="modal">
         <div class="modal-content">
             <p>Sei sicuro di voler pubblicare l'annuncio sui social?</p>
@@ -123,7 +139,6 @@
         </div>
     </div>
 
-    <!-- Step 3: successo -->
     <div id="socialSuccessModal" class="modal">
         <div class="modal-content">
             <p>✅ Annuncio pubblicato con successo!</p>
@@ -132,14 +147,11 @@
     </div>
 </div>
 
-<!-- Modale Social Feed -->
 <div th:fragment="social-feed-modal">
     <div id="socialFeedModal" class="modal">
         <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
             <h3>📢 Social Network</h3>
-            <div id="socialPostsContainer">
-                <!-- I post verranno inseriti via JS -->
-            </div>
+            <div id="socialPostsContainer"></div>
             <div style="margin-top: 15px; text-align: right;">
                 <button type="button" onclick="modalUtils.closeModal('socialFeedModal')">Chiudi</button>
             </div>
@@ -153,11 +165,9 @@
             modalUtils.closeModal("socialSuccessModal");
             modalUtils.closeModal("createSuccessModal");
             modalUtils.closeModal("updateSuccessModal");
-
+            modalUtils.closeModal("createSuccessModalFiera");
             const url = e.target.getAttribute("data-redirect");
-            if (url) {
-                window.location.href = url;
-            }
+            if (url) window.location.href = url;
         }
     });
 </script>

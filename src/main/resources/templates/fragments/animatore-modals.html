@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Modali creazione per Animatore -->
+<div th:fragment="animatore-create-modals(redirectPath)">
+
+    <!-- ================== VISITA ================== -->
+    <!-- Conferma pubblicazione Visita -->
+    <div id="createConfirmModalVisita" class="modal">
+        <div class="modal-content">
+            <p>Vuoi pubblicare la visita?</p>
+            <button type="button" onclick="visitaCrud.submitForm()">Sì</button>
+            <button type="button" onclick="modalUtils.closeModal('createConfirmModalVisita')">No</button>
+        </div>
+    </div>
+    <!-- Successo pubblicazione Visita -->
+    <div id="createSuccessModalVisita" class="modal">
+        <div class="modal-content">
+            <p>✅ Visita pubblicata con successo!</p>
+            <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+        </div>
+    </div>
+
+    <!-- ================== FIERA ================== -->
+    <!-- Conferma pubblicazione Fiera -->
+    <div id="createConfirmModalFiera" class="modal">
+        <div class="modal-content">
+            <p>Vuoi pubblicare la fiera?</p>
+            <button type="button" onclick="fieraCrud.submitForm()">Sì</button>
+            <button type="button" onclick="modalUtils.closeModal('createConfirmModalFiera')">No</button>
+        </div>
+    </div>
+    <!-- Successo pubblicazione Fiera -->
+    <div id="createSuccessModalFiera" class="modal">
+        <div class="modal-content">
+            <p>✅ Fiera pubblicata con successo!</p>
+            <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener("click", function(e) {
+        if (e.target && e.target.classList.contains("redirect-btn")) {
+            modalUtils.closeModal("createSuccessModalVisita");
+            modalUtils.closeModal("createSuccessModalFiera");
+            const url = e.target.getAttribute("data-redirect");
+            if (url) window.location.href = url;
+        }
+    });
+</script>
+</body>
+</html>

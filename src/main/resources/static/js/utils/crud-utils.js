@@ -131,12 +131,18 @@ const crudUtils = (() => {
                 const isUpdate = form.action === config.updateAction;
                 const modalId = isUpdate ? "updateSuccessModal" : "createSuccessModal";
 
-                // Imposta messaggio dinamico
-                const msg = `${config.labels.itemName} inviato al Curatore con successo!`;
-                const span = document.querySelector(`#${modalId} p`);
-                if (span) span.textContent = msg;
-
-                modalUtils.openModal(modalId);
+                // Se l'app ha definito callback custom → eseguila
+                if (isUpdate && typeof config.onUpdateSuccess === "function") {
+                    config.onUpdateSuccess();
+                } else if (!isUpdate && typeof config.onCreateSuccess === "function") {
+                    config.onCreateSuccess();
+                } else {
+                    // default: messaggio "inviato al curatore"
+                    const msg = `${config.labels.itemName} inviato al Curatore con successo!`;
+                    const span = document.querySelector(`#${modalId} p`);
+                    if (span) span.textContent = msg;
+                    modalUtils.openModal(modalId);
+                }
             } else {
                 alert("Errore durante l'invio: " + (await res.text()));
             }

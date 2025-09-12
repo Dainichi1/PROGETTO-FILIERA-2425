@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<head>
+    <title>Dashboard Animatore</title>
+    <meta charset="UTF-8"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+<h1 th:text="'Benvenuto ' + (${utente?.nome ?: 'Utente'}) +
+              ', il tuo ruolo è ' + (${utente?.ruolo ?: 'Animatore'}) + '.'">
+    Benvenuto, il tuo ruolo è Animatore.
+</h1>
+
+<!-- Sezione pubblicati -->
+<div th:replace="fragments/animatore-table.html :: pubblicati-section(${visite}, ${fiere})"></div>
+
+<!-- Modali per animatore -->
+<div th:replace="fragments/animatore-modals :: animatore-create-modals('/animatore/dashboard')"></div>
+
+<hr class="section-separator"/>
+
+<!-- Bottone per aprire il form -->
+<button type="button" class="btn-primary" onclick="visitaCrud.toggleForm()">
+    ➕ Pubblica Visita ad Invito
+</button>
+<button type="button" class="btn-primary" onclick="fieraCrud.toggleForm()">
+    ➕ Pubblica Fiera
+</button>
+
+<!-- Form creazione VISITA -->
+<div id="visitaFormContainer" class="form-container"
+     th:style="${showForm} ? 'display:block;' : 'display:none;'">
+
+    <h3 id="formTitle">Nuova Visita ad Invito</h3>
+    <form id="visitaForm" th:action="@{/animatore/crea-visita}" th:object="${visitaDto}"
+          method="post" novalidate>
+        <input type="hidden" th:field="*{id}" id="visitaId"/>
+        <input type="hidden" th:field="*{tipo}" id="eventoTipo" value="VISITA"/>
+        <div th:replace="fragments/animatore-fields :: visita-fields('visitaDto')"></div>
+        <div id="createButtons" class="form-actions">
+            <button type="button" class="btn-primary"
+                    onclick="modalUtils.openModal('createConfirmModalVisita')">✅ Pubblica</button>
+            <button type="button" class="btn-secondary"
+                    onclick="visitaCrud.toggleForm()">❌ Annulla</button>
+        </div>
+    </form>
+</div>
+
+<!-- Form creazione FIERA -->
+<div id="fieraFormContainer" class="form-container" style="display:none;">
+    <h3 id="formTitleFiera">Nuova Fiera</h3>
+    <form id="fieraForm" th:action="@{/animatore/crea-fiera}" th:object="${fieraDto}"
+          method="post" novalidate>
+        <input type="hidden" th:field="*{id}" id="fieraId"/>
+        <input type="hidden" th:field="*{tipo}" id="eventoTipoFiera" value="FIERA"/>
+        <div th:replace="fragments/animatore-fields :: fiera-fields('fieraDto')"></div>
+        <div id="createButtonsFiera" class="form-actions">
+            <button type="button" class="btn-primary"
+                    onclick="modalUtils.openModal('createConfirmModalFiera')">✅ Pubblica</button>
+            <button type="button" class="btn-secondary"
+                    onclick="fieraCrud.toggleForm()">❌ Annulla</button>
+        </div>
+    </form>
+</div>
+
+<p><a th:href="@{/}">⬅ Torna alla Home</a></p>
+
+<!-- Script -->
+<script src="/js/utils/form-utils.js" defer></script>
+<script src="/js/utils/modal-utils.js" defer></script>
+<script src="/js/utils/csrf-utils.js" defer></script>
+<script src="/js/utils/crud-utils.js" defer></script>
+<script src="/js/utils/crud-utils-animatore.js" defer></script>
+<script src="/js/pages/animatore.js" defer></script>
+
+</body>
+</html>

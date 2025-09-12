@@ -1,40 +1,83 @@
-<div class="dettagli">
-    <h2 th:text="${elemento.nome}">Nome elemento</h2>
-    <p><strong>Descrizione:</strong> <span th:text="${elemento.descrizione}"></span></p>
-    <p><strong>Quantità:</strong> <span th:text="${elemento.quantita}"></span></p>
-    <p><strong>Prezzo:</strong> <span th:text="${elemento.prezzo}"></span> €</p>
-    <p><strong>Creato da:</strong> <span th:text="${elemento.creatoDa}"></span></p>
+<div class="dettagli" style="font-family: Arial, sans-serif;">
+    <div style="background:#f9f9f9; border:1px solid #ddd; border-radius:8px; padding:1rem; margin-bottom:1rem;">
+        <h2 style="margin-top:0; font-size:1.4rem; color:#2e7d32;"
+            th:text="${elemento.nome}">Nome elemento</h2>
+        <p><strong>📝 Descrizione:</strong> <span th:text="${elemento.descrizione}"></span></p>
+        <p><strong>👤 Creato da:</strong> <span th:text="${elemento.creatoDa}"></span></p>
+    </div>
 
-    <!-- Lista prodotti del pacchetto -->
-    <div th:if="${tipo == 'pacchetto'}">
-        <h4>📦 Prodotti inclusi</h4>
+    <!-- Solo prodotti -->
+    <div th:if="${tipo == 'prodotto'}"
+         style="background:#fff; border:1px solid #eee; border-radius:6px; padding:0.8rem; margin-bottom:1rem;">
+        <h3 style="margin-top:0; font-size:1.1rem; border-left:4px solid #4CAF50; padding-left:6px;">🍎 Dettagli prodotto</h3>
+        <p><strong>📦 Quantità:</strong> <span th:text="${elemento.quantita}"></span></p>
+        <p><strong>💰 Prezzo:</strong> <span th:text="${elemento.prezzo}"></span> €</p>
+
+        <!-- FOTO -->
+        <div th:if="${elemento.foto != null and !elemento.foto.isEmpty()}">
+            <h4>📸 Foto</h4>
+            <ul style="list-style:none; padding:0;">
+                <li th:each="foto : ${elemento.foto}" style="margin:5px 0;">
+                    <a th:href="@{'/file/foto/' + ${foto}}" target="_blank">
+                        <img th:src="@{'/file/foto/' + ${foto}}" alt="Foto"
+                             style="max-width: 200px; border: 1px solid #ccc; border-radius:6px; padding: 3px;"/>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- CERTIFICATI -->
+        <div th:if="${elemento.certificati != null and !elemento.certificati.isEmpty()}">
+            <h4>📜 Certificati</h4>
+            <ul style="list-style:none; padding:0;">
+                <li th:each="cert : ${elemento.certificati}" style="margin:5px 0;">
+                    <a th:href="@{'/file/certificati/' + ${cert}}" target="_blank">
+                        <span th:text="${cert}"></span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Pacchetto -->
+    <div th:if="${tipo == 'pacchetto'}"
+         style="background:#fff; border:1px solid #eee; border-radius:6px; padding:0.8rem; margin-bottom:1rem;">
+        <h3 style="margin-top:0; font-size:1.1rem; border-left:4px solid #4CAF50; padding-left:6px;">📦 Prodotti inclusi</h3>
         <ul>
             <li th:each="nomeProdotto : ${elemento.prodotti}" th:text="${nomeProdotto}"></li>
         </ul>
     </div>
 
-    <!-- FOTO cliccabili -->
-    <div th:if="${elemento.foto != null and !elemento.foto.isEmpty()}">
-        <h4>📸 Foto</h4>
-        <ul style="list-style:none; padding:0;">
-            <li th:each="foto : ${elemento.foto}" style="margin:5px 0;">
-                <a th:href="@{'/file/foto/' + ${foto}}" target="_blank">
-                    <img th:src="@{'/file/foto/' + ${foto}}" alt="Foto"
-                         style="max-width: 200px; border: 1px solid #ccc; padding: 3px;"/>
-                </a>
-            </li>
-        </ul>
+    <!-- Visita -->
+    <div th:if="${tipo == 'visita'}"
+         style="background:#fff; border:1px solid #eee; border-radius:6px; padding:0.8rem; margin-bottom:1rem;">
+        <h3 style="margin-top:0; font-size:1.1rem; border-left:4px solid #4CAF50; padding-left:6px;">🎟 Dettagli visita</h3>
+        <p><strong>📍 Indirizzo:</strong> <span th:text="${elemento.indirizzo}"></span></p>
+        <p><strong>🗓 Periodo:</strong>
+            <span th:text="${#temporals.format(elemento.dataInizio, 'dd/MM/yyyy')}"></span>
+            -
+            <span th:text="${#temporals.format(elemento.dataFine, 'dd/MM/yyyy')}"></span>
+        </p>
+        <p><strong>👥 Destinatari:</strong>
+            <span th:text="${elemento.destinatari}"></span>
+        </p>
     </div>
 
-    <!-- CERTIFICATI cliccabili -->
-    <div th:if="${elemento.certificati != null and !elemento.certificati.isEmpty()}">
-        <h4>📜 Certificati</h4>
-        <ul style="list-style:none; padding:0;">
-            <li th:each="cert : ${elemento.certificati}" style="margin:5px 0;">
-                <a th:href="@{'/file/certificati/' + ${cert}}" target="_blank">
-                    <span th:text="${cert}"></span>
-                </a>
-            </li>
-        </ul>
+    <!-- Fiera -->
+    <div th:if="${tipo == 'fiera'}"
+         style="background:#fff; border:1px solid #eee; border-radius:6px; padding:0.8rem;">
+        <h3 style="margin-top:0; font-size:1.1rem; border-left:4px solid #4CAF50; padding-left:6px;">🎪 Dettagli fiera</h3>
+        <p><strong>📍 Indirizzo:</strong> <span th:text="${elemento.indirizzo}"></span></p>
+        <p><strong>🗓 Periodo:</strong>
+            <span th:text="${#temporals.format(elemento.dataInizio, 'dd/MM/yyyy')}"></span>
+            -
+            <span th:text="${#temporals.format(elemento.dataFine, 'dd/MM/yyyy')}"></span>
+        </p>
+        <p><strong>💰 Prezzo:</strong>
+            <span th:text="${elemento.prezzo}"></span> €
+        </p>
+        <p><strong>👤 Organizzatore:</strong>
+            <span th:text="${elemento.creatoDa}"></span>
+        </p>
     </div>
 </div>

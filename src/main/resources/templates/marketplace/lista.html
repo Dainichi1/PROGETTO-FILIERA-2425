@@ -7,6 +7,7 @@
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
         h1 { background: #4CAF50; color: white; padding: 1rem; margin: 0; }
         .container { display: flex; height: calc(100vh - 70px); }
+
         .sinistra {
             width: 30%;
             border-right: 1px solid #ccc;
@@ -18,7 +19,25 @@
             padding: 1rem;
             overflow-y: auto;
         }
-        ul { list-style: none; padding: 0; }
+
+        /* Stile sezioni */
+        .section-box {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+        }
+        .section-box h3 {
+            margin: 0 0 0.5rem 0;
+            padding: 0.3rem 0.5rem;
+            background: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+            border-radius: 4px;
+            font-size: 1.1rem;
+        }
+
+        ul { list-style: none; padding: 0; margin: 0; }
         li { margin-bottom: 0.5rem; }
         li a {
             text-decoration: none;
@@ -35,43 +54,75 @@
 <div class="container">
     <!-- Colonna sinistra -->
     <div class="sinistra">
-        <h3>Prodotti approvati</h3>
-        <ul>
-            <li th:each="p : ${prodotti}">
-                <a href="#"
-                   th:data-id="${p.id}"
-                   th:data-tipo="'prodotto'"
-                   th:text="${p.nome}"
-                   onclick="caricaDettagli(this.getAttribute('data-id'), this.getAttribute('data-tipo')); return false;"></a>
-            </li>
-        </ul>
+        <div class="section-box">
+            <h3>Prodotti approvati</h3>
+            <ul>
+                <li th:each="p : ${prodotti}">
+                    <a href="#"
+                       th:data-id="${p.id}"
+                       th:data-tipo="'prodotto'"
+                       th:text="${p.nome}"
+                       onclick="caricaDettagli(this.getAttribute('data-id'), this.getAttribute('data-tipo')); return false;"></a>
+                </li>
+            </ul>
+        </div>
 
-        <h3>Pacchetti approvati</h3>
-        <ul>
-            <li th:each="pac : ${pacchetti}">
-                <a href="#"
-                   th:data-id="${pac.id}"
-                   th:data-tipo="'pacchetto'"
-                   th:text="${pac.nome}"
-                   onclick="caricaDettagli(this.getAttribute('data-id'), this.getAttribute('data-tipo')); return false;"></a>
-            </li>
-        </ul>
+        <div class="section-box">
+            <h3>Pacchetti approvati</h3>
+            <ul>
+                <li th:each="pac : ${pacchetti}">
+                    <a href="#"
+                       th:data-id="${pac.id}"
+                       th:data-tipo="'pacchetto'"
+                       th:text="${pac.nome}"
+                       onclick="caricaDettagli(this.getAttribute('data-id'), this.getAttribute('data-tipo')); return false;"></a>
+                </li>
+            </ul>
+        </div>
 
-        <h3>Prodotti trasformati approvati</h3>
-        <ul>
-            <li th:each="t : ${trasformati}">
-                <a href="#"
-                   th:data-id="${t.id}"
-                   th:data-tipo="'trasformato'"
-                   th:text="${t.nome}"
-                   onclick="caricaDettagli(this.getAttribute('data-id'), this.getAttribute('data-tipo')); return false;"></a>
-            </li>
-        </ul>
+        <div class="section-box">
+            <h3>Prodotti trasformati approvati</h3>
+            <ul>
+                <li th:each="t : ${trasformati}">
+                    <a href="#"
+                       th:data-id="${t.id}"
+                       th:data-tipo="'trasformato'"
+                       th:text="${t.nome}"
+                       onclick="caricaDettagli(this.getAttribute('data-id'), this.getAttribute('data-tipo')); return false;"></a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="section-box">
+            <h3>Visite pubblicate</h3>
+            <ul>
+                <li th:each="v : ${visite}">
+                    <a href="#"
+                       th:data-id="${v.id}"
+                       th:data-tipo="'visita'"
+                       th:text="${v.nome}"
+                       onclick="caricaDettagli(this.getAttribute('data-id'), this.getAttribute('data-tipo')); return false;"></a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="section-box">
+            <h3>Fiere pubblicate</h3>
+            <ul>
+                <li th:each="f : ${fiere}">
+                    <a href="#"
+                       th:data-id="${f.id}"
+                       th:data-tipo="'fiera'"
+                       th:text="${f.nome}"
+                       onclick="caricaDettagli(this.getAttribute('data-id'), this.getAttribute('data-tipo')); return false;"></a>
+                </li>
+            </ul>
+        </div>
     </div>
 
     <!-- Colonna destra -->
     <div class="destra" id="dettagli">
-        <p><i>Seleziona un prodotto, pacchetto o prodotto trasformato per vedere i dettagli</i></p>
+        <p><i>Seleziona un prodotto, pacchetto, trasformato, visita o fiera per vedere i dettagli</i></p>
     </div>
 </div>
 

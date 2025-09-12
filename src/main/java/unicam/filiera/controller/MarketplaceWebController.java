@@ -3,13 +3,10 @@ package unicam.filiera.controller;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import unicam.filiera.entity.ProdottoEntity;
-import unicam.filiera.entity.PacchettoEntity;
-import unicam.filiera.entity.ProdottoTrasformatoEntity;
-import unicam.filiera.repository.ProdottoRepository;
-import unicam.filiera.repository.PacchettoRepository;
-import unicam.filiera.repository.ProdottoTrasformatoRepository;
+import unicam.filiera.entity.*;
+import unicam.filiera.repository.*;
 import unicam.filiera.model.StatoProdotto;
+import unicam.filiera.model.StatoEvento;
 
 import java.util.List;
 
@@ -20,13 +17,18 @@ public class MarketplaceWebController {
     private final ProdottoRepository prodottoRepository;
     private final PacchettoRepository pacchettoRepository;
     private final ProdottoTrasformatoRepository prodottoTrasformatoRepository;
+    private final VisitaInvitoRepository visitaInvitoRepository;
+    private final FieraRepository fieraRepository;
 
     public MarketplaceWebController(ProdottoRepository prodottoRepository,
                                     PacchettoRepository pacchettoRepository,
-                                    ProdottoTrasformatoRepository prodottoTrasformatoRepository) {
+                                    ProdottoTrasformatoRepository prodottoTrasformatoRepository,
+                                    VisitaInvitoRepository visitaInvitoRepository, FieraRepository fieraRepository) {
         this.prodottoRepository = prodottoRepository;
         this.pacchettoRepository = pacchettoRepository;
         this.prodottoTrasformatoRepository = prodottoTrasformatoRepository;
+        this.visitaInvitoRepository = visitaInvitoRepository;
+        this.fieraRepository = fieraRepository;
     }
 
     @GetMapping
@@ -34,10 +36,14 @@ public class MarketplaceWebController {
         List<ProdottoEntity> prodotti = prodottoRepository.findByStato(StatoProdotto.APPROVATO);
         List<PacchettoEntity> pacchetti = pacchettoRepository.findByStato(StatoProdotto.APPROVATO);
         List<ProdottoTrasformatoEntity> trasformati = prodottoTrasformatoRepository.findByStato(StatoProdotto.APPROVATO);
+        List<VisitaInvitoEntity> visite = visitaInvitoRepository.findByStato(StatoEvento.PUBBLICATA);
+        List<FieraEntity> fiere = fieraRepository.findByStato(StatoEvento.PUBBLICATA);
 
         model.addAttribute("prodotti", prodotti);
         model.addAttribute("pacchetti", pacchetti);
         model.addAttribute("trasformati", trasformati);
+        model.addAttribute("visite", visite);
+        model.addAttribute("fiere", fiere);
 
         return "marketplace/lista";
     }
@@ -66,6 +72,24 @@ public class MarketplaceWebController {
                 .orElseThrow(() -> new IllegalArgumentException("Prodotto trasformato non trovato"));
         model.addAttribute("elemento", trasformato);
         model.addAttribute("tipo", "trasformato");
+        return "marketplace/dettagli";
+    }
+
+    @GetMapping("/visita/{id}")
+    public String mostraDettagliVisita(@PathVariable Long id, Model model) {
+        VisitaInvitoEntity visita = visitaInvitoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Visita non trovata"));
+        model.addAttribute("elemento", visita);
+        model.addAttribute("tipo", "visita");
+        return "marketplace/dettagli";
+    }
+
+    @GetMapping("/fiera/{id}")
+    public String mostraDettagliFiera(@PathVariable Long id, Model model) {
+        FieraEntity fiera = fieraRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Fiera non trovata"));
+        model.addAttribute("elemento", fiera);
+        model.addAttribute("tipo", "fiera");
         return "marketplace/dettagli";
     }
 }

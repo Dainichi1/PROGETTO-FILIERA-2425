@@ -45,7 +45,7 @@ public abstract class Item {
         this.creatoDa = creatoDa;
         this.stato = stato;
         this.commento = commento;
-        this.tipo = tipo; // 🔹 assegna
+        this.tipo = tipo;
     }
 
     @Override

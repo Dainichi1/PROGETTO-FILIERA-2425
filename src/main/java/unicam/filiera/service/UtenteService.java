@@ -34,4 +34,15 @@ public class UtenteService {
     public List<UtenteEntity> getProduttori() {
         return repo.findByRuolo(Ruolo.PRODUTTORE);
     }
+
+    /**
+     * Restituisce tutti i destinatari possibili per una visita (produttori, trasformatori, distributori tipicità).
+     */
+    public List<UtenteEntity> getDestinatariPossibili() {
+        return repo.findByRuoloIn(List.of(
+                Ruolo.PRODUTTORE,
+                Ruolo.TRASFORMATORE,
+                Ruolo.DISTRIBUTORE_TIPICITA
+        ));
+    }
 }

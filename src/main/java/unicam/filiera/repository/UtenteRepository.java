@@ -15,7 +15,12 @@ public interface UtenteRepository extends JpaRepository<UtenteEntity, String> {
     boolean existsByNomeAndCognome(String nome, String cognome);
 
     /**
-     * Recupera tutti gli utenti filtrati per ruolo.
+     * Recupera tutti gli utenti filtrati per ruolo singolo.
      */
     List<UtenteEntity> findByRuolo(Ruolo ruolo);
+
+    /**
+     * Recupera tutti gli utenti filtrati da una lista di ruoli.
+     */
+    List<UtenteEntity> findByRuoloIn(List<Ruolo> ruoli);
 }

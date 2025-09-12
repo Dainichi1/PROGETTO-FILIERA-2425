@@ -1,62 +1,24 @@
 package unicam.filiera.dto;
 
+import jakarta.validation.constraints.NotEmpty;
+import lombok.*;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * DTO per la creazione di una visita su invito.
+ * DTO per la creazione o modifica di una Visita ad invito da parte dell’Animatore.
+ * Estende BaseEventoDto.
+ *
+ * I destinatari ora contengono gli **username** degli utenti invitati
+ * (produttori, trasformatori, distributori_tipicita).
  */
-public class VisitaInvitoDto {
-    private final String dataInizioTxt;
-    private final String dataFineTxt;
-    private final String prezzoTxt;
-    private final String descrizione;
-    private final String indirizzo;
-    private final String minPartecipantiTxt;
-    private final List<String> destinatari;
+@Getter
+@Setter
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+public class VisitaInvitoDto extends BaseEventoDto {
 
-    public VisitaInvitoDto(
-            String dataInizioTxt,
-            String dataFineTxt,
-            String prezzoTxt,
-            String descrizione,
-            String indirizzo,
-            String minPartecipantiTxt,
-            List<String> destinatari
-    ) {
-        this.dataInizioTxt = dataInizioTxt;
-        this.dataFineTxt = dataFineTxt;
-        this.prezzoTxt = prezzoTxt;
-        this.descrizione = descrizione;
-        this.indirizzo = indirizzo;
-        this.minPartecipantiTxt = minPartecipantiTxt;
-        this.destinatari = List.copyOf(destinatari);
-    }
-
-    public String getDataInizioTxt() {
-        return dataInizioTxt;
-    }
-
-    public String getDataFineTxt() {
-        return dataFineTxt;
-    }
-
-    public String getPrezzoTxt() {
-        return prezzoTxt;
-    }
-
-    public String getDescrizione() {
-        return descrizione;
-    }
-
-    public String getIndirizzo() {
-        return indirizzo;
-    }
-
-    public String getMinPartecipantiTxt() {
-        return minPartecipantiTxt;
-    }
-
-    public List<String> getDestinatari() {
-        return destinatari;
-    }
+    @NotEmpty(message = "⚠ Devi selezionare almeno un destinatario")
+    private List<String> destinatari = new ArrayList<>(); // lista di username
 }

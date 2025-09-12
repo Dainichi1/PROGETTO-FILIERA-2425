@@ -1,77 +1,59 @@
-// -------- Evento.java --------
 package unicam.filiera.model;
 
-import java.time.LocalDateTime;
+import lombok.Getter;
+import unicam.filiera.dto.EventoTipo;
+
+import java.time.LocalDate;
+import java.util.List;
 
 /**
- * Super‐classe astratta per tutti gli eventi (fiere, visite su invito, …).
+ * Classe astratta base per tutti gli eventi (VisitaInvito, Fiera, ...).
+ * Raccoglie i campi comuni per evitare duplicazioni.
  */
+@Getter
 public abstract class Evento {
-    private long id;
-    private final LocalDateTime dataInizio;
-    private final LocalDateTime dataFine;
-    private final double prezzo;
+
+    private final String nome;
     private final String descrizione;
     private final String indirizzo;
+    private final LocalDate dataInizio;
+    private final LocalDate dataFine;
+    private final String creatoDa;
+
+    private final EventoTipo tipo;
+
     private StatoEvento stato;
 
-    protected Evento(long id,
-                     LocalDateTime dataInizio,
-                     LocalDateTime dataFine,
-                     double prezzo,
+    protected Evento(String nome,
                      String descrizione,
                      String indirizzo,
-                     StatoEvento stato) {
-        this.id = id;
-        this.dataInizio = dataInizio;
-        this.dataFine = dataFine;
-        this.prezzo = prezzo;
+                     LocalDate dataInizio,
+                     LocalDate dataFine,
+                     String creatoDa,
+                     StatoEvento stato,
+                     EventoTipo tipo) {
+        this.nome = nome;
         this.descrizione = descrizione;
         this.indirizzo = indirizzo;
+        this.dataInizio = dataInizio;
+        this.dataFine = dataFine;
+        this.creatoDa = creatoDa;
         this.stato = stato;
+        this.tipo = tipo;
     }
 
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public LocalDateTime getDataInizio() {
-        return dataInizio;
-    }
-
-    public LocalDateTime getDataFine() {
-        return dataFine;
-    }
-
-    public double getPrezzo() {
-        return prezzo;
-    }
-
-    public String getDescrizione() {
-        return descrizione;
-    }
-
-    public String getIndirizzo() {
-        return indirizzo;
-    }
-
-    public StatoEvento getStato() {
-        return stato;
-    }
-
-    public void setStato(StatoEvento s) {
-        this.stato = s;
+    public void setStato(StatoEvento stato) {
+        this.stato = stato;
     }
 
     @Override
     public String toString() {
         return String.format(
-                "Evento[id=%d, %s → %s, prezzo=%.2f, stato=%s, descr=%s, addr=%s]",
-                id, dataInizio, dataFine, prezzo, stato, descrizione, indirizzo
+                "Evento[nome=%s, descr=%s, indirizzo=%s, dal=%s al=%s, stato=%s, tipo=%s]",
+                nome, descrizione, indirizzo,
+                dataInizio, dataFine,
+                stato != null ? stato.name() : "N/D",
+                tipo != null ? tipo.name() : "N/D"
         );
     }
 }

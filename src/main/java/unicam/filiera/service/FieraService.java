@@ -1,31 +1,21 @@
 package unicam.filiera.service;
 
 import unicam.filiera.dto.FieraDto;
+import unicam.filiera.entity.FieraEntity;
 import unicam.filiera.model.Fiera;
-import unicam.filiera.model.StatoEvento;
 
 import java.util.List;
+import java.util.Optional;
 
-/**
- * Service per la gestione della logica di creazione e recupero di Fiere/Eventi.
- */
 public interface FieraService {
-    /**
-     * Crea una nuova fiera/evento: validazione → mapping → persistenza → notifica.
-     *
-     * @param dto           dati dal form
-     * @param organizzatore username di chi organizza
-     * @throws IllegalArgumentException in caso di validazione fallita
-     */
-    void creaFiera(FieraDto dto, String organizzatore);
 
-    /**
-     * Recupera le fiere create da un dato organizzatore.
-     */
-    List<Fiera> getFiereCreateDa(String organizzatore);
+    void creaFiera(FieraDto dto, String creatore);
 
-    /**
-     * Recupera le fiere filtrate per stato.
-     */
-    List<Fiera> getFiereByStato(StatoEvento stato);
+    void aggiornaFiera(Long id, FieraDto dto, String creatore);
+
+    List<Fiera> getFiereByCreatore(String creatore);
+
+    Optional<FieraEntity> findEntityById(Long id);
+
+    void eliminaById(Long id, String username);
 }

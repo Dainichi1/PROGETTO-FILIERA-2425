@@ -1,7 +1,6 @@
 function clientValidateTrasformato() {
     formUtils.clearAllErrors("itemForm");
 
-    // id reali con suffisso -trasformatoDto
     const nome = document.getElementById("nome-trasformatoDto");
     const descrizione = document.getElementById("descrizione-trasformatoDto");
     const quantita = document.getElementById("quantita-trasformatoDto");
@@ -38,16 +37,14 @@ function clientValidateTrasformato() {
         ok = false;
     }
 
-    // file obbligatori solo in creazione
-    if (!document.getElementById("itemId").value) {
-        if (!certificati.files || certificati.files.length === 0) {
-            formUtils.setFieldError("certificati-trasformatoDto", "⚠ Devi caricare almeno un certificato");
-            ok = false;
-        }
-        if (!foto.files || foto.files.length === 0) {
-            formUtils.setFieldError("foto-trasformatoDto", "⚠ Devi caricare almeno una foto");
-            ok = false;
-        }
+    // 📌 file obbligatori SEMPRE (anche in modifica)
+    if (!certificati.files || certificati.files.length === 0) {
+        formUtils.setFieldError("certificati-trasformatoDto", "⚠ Devi caricare almeno un certificato");
+        ok = false;
+    }
+    if (!foto.files || foto.files.length === 0) {
+        formUtils.setFieldError("foto-trasformatoDto", "⚠ Devi caricare almeno una foto");
+        ok = false;
     }
 
     // validazione fasi (>= 2)
@@ -63,10 +60,6 @@ function clientValidateTrasformato() {
     return ok;
 }
 
-/**
- * Aggiorna gli indici delle fasi nel form.
- * Serve per il binding della lista fasiProduzione lato server.
- */
 function reindexFasi() {
     const fasi = document.querySelectorAll("#fasiList li");
     fasi.forEach((li, index) => {
@@ -78,12 +71,6 @@ function reindexFasi() {
     });
 }
 
-/**
- * Popola la select "faseProdottoBase" con i prodotti approvati del produttore scelto
- */
-/**
- * Popola la select "faseProdottoBase" con i prodotti approvati del produttore scelto
- */
 function caricaProdottiPerProduttore(username) {
     const select = document.getElementById("faseProdottoBase");
     select.innerHTML = "<option value=''>Caricamento...</option>";
@@ -115,9 +102,6 @@ function caricaProdottiPerProduttore(username) {
         });
 }
 
-/**
- * Aggiunge una nuova fase alla lista #fasiList
- */
 function aggiungiFase() {
     const descrizione = document.getElementById("faseDescrizione").value.trim();
     const produttore = document.getElementById("faseProduttore").value;
@@ -129,7 +113,6 @@ function aggiungiFase() {
     }
 
     const list = document.getElementById("fasiList");
-
     const index = list.querySelectorAll("li").length;
 
     const li = document.createElement("li");
@@ -145,7 +128,6 @@ function aggiungiFase() {
 
     list.appendChild(li);
 
-    // reset campi modale
     document.getElementById("faseDescrizione").value = "";
     document.getElementById("faseProduttore").value = "";
     document.getElementById("faseProdottoBase").innerHTML = "<option value=''>-- Seleziona prima un produttore --</option>";
@@ -153,10 +135,28 @@ function aggiungiFase() {
     modalUtils.closeModal("faseModal");
 }
 
+// ✅ nuova funzione mancante
+function appendFaseLi(index, descrizione, produttore, prodottoBase, produttoreLabel, prodottoLabel) {
+    const list = document.getElementById("fasiList");
+
+    const li = document.createElement("li");
+    li.innerHTML = `
+        <strong>${descrizione}</strong> 
+        (Produttore: ${produttoreLabel}, Prodotto: ${prodottoLabel})
+        <button type="button" onclick="this.parentElement.remove(); reindexFasi();">❌ Rimuovi</button>
+
+        <input type="hidden" name="fasiProduzione[${index}].descrizioneFase" value="${descrizione}">
+        <input type="hidden" name="fasiProduzione[${index}].produttoreUsername" value="${produttore}">
+        <input type="hidden" name="fasiProduzione[${index}].prodottoOrigineId" value="${prodottoBase}">
+    `;
+
+    list.appendChild(li);
+}
+
 // esporta globalmente
 window.caricaProdottiPerProduttore = caricaProdottiPerProduttore;
 window.aggiungiFase = aggiungiFase;
-
+window.appendFaseLi = appendFaseLi;
 
 crudUtils.init({
     formId: "itemForm",
@@ -196,6 +196,7 @@ crudUtils.init({
     },
 
     prefillFormFn: (t) => {
+        document.getElementById("itemId").value = t.id ?? '';   // ✅ fix id mancante
         document.getElementById("nome-trasformatoDto").value = t.nome ?? '';
         document.getElementById("descrizione-trasformatoDto").value = t.descrizione ?? '';
         document.getElementById("quantita-trasformatoDto").value = t.quantita ?? '';

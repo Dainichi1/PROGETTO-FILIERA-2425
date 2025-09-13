@@ -3,6 +3,7 @@ package unicam.filiera.controller;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import unicam.filiera.dto.PacchettoViewDto;
 import unicam.filiera.entity.*;
 import unicam.filiera.repository.*;
 import unicam.filiera.model.StatoProdotto;
@@ -61,10 +62,37 @@ public class MarketplaceWebController {
     public String mostraDettagliPacchetto(@PathVariable Long id, Model model) {
         PacchettoEntity pacchetto = pacchettoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pacchetto non trovato"));
-        model.addAttribute("elemento", pacchetto);
+
+        // converto inline in DTO
+        PacchettoViewDto dto = new PacchettoViewDto();
+        dto.setId(pacchetto.getId());
+        dto.setNome(pacchetto.getNome());
+        dto.setDescrizione(pacchetto.getDescrizione());
+        dto.setQuantita(pacchetto.getQuantita());
+        dto.setPrezzo(pacchetto.getPrezzo());
+        dto.setIndirizzo(pacchetto.getIndirizzo());
+        dto.setCreatoDa(pacchetto.getCreatoDa());
+        dto.setStato(pacchetto.getStato().name());
+        dto.setCommento(pacchetto.getCommento());
+
+        if (pacchetto.getCertificati() != null) {
+            dto.setCertificati(List.of(pacchetto.getCertificati().split(",")));
+        }
+        if (pacchetto.getFoto() != null) {
+            dto.setFoto(List.of(pacchetto.getFoto().split(",")));
+        }
+
+        dto.setProdottiNomi(
+                pacchetto.getProdotti().stream()
+                        .map(ProdottoEntity::getNome) // solo i nomi
+                        .toList()
+        );
+
+        model.addAttribute("elemento", dto);
         model.addAttribute("tipo", "pacchetto");
         return "marketplace/dettagli";
     }
+
 
     @GetMapping("/trasformato/{id}")
     public String mostraDettagliTrasformato(@PathVariable Long id, Model model) {

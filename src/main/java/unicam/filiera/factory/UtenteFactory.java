@@ -46,8 +46,6 @@ public final class UtenteFactory {
         registry.put(Ruolo.ACQUIRENTE,
                 d -> new Acquirente(d.username(), d.password(), d.nome(), d.cognome(), d.fondi()));
 
-        registry.put(Ruolo.GESTORE_PIATTAFORMA,
-                d -> new GestorePiattaforma(d.username(), d.password(), d.nome(), d.cognome()));
     }
 
     /**

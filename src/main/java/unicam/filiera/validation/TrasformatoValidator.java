@@ -20,10 +20,6 @@ public class TrasformatoValidator implements Validator {
         validaInterno(dto, errors, false);
     }
 
-    /**
-     * Metodo statico per validazione manuale in Service.
-     * Lancia IllegalArgumentException in caso di errore.
-     */
     public static void valida(ProdottoTrasformatoDto dto) {
         if (dto == null) {
             throw new IllegalArgumentException("⚠ Il DTO non può essere null");
@@ -31,19 +27,21 @@ public class TrasformatoValidator implements Validator {
         validaInterno(dto, null, true);
     }
 
-    // Logica condivisa
     private static void validaInterno(ProdottoTrasformatoDto dto, Errors errors, boolean throwException) {
-        boolean isCreazione = (dto.getId() == null);
 
-        if (isCreazione) {
-            if (dto.getCertificati() == null || dto.getCertificati().isEmpty()
-                    || dto.getCertificati().stream().allMatch(MultipartFile::isEmpty)) {
-                if (throwException) throw new IllegalArgumentException("⚠ Devi caricare almeno un certificato");
+        // certificati obbligatori SEMPRE
+        if (dto.getCertificati() == null || dto.getCertificati().isEmpty()
+                || dto.getCertificati().stream().allMatch(MultipartFile::isEmpty)) {
+            if (throwException) throw new IllegalArgumentException("⚠ Devi caricare almeno un certificato");
+            if (errors != null) {
                 errors.rejectValue("certificati", "error.certificati", "Devi caricare almeno un certificato");
             }
-            if (dto.getFoto() == null || dto.getFoto().isEmpty()
-                    || dto.getFoto().stream().allMatch(MultipartFile::isEmpty)) {
-                if (throwException) throw new IllegalArgumentException("⚠ Devi caricare almeno una foto");
+        }
+
+        if (dto.getFoto() == null || dto.getFoto().isEmpty()
+                || dto.getFoto().stream().allMatch(MultipartFile::isEmpty)) {
+            if (throwException) throw new IllegalArgumentException("⚠ Devi caricare almeno una foto");
+            if (errors != null) {
                 errors.rejectValue("foto", "error.foto", "Devi caricare almeno una foto");
             }
         }
@@ -58,7 +56,9 @@ public class TrasformatoValidator implements Validator {
 
         if (fasiValide < 2) {
             if (throwException) throw new IllegalArgumentException("⚠ Devi inserire almeno 2 fasi di produzione");
-            errors.rejectValue("fasiProduzione", "error.fasiProduzione", "Devi inserire almeno 2 fasi di produzione");
+            if (errors != null) {
+                errors.rejectValue("fasiProduzione", "error.fasiProduzione", "Devi inserire almeno 2 fasi di produzione");
+            }
         }
     }
 }

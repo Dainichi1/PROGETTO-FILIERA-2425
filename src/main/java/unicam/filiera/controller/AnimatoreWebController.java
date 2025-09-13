@@ -62,13 +62,7 @@ public class AnimatoreWebController {
         }
 
         // Carico le liste
-        List<VisitaInvito> visite = visitaService.getVisiteByCreatore(username);
-        List<Fiera> fiere = fieraService.getFiereByCreatore(username);
-        List<UtenteEntity> destinatari = utenteService.getDestinatariPossibili();
-
-        model.addAttribute("visite", visite);
-        model.addAttribute("fiere", fiere);
-        model.addAttribute("destinatari", destinatari);
+        prepareDashboardLists(model, username);
 
         model.addAttribute("showForm", false);
         return "dashboard/animatore";
@@ -88,6 +82,7 @@ public class AnimatoreWebController {
 
         if (br.hasErrors()) {
             prepareDashboardLists(model, username);
+            ensureDtos(model);
             model.addAttribute("showForm", true);
             model.addAttribute("validationFailed", true);
             return "dashboard/animatore";
@@ -99,6 +94,7 @@ public class AnimatoreWebController {
             return "redirect:/animatore/dashboard";
         } catch (Exception ex) {
             prepareDashboardLists(model, username);
+            ensureDtos(model);
             model.addAttribute("errorMessage", "Errore durante creazione visita: " + ex.getMessage());
             return "dashboard/animatore";
         }
@@ -126,6 +122,7 @@ public class AnimatoreWebController {
 
         if (br.hasErrors()) {
             prepareDashboardLists(model, username);
+            ensureDtos(model);
             model.addAttribute("showForm", true);
             model.addAttribute("validationFailed", true);
             return "dashboard/animatore";
@@ -137,6 +134,7 @@ public class AnimatoreWebController {
             return "redirect:/animatore/dashboard";
         } catch (Exception ex) {
             prepareDashboardLists(model, username);
+            ensureDtos(model);
             model.addAttribute("errorMessage", "Errore durante creazione fiera: " + ex.getMessage());
             return "dashboard/animatore";
         }
@@ -157,5 +155,18 @@ public class AnimatoreWebController {
         model.addAttribute("visite", visitaService.getVisiteByCreatore(username));
         model.addAttribute("fiere", fieraService.getFiereByCreatore(username));
         model.addAttribute("destinatari", utenteService.getDestinatariPossibili());
+    }
+
+    private void ensureDtos(Model model) {
+        if (!model.containsAttribute("visitaDto")) {
+            VisitaInvitoDto v = new VisitaInvitoDto();
+            v.setTipo(EventoTipo.VISITA);
+            model.addAttribute("visitaDto", v);
+        }
+        if (!model.containsAttribute("fieraDto")) {
+            FieraDto f = new FieraDto();
+            f.setTipo(EventoTipo.FIERA);
+            model.addAttribute("fieraDto", f);
+        }
     }
 }

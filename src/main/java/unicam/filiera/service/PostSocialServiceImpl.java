@@ -4,15 +4,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import unicam.filiera.dto.PostSocialDto;
+import unicam.filiera.dto.ItemTipo;
+import unicam.filiera.dto.EventoTipo;
+import unicam.filiera.entity.PostSocialEntity;
 import unicam.filiera.factory.ItemFactory;
+import unicam.filiera.factory.EventoFactory;
 import unicam.filiera.factory.PostSocialFactory;
 import unicam.filiera.model.Item;
+import unicam.filiera.model.Evento;
 import unicam.filiera.model.PostSocial;
 import unicam.filiera.observer.OsservatorePostSocial;
-import unicam.filiera.repository.PostSocialRepository;
-import unicam.filiera.repository.ProdottoRepository;
-import unicam.filiera.repository.PacchettoRepository;
-import unicam.filiera.repository.ProdottoTrasformatoRepository;
+import unicam.filiera.repository.*;
 import unicam.filiera.validation.PostValidator;
 
 import java.util.List;
@@ -24,6 +26,8 @@ public class PostSocialServiceImpl implements PostSocialService {
     private final ProdottoRepository prodottoRepo;
     private final PacchettoRepository pacchettoRepo;
     private final ProdottoTrasformatoRepository trasformatoRepo;
+    private final FieraRepository fieraRepo;
+    private final VisitaInvitoRepository visitaRepo;
     private final List<OsservatorePostSocial> observers;
 
     @Autowired
@@ -31,36 +35,52 @@ public class PostSocialServiceImpl implements PostSocialService {
                                  ProdottoRepository prodottoRepo,
                                  PacchettoRepository pacchettoRepo,
                                  ProdottoTrasformatoRepository trasformatoRepo,
+                                 FieraRepository fieraRepo,
+                                 VisitaInvitoRepository visitaRepo,
                                  List<OsservatorePostSocial> observers) {
         this.postRepo = postRepo;
         this.prodottoRepo = prodottoRepo;
         this.pacchettoRepo = pacchettoRepo;
         this.trasformatoRepo = trasformatoRepo;
+        this.fieraRepo = fieraRepo;
+        this.visitaRepo = visitaRepo;
         this.observers = observers;
     }
 
     @Override
     @Transactional
     public PostSocialDto pubblicaPost(Long itemId, String autoreUsername, PostSocialDto dto) {
-        // Recupera l’item dal DB
-        Item item = ItemFactory.fromId(itemId, prodottoRepo, pacchettoRepo, trasformatoRepo);
-
-        // Valida titolo e testo
         PostValidator.valida(dto);
 
-        // Costruisci l’entità con dati utente + dati item dal DB
-        var entity = PostSocialFactory.creaPost(dto, item, autoreUsername);
+        String tipo = dto.getTipoItem();
+        if (tipo == null) {
+            throw new IllegalArgumentException("⚠ Tipo dell'item mancante");
+        }
 
-        // Salva
+        PostSocialEntity entity;
+
+        try {
+            // --- ITEM ---
+            ItemTipo itemTipo = ItemTipo.valueOf(tipo.toUpperCase());
+            Item item = ItemFactory.fromId(itemId, itemTipo, prodottoRepo, pacchettoRepo, trasformatoRepo);
+            entity = PostSocialFactory.creaPost(dto, item, autoreUsername);
+        } catch (IllegalArgumentException ex1) {
+            try {
+                // --- EVENTO ---
+                EventoTipo eventoTipo = EventoTipo.valueOf(tipo.toUpperCase());
+                Evento evento = EventoFactory.fromId(itemId, eventoTipo, fieraRepo, visitaRepo);
+                entity = PostSocialFactory.creaPost(dto, evento, autoreUsername);
+            } catch (IllegalArgumentException ex2) {
+                throw new UnsupportedOperationException("Tipo non supportato: " + tipo);
+            }
+        }
+
         var saved = postRepo.save(entity);
-
-        // Converto in modello
         PostSocial model = saved.toModel();
 
-        // Notifica tutti gli observer registrati
+        // Notifica agli osservatori
         observers.forEach(obs -> obs.notifica(model, "NUOVO_POST"));
 
-        // Ritorno DTO dal model
         return PostSocialDto.fromModel(model);
     }
 

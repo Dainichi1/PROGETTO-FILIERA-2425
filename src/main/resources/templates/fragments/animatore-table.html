@@ -12,11 +12,17 @@
     <!-- Contenitore delle tabelle (inizialmente nascosto) -->
     <div id="pubblicatiContainer" style="display: none; margin-top: 20px;">
 
+        <!-- Bottone Pubblica Avviso -->
+        <button id="btnPubblicaAvviso" type="button" class="btn-secondary" disabled style="margin-bottom: 15px;">
+            📢 Pubblica avviso su social
+        </button>
+
         <!-- VISITE -->
         <h2>📋 Le tue Visite ad Invito</h2>
         <table border="1" style="border-collapse: collapse; width: 100%; margin-top: 20px;">
             <thead>
             <tr style="background-color: #f0f0f0; text-align: center;">
+                <th>ID</th>
                 <th>Nome</th>
                 <th>Descrizione</th>
                 <th>Indirizzo</th>
@@ -27,7 +33,11 @@
             </tr>
             </thead>
             <tbody>
-            <tr th:each="visita : ${visite}" th:attr="data-id=${visita.id}">
+            <tr th:each="visita : ${visite}"
+                th:attr="data-id=${visita.id}, data-type='VISITA'"
+                class="selectable-row">
+                <!-- Aggiunto ID visibile per debug -->
+                <td th:text="${visita.id}">ID</td>
                 <td th:text="${visita.nome}">Nome</td>
                 <td th:text="${visita.descrizione}">Descrizione</td>
                 <td th:text="${visita.indirizzo}">Indirizzo</td>
@@ -48,6 +58,7 @@
         <table border="1" style="border-collapse: collapse; width: 100%; margin-top: 20px;">
             <thead>
             <tr style="background-color: #f0f0f0; text-align: center;">
+                <th>ID</th>
                 <th>Nome</th>
                 <th>Descrizione</th>
                 <th>Indirizzo</th>
@@ -57,7 +68,11 @@
             </tr>
             </thead>
             <tbody>
-            <tr th:each="fiera : ${fiere}" th:attr="data-id=${fiera.id}">
+            <tr th:each="fiera : ${fiere}"
+                th:attr="data-id=${fiera.id}, data-type='FIERA'"
+                class="selectable-row">
+                <!-- Aggiunto ID visibile per debug -->
+                <td th:text="${fiera.id}">ID</td>
                 <td th:text="${fiera.nome}">Nome</td>
                 <td th:text="${fiera.descrizione}">Descrizione</td>
                 <td th:text="${fiera.indirizzo}">Indirizzo</td>
@@ -69,6 +84,68 @@
         </table>
     </div>
 </div>
+
+
+<!-- ================== SCRIPT PUBBLICATI ================== -->
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const btnToggle = document.getElementById("togglePubblicatiBtn");
+        const container = document.getElementById("pubblicatiContainer");
+        const btnPubblica = document.getElementById("btnPubblicaAvviso");
+        let selectedRow = null;
+
+        // toggle sezione
+        if (btnToggle) {
+            btnToggle.addEventListener("click", () => {
+                const isHidden = container.style.display === "none";
+                container.style.display = isHidden ? "block" : "none";
+                btnToggle.textContent = isHidden ? "❌ Chiudi" : "📋 Visualizza visite/fiere pubblicate";
+                console.log("[DEBUG] Toggle pubblicati, visibile:", isHidden);
+            });
+        }
+
+        // selezione riga
+        document.querySelectorAll(".selectable-row").forEach(row => {
+            row.addEventListener("click", () => {
+                document.querySelectorAll(".selectable-row").forEach(r => r.classList.remove("selected"));
+                row.classList.add("selected");
+                selectedRow = row;
+                btnPubblica.disabled = false;
+
+                console.log("[DEBUG] RIGA SELEZIONATA:", row.outerHTML);
+                console.log("[DEBUG] data-id:", row.getAttribute("data-id"));
+                console.log("[DEBUG] data-type:", row.getAttribute("data-type"));
+            });
+        });
+
+        // apertura modale social
+        if (btnPubblica) {
+            btnPubblica.addEventListener("click", () => {
+                if (!selectedRow) {
+                    console.error("[DEBUG] Nessuna riga selezionata!");
+                    return;
+                }
+                const id = selectedRow.getAttribute("data-id");
+                const type = selectedRow.getAttribute("data-type");
+
+                console.log("[DEBUG] CLICK PUBBLICA AVVISO -> id:", id, "type:", type);
+
+                if (type === "VISITA") {
+                    window.currentCrud = visitaCrud;
+                } else if (type === "FIERA") {
+                    window.currentCrud = fieraCrud;
+                }
+
+                if (window.currentCrud) {
+                    console.log("[DEBUG] Richiamo openSocialModal con:", { id, type });
+                    window.currentCrud.openSocialModal(id, type);
+                } else {
+                    console.error("[DEBUG] Nessun crud valido trovato!");
+                }
+            });
+        }
+    });
+</script>
 
 </body>
 </html>

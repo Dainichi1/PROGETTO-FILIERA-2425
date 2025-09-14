@@ -3,11 +3,15 @@ package unicam.filiera.factory;
 import unicam.filiera.dto.BaseEventoDto;
 import unicam.filiera.dto.VisitaInvitoDto;
 import unicam.filiera.dto.FieraDto;
-import unicam.filiera.model.Evento;
 import unicam.filiera.dto.EventoTipo;
+import unicam.filiera.entity.FieraEntity;
+import unicam.filiera.entity.VisitaInvitoEntity;
+import unicam.filiera.model.Evento;
 import unicam.filiera.model.StatoEvento;
 import unicam.filiera.model.VisitaInvito;
 import unicam.filiera.model.Fiera;
+import unicam.filiera.repository.FieraRepository;
+import unicam.filiera.repository.VisitaInvitoRepository;
 
 import java.util.EnumMap;
 import java.util.List;
@@ -15,7 +19,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Factory centrale per la creazione di eventi (VisitaInvito, Fiera, …).
+ * Factory centrale per la creazione e ricostruzione di eventi
+ * (VisitaInvito, Fiera, …).
  */
 public final class EventoFactory {
 
@@ -69,6 +74,9 @@ public final class EventoFactory {
         });
     }
 
+    /* =========================
+       Creazione da DTO
+    ========================= */
     public static Evento creaEvento(BaseEventoDto dto, String creatore) {
         if (dto == null || dto.getTipo() == null) {
             throw new IllegalArgumentException("DTO o tipo evento null");
@@ -94,5 +102,53 @@ public final class EventoFactory {
 
     public static Fiera creaFiera(FieraDto dto, String creatore) {
         return (Fiera) creaEvento(dto, creatore);
+    }
+
+    /* =========================
+       Ricostruzione da Entity con tipo esplicito
+    ========================= */
+    public static Evento fromId(Long id,
+                                EventoTipo tipo,
+                                FieraRepository fieraRepo,
+                                VisitaInvitoRepository visitaRepo) {
+        if (id == null || tipo == null) {
+            throw new IllegalArgumentException("Id e tipo non possono essere null");
+        }
+
+        return switch (tipo) {
+            case FIERA -> fieraRepo.findById(id)
+                    .map(e -> new Fiera.Builder()
+                            .id(e.getId())
+                            .nome(e.getNome())
+                            .descrizione(e.getDescrizione())
+                            .indirizzo(e.getIndirizzo())
+                            .dataInizio(e.getDataInizio())
+                            .dataFine(e.getDataFine())
+                            .creatoDa(e.getCreatoDa())
+                            .stato(e.getStato())
+                            .prezzo(e.getPrezzo())
+                            .build())
+                    .orElseThrow(() -> new IllegalArgumentException("Fiera con id=" + id + " non trovata"));
+
+            case VISITA -> visitaRepo.findById(id)
+                    .map(e -> {
+                        List<String> destinatari = (e.getDestinatari() != null && !e.getDestinatari().isBlank())
+                                ? List.of(e.getDestinatari().split(","))
+                                : List.of();
+
+                        return new VisitaInvito.Builder()
+                                .id(e.getId())
+                                .nome(e.getNome())
+                                .descrizione(e.getDescrizione())
+                                .indirizzo(e.getIndirizzo())
+                                .dataInizio(e.getDataInizio())
+                                .dataFine(e.getDataFine())
+                                .creatoDa(e.getCreatoDa())
+                                .stato(e.getStato())
+                                .destinatari(destinatari)
+                                .build();
+                    })
+                    .orElseThrow(() -> new IllegalArgumentException("Visita con id=" + id + " non trovata"));
+        };
     }
 }

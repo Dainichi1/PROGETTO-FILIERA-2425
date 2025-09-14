@@ -11,7 +11,6 @@ function clientValidateTrasformato() {
 
     let ok = true;
 
-    // campi base
     if (!nome.value.trim()) {
         formUtils.setFieldError("nome-trasformatoDto", "⚠ Nome obbligatorio");
         ok = false;
@@ -37,7 +36,6 @@ function clientValidateTrasformato() {
         ok = false;
     }
 
-    // 📌 file obbligatori SEMPRE (anche in modifica)
     if (!certificati.files || certificati.files.length === 0) {
         formUtils.setFieldError("certificati-trasformatoDto", "⚠ Devi caricare almeno un certificato");
         ok = false;
@@ -47,7 +45,6 @@ function clientValidateTrasformato() {
         ok = false;
     }
 
-    // validazione fasi (>= 2)
     const numFasi = document.querySelectorAll("#fasiList li").length;
     const fasiErrorSpan = document.querySelector("#fasiList").nextElementSibling;
     if (numFasi < 2) {
@@ -135,7 +132,6 @@ function aggiungiFase() {
     modalUtils.closeModal("faseModal");
 }
 
-// ✅ nuova funzione mancante
 function appendFaseLi(index, descrizione, produttore, prodottoBase, produttoreLabel, prodottoLabel) {
     const list = document.getElementById("fasiList");
 
@@ -153,7 +149,6 @@ function appendFaseLi(index, descrizione, produttore, prodottoBase, produttoreLa
     list.appendChild(li);
 }
 
-// esporta globalmente
 window.caricaProdottiPerProduttore = caricaProdottiPerProduttore;
 window.aggiungiFase = aggiungiFase;
 window.appendFaseLi = appendFaseLi;
@@ -196,7 +191,7 @@ crudUtils.init({
     },
 
     prefillFormFn: (t) => {
-        document.getElementById("itemId").value = t.id ?? '';   // ✅ fix id mancante
+        document.getElementById("itemId").value = t.id ?? '';
         document.getElementById("nome-trasformatoDto").value = t.nome ?? '';
         document.getElementById("descrizione-trasformatoDto").value = t.descrizione ?? '';
         document.getElementById("quantita-trasformatoDto").value = t.quantita ?? '';
@@ -215,5 +210,34 @@ crudUtils.init({
                 fase.prodottoOrigineId
             )
         );
+    }
+});
+
+// ================= FIX BOTTONE OK SOCIAL =================
+document.addEventListener("DOMContentLoaded", () => {
+    const btnOk = document.getElementById("btnOkSocialPost");
+    if (btnOk) {
+        btnOk.onclick = () => {
+            const crud = window.currentCrud || crudUtils;
+            if (crud && typeof crud.openSocialConfirm === "function") {
+                console.log("[DEBUG] OK SocialPost → openSocialConfirm()");
+                crud.openSocialConfirm();
+            } else {
+                console.error("[ERRORE] Nessuna funzione openSocialConfirm trovata!");
+            }
+        };
+    }
+
+    const btnConfirm = document.getElementById("btnConfirmSocialPost");
+    if (btnConfirm) {
+        btnConfirm.onclick = () => {
+            const crud = window.currentCrud || crudUtils;
+            if (crud && typeof crud.submitSocialPost === "function") {
+                console.log("[DEBUG] Conferma SocialPost → submitSocialPost()");
+                crud.submitSocialPost();
+            } else {
+                console.error("[ERRORE] Nessuna funzione submitSocialPost trovata!");
+            }
+        };
     }
 });

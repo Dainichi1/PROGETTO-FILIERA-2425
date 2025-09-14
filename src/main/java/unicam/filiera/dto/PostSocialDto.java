@@ -29,6 +29,9 @@ public class PostSocialDto {
     private String nomeItem;         // settato dal service
     private String tipoItem;         // settato dal service
 
+    // ⚠ nuovo campo solo per input lato client
+    private String tipo;
+
     @NotBlank(message = "⚠ Il titolo è obbligatorio")
     @Size(max = 100, message = "⚠ Il titolo non può superare i 100 caratteri")
     private String titolo;
@@ -39,7 +42,11 @@ public class PostSocialDto {
 
     private LocalDateTime createdAt;
 
-    // ===== Mapping =====
+    // ====== Utility ======
+    public String getTipoEffettivo() {
+        return (tipo != null && !tipo.isBlank()) ? tipo : tipoItem;
+    }
+
     public static PostSocialDto fromEntity(PostSocialEntity entity) {
         return fromModel(entity.toModel());
     }
@@ -57,10 +64,6 @@ public class PostSocialDto {
         return dto;
     }
 
-    /**
-     * Non usare per la creazione in runtime.
-     * Usa PostSocialFactory invece.
-     */
     @Deprecated
     public static PostSocialEntity toEntity(PostSocialDto dto) {
         PostSocialEntity entity = new PostSocialEntity();
@@ -68,7 +71,7 @@ public class PostSocialDto {
         entity.setAutoreUsername(dto.getAutoreUsername());
         entity.setIdAcquisto(dto.getIdAcquisto());
         entity.setNomeItem(dto.getNomeItem());
-        entity.setTipoItem(dto.getTipoItem());
+        entity.setTipoItem(dto.getTipoEffettivo()); // usa sempre il tipo effettivo
         entity.setTitolo(dto.getTitolo());
         entity.setTesto(dto.getTesto());
         entity.setCreatedAt(dto.getCreatedAt());

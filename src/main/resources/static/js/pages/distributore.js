@@ -114,3 +114,32 @@ if (UPDATE_MODE) {
         document.getElementById("itemId").value = UPDATE_ID;
     });
 }
+
+// ================= FIX BOTTONE OK SOCIAL =================
+document.addEventListener("DOMContentLoaded", () => {
+    const btnOk = document.getElementById("btnOkSocialPost");
+    if (btnOk) {
+        btnOk.onclick = () => {
+            const crud = window.currentCrud || crudUtils;
+            if (crud && typeof crud.openSocialConfirm === "function") {
+                console.log("[DEBUG] OK SocialPost → openSocialConfirm()");
+                crud.openSocialConfirm();
+            } else {
+                console.error("[ERRORE] Nessuna funzione openSocialConfirm trovata!");
+            }
+        };
+    }
+
+    const btnConfirm = document.getElementById("btnConfirmSocialPost");
+    if (btnConfirm) {
+        btnConfirm.onclick = () => {
+            const crud = window.currentCrud || crudUtils;
+            if (crud && typeof crud.submitSocialPost === "function") {
+                console.log("[DEBUG] Conferma SocialPost → submitSocialPost()");
+                crud.submitSocialPost();
+            } else {
+                console.error("[ERRORE] Nessuna funzione submitSocialPost trovata!");
+            }
+        };
+    }
+});

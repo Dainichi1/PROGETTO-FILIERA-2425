@@ -1,6 +1,7 @@
 package unicam.filiera.model;
 
 import lombok.Getter;
+import lombok.Setter;
 import unicam.filiera.dto.EventoTipo;
 
 import java.time.LocalDate;
@@ -22,6 +23,7 @@ public abstract class Evento {
 
     private final EventoTipo tipo;
 
+    @Setter
     private StatoEvento stato;
 
     protected Evento(String nome,
@@ -40,10 +42,6 @@ public abstract class Evento {
         this.creatoDa = creatoDa;
         this.stato = stato;
         this.tipo = tipo;
-    }
-
-    public void setStato(StatoEvento stato) {
-        this.stato = stato;
     }
 
     @Override

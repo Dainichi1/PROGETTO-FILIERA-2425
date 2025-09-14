@@ -279,3 +279,11 @@ table td {
     accent-color: #2a7ae4; /* colore coerente con btn-primary */
     cursor: pointer;
 }
+
+.selectable-row {
+    cursor: pointer;
+}
+.selectable-row.selected {
+    background-color: #d0ebff; /* azzurro chiaro */
+}
+

@@ -1,6 +1,8 @@
 package unicam.filiera.controller;
 
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -11,18 +13,15 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import unicam.filiera.dto.EventoTipo;
 import unicam.filiera.dto.VisitaInvitoDto;
 import unicam.filiera.dto.FieraDto;
-import unicam.filiera.entity.UtenteEntity;
-import unicam.filiera.model.VisitaInvito;
-import unicam.filiera.model.Fiera;
 import unicam.filiera.service.FieraService;
 import unicam.filiera.service.UtenteService;
 import unicam.filiera.service.VisitaInvitoService;
 
-import java.util.List;
-
 @Controller
 @RequestMapping("/animatore")
 public class AnimatoreWebController {
+
+    private static final Logger log = LoggerFactory.getLogger(AnimatoreWebController.class);
 
     private final VisitaInvitoService visitaService;
     private final FieraService fieraService;
@@ -48,17 +47,20 @@ public class AnimatoreWebController {
     @GetMapping("/dashboard")
     public String dashboard(Model model, Authentication auth) {
         String username = resolveUsername(auth);
+        log.info("Accesso alla dashboard animatore da utente '{}'", username);
 
         // Preparo DTO vuoti se non già presenti
         if (!model.containsAttribute("visitaDto")) {
             VisitaInvitoDto v = new VisitaInvitoDto();
             v.setTipo(EventoTipo.VISITA);
             model.addAttribute("visitaDto", v);
+            log.debug("Creato nuovo VisitaInvitoDto per utente '{}'", username);
         }
         if (!model.containsAttribute("fieraDto")) {
             FieraDto f = new FieraDto();
             f.setTipo(EventoTipo.FIERA);
             model.addAttribute("fieraDto", f);
+            log.debug("Creato nuovo FieraDto per utente '{}'", username);
         }
 
         // Carico le liste
@@ -79,8 +81,10 @@ public class AnimatoreWebController {
                              RedirectAttributes ra,
                              Model model) {
         String username = resolveUsername(auth);
+        log.info("Richiesta creazione visita da utente '{}': {}", username, dto);
 
         if (br.hasErrors()) {
+            log.warn("Validazione fallita per la visita di '{}': errori={}", username, br.getAllErrors());
             prepareDashboardLists(model, username);
             ensureDtos(model);
             model.addAttribute("showForm", true);
@@ -90,9 +94,11 @@ public class AnimatoreWebController {
 
         try {
             visitaService.creaVisita(dto, username);
+            log.info("Visita '{}' creata con successo da '{}'", dto.getNome(), username);
             ra.addFlashAttribute("createSuccessMessage", "Visita pubblicata con successo");
             return "redirect:/animatore/dashboard";
         } catch (Exception ex) {
+            log.error("Errore durante creazione visita da '{}': {}", username, ex.getMessage(), ex);
             prepareDashboardLists(model, username);
             ensureDtos(model);
             model.addAttribute("errorMessage", "Errore durante creazione visita: " + ex.getMessage());
@@ -104,7 +110,9 @@ public class AnimatoreWebController {
     @ResponseBody
     public String eliminaVisita(@PathVariable Long id, Authentication auth) {
         String username = resolveUsername(auth);
+        log.info("Richiesta eliminazione visita '{}' da parte di '{}'", id, username);
         visitaService.eliminaById(id, username);
+        log.debug("Visita '{}' eliminata da '{}'", id, username);
         return "Visita eliminata con successo";
     }
 
@@ -119,8 +127,10 @@ public class AnimatoreWebController {
                             RedirectAttributes ra,
                             Model model) {
         String username = resolveUsername(auth);
+        log.info("Richiesta creazione fiera da utente '{}': {}", username, dto);
 
         if (br.hasErrors()) {
+            log.warn("Validazione fallita per la fiera di '{}': errori={}", username, br.getAllErrors());
             prepareDashboardLists(model, username);
             ensureDtos(model);
             model.addAttribute("showForm", true);
@@ -130,9 +140,11 @@ public class AnimatoreWebController {
 
         try {
             fieraService.creaFiera(dto, username);
+            log.info("Fiera '{}' creata con successo da '{}'", dto.getNome(), username);
             ra.addFlashAttribute("createSuccessMessage", "Fiera pubblicata con successo");
             return "redirect:/animatore/dashboard";
         } catch (Exception ex) {
+            log.error("Errore durante creazione fiera da '{}': {}", username, ex.getMessage(), ex);
             prepareDashboardLists(model, username);
             ensureDtos(model);
             model.addAttribute("errorMessage", "Errore durante creazione fiera: " + ex.getMessage());
@@ -144,7 +156,9 @@ public class AnimatoreWebController {
     @ResponseBody
     public String eliminaFiera(@PathVariable Long id, Authentication auth) {
         String username = resolveUsername(auth);
+        log.info("Richiesta eliminazione fiera '{}' da parte di '{}'", id, username);
         fieraService.eliminaById(id, username);
+        log.debug("Fiera '{}' eliminata da '{}'", id, username);
         return "Fiera eliminata con successo";
     }
 
@@ -152,6 +166,7 @@ public class AnimatoreWebController {
     // Utility interna
     // =======================
     private void prepareDashboardLists(Model model, String username) {
+        log.debug("Caricamento liste per dashboard animatore '{}'", username);
         model.addAttribute("visite", visitaService.getVisiteByCreatore(username));
         model.addAttribute("fiere", fieraService.getFiereByCreatore(username));
         model.addAttribute("destinatari", utenteService.getDestinatariPossibili());
@@ -162,11 +177,13 @@ public class AnimatoreWebController {
             VisitaInvitoDto v = new VisitaInvitoDto();
             v.setTipo(EventoTipo.VISITA);
             model.addAttribute("visitaDto", v);
+            log.debug("Creato VisitaInvitoDto in ensureDtos()");
         }
         if (!model.containsAttribute("fieraDto")) {
             FieraDto f = new FieraDto();
             f.setTipo(EventoTipo.FIERA);
             model.addAttribute("fieraDto", f);
+            log.debug("Creato FieraDto in ensureDtos()");
         }
     }
 }

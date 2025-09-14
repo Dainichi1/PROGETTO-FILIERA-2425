@@ -13,15 +13,27 @@
     Benvenuto, il tuo ruolo è Animatore.
 </h1>
 
-<!-- Sezione pubblicati -->
+<!-- ================== BOTTONI PRINCIPALI ================== -->
+<div style="display: flex; gap: 20px; margin: 20px 0;">
+    <button type="button" class="btn-primary" onclick="crudUtils.openSocialFeed()">
+        📢 Visualizza Social Network
+    </button>
+</div>
+
+<!-- ================== SEZIONE PUBBLICATI ================== -->
 <div th:replace="fragments/animatore-table.html :: pubblicati-section(${visite}, ${fiere})"></div>
 
-<!-- Modali per animatore -->
+<!-- ================== MODALI CREAZIONE EVENTI ================== -->
 <div th:replace="fragments/animatore-modals :: animatore-create-modals('/animatore/dashboard')"></div>
+
+<!-- ================== MODALI SOCIAL (COMUNI) ================== -->
+<div th:replace="fragments/modals :: social-modal"></div>
+<div th:replace="fragments/modals :: social-feed-modal"></div>
+<div th:replace="fragments/modals :: social-post-modals('/animatore/dashboard')"></div>
 
 <hr class="section-separator"/>
 
-<!-- Bottone per aprire il form -->
+<!-- ================== BOTTONI APERTURA FORM ================== -->
 <button type="button" class="btn-primary" onclick="visitaCrud.toggleForm()">
     ➕ Pubblica Visita ad Invito
 </button>
@@ -29,7 +41,7 @@
     ➕ Pubblica Fiera
 </button>
 
-<!-- Form creazione VISITA -->
+<!-- ================== FORM CREAZIONE VISITA ================== -->
 <div id="visitaFormContainer" class="form-container"
      th:style="${showForm} ? 'display:block;' : 'display:none;'">
 
@@ -48,7 +60,7 @@
     </form>
 </div>
 
-<!-- Form creazione FIERA -->
+<!-- ================== FORM CREAZIONE FIERA ================== -->
 <div id="fieraFormContainer" class="form-container" style="display:none;">
     <h3 id="formTitleFiera">Nuova Fiera</h3>
     <form id="fieraForm" th:action="@{/animatore/crea-fiera}" th:object="${fieraDto}"
@@ -65,15 +77,33 @@
     </form>
 </div>
 
+<!-- ================== LINK HOME ================== -->
 <p><a th:href="@{/}">⬅ Torna alla Home</a></p>
 
-<!-- Script -->
+<!-- ================== SCRIPT ================== -->
 <script src="/js/utils/form-utils.js" defer></script>
 <script src="/js/utils/modal-utils.js" defer></script>
 <script src="/js/utils/csrf-utils.js" defer></script>
 <script src="/js/utils/crud-utils.js" defer></script>
 <script src="/js/utils/crud-utils-animatore.js" defer></script>
 <script src="/js/pages/animatore.js" defer></script>
+
+<!-- ================== FIX SOCIAL POST ================== -->
+<script defer>
+    document.addEventListener("DOMContentLoaded", () => {
+        const confirmBtn = document.getElementById("btnConfirmSocialPost");
+        if (confirmBtn) {
+            confirmBtn.onclick = () => {
+                if (window.currentCrud && typeof window.currentCrud.submitSocialPost === "function") {
+                    console.log("[DEBUG] Conferma social → submitSocialPost()");
+                    window.currentCrud.submitSocialPost();
+                } else {
+                    console.error("[ERRORE] Nessuna istanza CRUD attiva trovata!");
+                }
+            };
+        }
+    });
+</script>
 
 </body>
 </html>

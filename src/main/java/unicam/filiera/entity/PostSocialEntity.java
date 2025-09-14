@@ -23,13 +23,13 @@ public class PostSocialEntity {
     private String autoreUsername;
 
     @Column(name = "id_acquisto")
-    private Integer idAcquisto; // opzionale
+    private Integer idAcquisto; // opzionale, utile solo per prodotti acquistati
 
     @Column(name = "nome_item", nullable = false, length = 100)
     private String nomeItem;
 
     @Column(name = "tipo_item", nullable = false, length = 30)
-    private String tipoItem; // PRODOTTO | PACCHETTO | TRASFORMATO
+    private String tipoItem; // PRODOTTO | PACCHETTO | TRASFORMATO | FIERA | VISITA
 
     @Column(name = "titolo", nullable = false, length = 100)
     private String titolo;
@@ -48,7 +48,7 @@ public class PostSocialEntity {
         }
     }
 
-    /** Conversione a Domain Model */
+    /** Conversione a domain model PostSocial */
     public PostSocial toModel() {
         return new PostSocial.Builder()
                 .id(id)

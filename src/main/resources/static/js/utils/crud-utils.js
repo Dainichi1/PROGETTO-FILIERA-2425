@@ -3,7 +3,7 @@ const crudUtils = (() => {
 
     function init(cfg) {
         config = cfg;
-        attachLiveValidation();
+        attachLiveValidation(cfg.formId);
         attachSocialLiveValidation();
     }
 
@@ -22,13 +22,11 @@ const crudUtils = (() => {
         }
 
         if (stato === "APPROVATO") {
-            // salvo l'id dell'item da pubblicare
             config.currentItemId = button.getAttribute("data-id");
             modalUtils.openModal("socialPostModal");
         }
     }
 
-    // step 1: click su "OK" in socialPostModal → apre conferma
     function openSocialConfirm() {
         const titleEl = document.getElementById("postTitle");
         const textEl = document.getElementById("postText");
@@ -46,21 +44,19 @@ const crudUtils = (() => {
             ok = false;
         }
 
-        if (!ok) {
-            return;
-        }
+        if (!ok) return;
 
         modalUtils.closeModal("socialPostModal");
         modalUtils.openModal("socialConfirmModal");
     }
 
-    // step 2: click su "Sì" in socialConfirmModal → submit al backend
     async function submitSocialPost() {
         modalUtils.closeModal("socialConfirmModal");
 
         const title = document.getElementById("postTitle").value.trim();
         const text = document.getElementById("postText").value.trim();
         const { header, token } = getCsrf();
+        const tipo = config.itemType;
 
         try {
             const res = await fetch(`/api/social/pubblica/${config.currentItemId}`, {
@@ -70,7 +66,7 @@ const crudUtils = (() => {
                     [header]: token
                 },
                 credentials: "same-origin",
-                body: JSON.stringify({ titolo: title, testo: text })
+                body: JSON.stringify({ titolo: title, testo: text, tipoItem: tipo })
             });
 
             if (res.ok) {
@@ -103,7 +99,7 @@ const crudUtils = (() => {
         }
     }
 
-    // ===== SUBMIT FORM (AJAX) =====
+    // ===== SUBMIT FORM =====
     async function submitForm() {
         const ok = config.validateFn ? config.validateFn() : true;
         if (!ok) {
@@ -131,13 +127,11 @@ const crudUtils = (() => {
                 const isUpdate = form.action === config.updateAction;
                 const modalId = isUpdate ? "updateSuccessModal" : "createSuccessModal";
 
-                // Se l'app ha definito callback custom → eseguila
                 if (isUpdate && typeof config.onUpdateSuccess === "function") {
                     config.onUpdateSuccess();
                 } else if (!isUpdate && typeof config.onCreateSuccess === "function") {
                     config.onCreateSuccess();
                 } else {
-                    // default: messaggio "inviato al curatore"
                     const msg = `${config.labels.itemName} inviato al Curatore con successo!`;
                     const span = document.querySelector(`#${modalId} p`);
                     if (span) span.textContent = msg;
@@ -207,10 +201,9 @@ const crudUtils = (() => {
             return;
         }
 
-        // differenzia endpoint se rifiutato
         const form = document.getElementById(config.formId);
         if (stato === "RIFIUTATO") {
-            form.setAttribute("action", config.updateRejectedAction); // nuovo campo
+            form.setAttribute("action", config.updateRejectedAction);
         } else {
             form.setAttribute("action", config.updateAction);
         }
@@ -250,14 +243,14 @@ const crudUtils = (() => {
                     div.style.borderRadius = "8px";
                     div.style.background = "#fff";
                     div.innerHTML = `
-                    <h4>${post.titolo}</h4>
-                    <p>${post.testo}</p>
-                    <small>
-                        👤 ${post.autoreUsername} |
-                        📦 ${post.tipoItem}: ${post.nomeItem} |
-                        🕒 ${new Date(post.createdAt).toLocaleString()}
-                    </small>
-                `;
+                        <h4>${post.titolo}</h4>
+                        <p>${post.testo}</p>
+                        <small>
+                            👤 ${post.autoreUsername} |
+                            📦 ${post.tipoItem}: ${post.nomeItem} |
+                            🕒 ${new Date(post.createdAt).toLocaleString()}
+                        </small>
+                    `;
                     container.appendChild(div);
                 });
             }
@@ -280,20 +273,18 @@ const crudUtils = (() => {
     }
 
     // ===== UTILS =====
-    function attachLiveValidation() {
-        if (!config.formId) return;
-        const form = document.getElementById(config.formId);
+    function attachLiveValidation(formId) {
+        if (!formId) return;
+        const form = document.getElementById(formId);
         if (!form) return;
-        form.querySelectorAll("input, textarea, select")
-            .forEach(f => {
-                f.addEventListener("input", () => clearFieldError(f));
-                f.addEventListener("change", () => clearFieldError(f));
-            });
+        form.querySelectorAll("input, textarea, select").forEach(f => {
+            f.addEventListener("input", () => formUtils.clearFieldError(f));
+            f.addEventListener("change", () => formUtils.clearFieldError(f));
+        });
     }
 
     function attachSocialLiveValidation() {
-        const socialFields = ["postTitle", "postText"];
-        socialFields.forEach(id => {
+        ["postTitle", "postText"].forEach(id => {
             const field = document.getElementById(id);
             if (field) {
                 field.addEventListener("input", () => formUtils.clearFieldError(field));
@@ -302,21 +293,30 @@ const crudUtils = (() => {
         });
     }
 
+    // ===== CREATE INSTANCE (per fiere/visite) =====
+    function createInstance(cfg) {
+        const instance = { ...crudUtils, config: cfg };
+        document.addEventListener("DOMContentLoaded", () => {
+            attachLiveValidation(cfg.formId);
+            attachSocialLiveValidation();
+        });
+        return instance;
+    }
+
     // ===== FIX REDIRECT BUTTON =====
-    document.addEventListener("click", function (e) {
+    document.addEventListener("click", e => {
         if (e.target && e.target.classList.contains("redirect-btn")) {
             modalUtils.closeModal("createSuccessModal");
             modalUtils.closeModal("updateSuccessModal");
 
             const url = e.target.getAttribute("data-redirect");
-            if (url) {
-                window.location.href = url;
-            }
+            if (url) window.location.href = url;
         }
     });
 
     return {
         init,
+        createInstance,
         toggleForm,
         submitForm,
         handleDeleteClick,

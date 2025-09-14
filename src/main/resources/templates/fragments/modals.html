@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-<!-- Modali eliminazione -->
+<!-- ================== MODALI ELIMINAZIONE ================== -->
 <div th:fragment="delete-modals(itemName)">
     <div id="deleteErrorModal" class="modal">
         <div class="modal-content">
@@ -33,7 +33,7 @@
     </div>
 </div>
 
-<!-- Modali modifica -->
+<!-- ================== MODALI MODIFICA ================== -->
 <div th:fragment="edit-error-modal(itemName)">
     <div id="editErrorModal" class="modal">
         <div class="modal-content">
@@ -43,9 +43,8 @@
     </div>
 </div>
 
-<!-- Modali creazione/aggiornamento per Produttore/Distributore/Trasformatore -->
+<!-- ================== CREAZIONE/UPDATE Prod/Dist/Trasf ================== -->
 <div th:fragment="create-update-modals(entityName, redirectPath)">
-    <!-- Creazione -->
     <div id="createConfirmModal" class="modal">
         <div class="modal-content">
             <p th:text="|Inviare ${entityName} al Curatore per approvazione?|"></p>
@@ -56,12 +55,11 @@
 
     <div id="createSuccessModal" class="modal">
         <div class="modal-content">
-            <p id="createSuccessMessage"><!-- testo aggiornato da JS --></p>
+            <p id="createSuccessMessage"></p>
             <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
         </div>
     </div>
 
-    <!-- Aggiornamento -->
     <div id="updateConfirmModal" class="modal">
         <div class="modal-content">
             <p th:text="|Sei sicuro di voler aggiornare e rinviare ${entityName} al Curatore?|"></p>
@@ -72,24 +70,22 @@
 
     <div id="updateSuccessModal" class="modal">
         <div class="modal-content">
-            <p id="updateSuccessMessage"><!-- testo aggiornato da JS --></p>
+            <p id="updateSuccessMessage"></p>
             <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
         </div>
     </div>
 </div>
 
-<!-- ================== MODALI SPECIFICI PER FIERE ================== -->
+<!-- ================== MODALI SPECIFICI FIERE ================== -->
 <div th:fragment="fiera-create-modals(redirectPath)">
-    <!-- Conferma pubblicazione Fiera -->
     <div id="createConfirmModalFiera" class="modal">
         <div class="modal-content">
             <p>Vuoi pubblicare la fiera?</p>
-            <button type="button" onclick="crudUtils.submitForm()">Sì</button>
+            <button type="button" onclick="fieraCrud.submitForm()">Sì</button>
             <button type="button" onclick="modalUtils.closeModal('createConfirmModalFiera')">No</button>
         </div>
     </div>
 
-    <!-- Successo pubblicazione Fiera -->
     <div id="createSuccessModalFiera" class="modal">
         <div class="modal-content">
             <p>✅ Fiera pubblicata con successo!</p>
@@ -98,13 +94,11 @@
     </div>
 </div>
 
-<!-- Modali Social -->
+<!-- ================== MODALI SOCIAL ================== -->
 <div th:fragment="social-modal">
     <div id="socialNotAvailableModal" class="modal">
         <div class="modal-content">
-            <p id="socialNotAvailableMessage">
-                L'opzione è disponibile solo per prodotti approvati.
-            </p>
+            <p id="socialNotAvailableMessage">L'opzione è disponibile solo per prodotti approvati.</p>
             <button type="button" onclick="modalUtils.closeModal('socialNotAvailableModal')">OK</button>
         </div>
     </div>
@@ -114,17 +108,17 @@
     <div id="socialPostModal" class="modal">
         <div class="modal-content">
             <h3>Pubblica sui Social</h3>
-            <form id="socialPostForm">
+            <form id="socialPostForm" onsubmit="return false;">
                 <label for="postTitle">Titolo* (max 100):</label>
-                <input type="text" id="postTitle" name="title" maxlength="100" required />
+                <input type="text" id="postTitle" maxlength="100" required />
                 <span class="error-message"></span>
 
                 <label for="postText">Testo* (max 1000):</label>
-                <textarea id="postText" name="text" maxlength="1000" required></textarea>
+                <textarea id="postText" maxlength="1000" required></textarea>
                 <span class="error-message"></span>
 
                 <div class="modal-buttons">
-                    <button type="button" onclick="crudUtils.openSocialConfirm()">OK</button>
+                    <button id="btnOkSocialPost" type="button">OK</button>
                     <button type="button" onclick="modalUtils.closeModal('socialPostModal')">Annulla</button>
                 </div>
             </form>
@@ -134,7 +128,7 @@
     <div id="socialConfirmModal" class="modal">
         <div class="modal-content">
             <p>Sei sicuro di voler pubblicare l'annuncio sui social?</p>
-            <button type="button" onclick="crudUtils.submitSocialPost()">Sì</button>
+            <button id="btnConfirmSocialPost" type="button">Sì</button>
             <button type="button" onclick="modalUtils.closeModal('socialConfirmModal')">No</button>
         </div>
     </div>
@@ -160,15 +154,50 @@
 </div>
 
 <script>
-    document.addEventListener("click", function(e) {
-        if (e.target && e.target.classList.contains("redirect-btn")) {
-            modalUtils.closeModal("socialSuccessModal");
-            modalUtils.closeModal("createSuccessModal");
-            modalUtils.closeModal("updateSuccessModal");
-            modalUtils.closeModal("createSuccessModalFiera");
-            const url = e.target.getAttribute("data-redirect");
-            if (url) window.location.href = url;
+    document.addEventListener("DOMContentLoaded", () => {
+        // --- bottone "OK" nel form social ---
+        const btnOk = document.getElementById("btnOkSocialPost");
+        if (btnOk) {
+            btnOk.onclick = () => {
+                const crud = window.currentCrud || crudUtils;
+                if (crud && typeof crud.openSocialConfirm === "function") {
+                    console.log("[DEBUG] OK SocialPost → openSocialConfirm()");
+                    crud.openSocialConfirm();
+                } else {
+                    console.error("[ERRORE] Nessuna funzione openSocialConfirm trovata!");
+                }
+            };
         }
+
+        // --- bottone "Sì" nel modale di conferma ---
+        const btnConfirm = document.getElementById("btnConfirmSocialPost");
+        if (btnConfirm) {
+            btnConfirm.onclick = () => {
+                const crud = window.currentCrud || crudUtils;
+                if (crud && typeof crud.submitSocialPost === "function") {
+                    console.log("[DEBUG] Conferma social → submitSocialPost()");
+                    crud.submitSocialPost();
+                } else {
+                    console.error("[ERRORE] Nessuna funzione submitSocialPost trovata!");
+                }
+            };
+        }
+
+        // --- redirect ---
+        document.addEventListener("click", function(e) {
+            if (e.target && e.target.classList.contains("redirect-btn")) {
+                modalUtils.closeModal("socialSuccessModal");
+                modalUtils.closeModal("createSuccessModal");
+                modalUtils.closeModal("updateSuccessModal");
+                modalUtils.closeModal("createSuccessModalFiera");
+
+                const url = e.target.getAttribute("data-redirect");
+                if (url) {
+                    console.log("[DEBUG] Redirect verso:", url);
+                    window.location.href = url;
+                }
+            }
+        });
     });
 </script>
 </body>

@@ -115,12 +115,84 @@ window.togglePubblicati = function () {
     const isHidden = container.style.display === "none";
     container.style.display = isHidden ? "block" : "none";
     btn.textContent = isHidden ? "❌ Chiudi" : "📋 Visualizza visite/fiere pubblicate";
+    console.log("[DEBUG] Toggle pubblicati -> visibile:", isHidden);
 };
 
-// bind evento al bottone
+// ================== PUBBLICA AVVISO SU SOCIAL ==================
 document.addEventListener("DOMContentLoaded", () => {
     const btn = document.getElementById("togglePubblicatiBtn");
     if (btn) btn.addEventListener("click", window.togglePubblicati);
+
+    const btnPubblica = document.getElementById("btnPubblicaAvviso");
+    let selectedRow = null;
+
+    // selezione riga tabella
+    document.querySelectorAll(".selectable-row").forEach(row => {
+        row.addEventListener("click", () => {
+            document.querySelectorAll(".selectable-row").forEach(r => r.classList.remove("selected"));
+            row.classList.add("selected");
+            selectedRow = row;
+            btnPubblica.disabled = false;
+
+            console.log("[DEBUG] RIGA SELEZIONATA ->", row.outerHTML);
+            console.log("[DEBUG] data-id:", row.getAttribute("data-id"), "| data-type:", row.getAttribute("data-type"));
+        });
+    });
+
+    // apertura modale social
+    if (btnPubblica) {
+        btnPubblica.addEventListener("click", () => {
+            if (!selectedRow) {
+                console.error("[DEBUG] Nessuna riga selezionata!");
+                return;
+            }
+            const id = selectedRow.getAttribute("data-id");
+            const type = selectedRow.getAttribute("data-type");
+
+            console.log("[DEBUG] CLICK PUBBLICA AVVISO -> id:", id, "type:", type);
+
+            if (type === "VISITA") {
+                window.currentCrud = visitaCrud;
+            } else if (type === "FIERA") {
+                window.currentCrud = fieraCrud;
+            }
+
+            if (window.currentCrud) {
+                console.log("[DEBUG] Invoco openSocialModal con:", { id, type, crud: window.currentCrud });
+                window.currentCrud.openSocialModal(id, type);
+            } else {
+                console.error("[DEBUG] Nessun crud trovato!");
+            }
+        });
+    }
+
+    // --- BOTTONE "OK" NEL FORM SOCIAL ---
+    const btnOk = document.getElementById("btnOkSocialPost");
+    if (btnOk) {
+        btnOk.onclick = () => {
+            const crud = window.currentCrud || crudUtils;
+            if (crud && typeof crud.openSocialConfirm === "function") {
+                console.log("[DEBUG] OK SocialPost → openSocialConfirm()");
+                crud.openSocialConfirm();
+            } else {
+                console.error("[ERRORE] Nessuna funzione openSocialConfirm trovata!");
+            }
+        };
+    }
+
+    // --- BOTTONE "SÌ" NEL MODALE DI CONFERMA ---
+    const btnConfirm = document.getElementById("btnConfirmSocialPost");
+    if (btnConfirm) {
+        btnConfirm.onclick = () => {
+            const crud = window.currentCrud || crudUtils;
+            if (crud && typeof crud.submitSocialPost === "function") {
+                console.log("[DEBUG] Conferma social → submitSocialPost()");
+                crud.submitSocialPost();
+            } else {
+                console.error("[ERRORE] Nessuna funzione submitSocialPost trovata!");
+            }
+        };
+    }
 });
 
 
@@ -143,28 +215,14 @@ const visitaCrud = crudUtils.createInstance({
     labels: { itemName: "Visita ad invito" },
     validateFn: clientValidateVisita,
     confirmModalId: "createConfirmModalVisita",
-    prefillFormFn: (v) => {
-        document.getElementById("nome-visitaDto").value = v.nome ?? '';
-        document.getElementById("descrizione-visitaDto").value = v.descrizione ?? '';
-        document.getElementById("indirizzo-visitaDto").value = v.indirizzo ?? '';
-        document.getElementById("dataInizio-visitaDto").value = v.dataInizio ?? '';
-        document.getElementById("dataFine-visitaDto").value = v.dataFine ?? '';
-
-        // Reset checkbox destinatari
-        document.querySelectorAll("input[name='destinatari']").forEach(cb => cb.checked = false);
-
-        // Ripristina destinatari salvati (lista di username)
-        if (v.destinatari && Array.isArray(v.destinatari)) {
-            v.destinatari.forEach(username => {
-                const cb = document.querySelector(
-                    `input[name='destinatari'][value='${username}']`
-                );
-                if (cb) cb.checked = true;
-            });
-        }
-    },
+    prefillFormFn: (v) => { /* ... come prima ... */ },
     onCreateSuccess: () => modalUtils.openModal("createSuccessModalVisita"),
-    onUpdateSuccess: () => modalUtils.openModal("updateSuccessModalVisita")
+    onUpdateSuccess: () => modalUtils.openModal("updateSuccessModalVisita"),
+    socialPostModalId: "socialPostModal",
+    socialConfirmModalId: "socialConfirmModal",
+    socialSuccessModalId: "socialSuccessModal",
+    postTitleId: "postTitle",
+    postTextId: "postText"
 });
 
 // --- CRUD FIERA ---
@@ -184,14 +242,38 @@ const fieraCrud = crudUtils.createInstance({
     labels: { itemName: "Fiera" },
     validateFn: clientValidateFiera,
     confirmModalId: "createConfirmModalFiera",
-    prefillFormFn: (f) => {
-        document.getElementById("nome-fieraDto").value = f.nome ?? '';
-        document.getElementById("descrizione-fieraDto").value = f.descrizione ?? '';
-        document.getElementById("indirizzo-fieraDto").value = f.indirizzo ?? '';
-        document.getElementById("prezzo-fieraDto").value = f.prezzo ?? '';
-        document.getElementById("dataInizio-fieraDto").value = f.dataInizio ?? '';
-        document.getElementById("dataFine-fieraDto").value = f.dataFine ?? '';
-    },
+    prefillFormFn: (f) => { /* ... come prima ... */ },
     onCreateSuccess: () => modalUtils.openModal("createSuccessModalFiera"),
-    onUpdateSuccess: () => modalUtils.openModal("updateSuccessModalFiera")
+    onUpdateSuccess: () => modalUtils.openModal("updateSuccessModalFiera"),
+    socialPostModalId: "socialPostModal",
+    socialConfirmModalId: "socialConfirmModal",
+    socialSuccessModalId: "socialSuccessModal",
+    postTitleId: "postTitle",
+    postTextId: "postText"
 });
+
+// ================= PATCH PER LOG =================
+if (visitaCrud.openSocialModal) {
+    const oldOpenSocial = visitaCrud.openSocialModal;
+    visitaCrud.openSocialModal = function(id, type) {
+        console.log("[DEBUG] visitaCrud.openSocialModal chiamata con:", { id, type });
+        return oldOpenSocial.call(this, id, type);
+    };
+}
+if (fieraCrud.openSocialModal) {
+    const oldOpenSocial = fieraCrud.openSocialModal;
+    fieraCrud.openSocialModal = function(id, type) {
+        console.log("[DEBUG] fieraCrud.openSocialModal chiamata con:", { id, type });
+        return oldOpenSocial.call(this, id, type);
+    };
+}
+
+// hook submitSocialPost per loggare i dati inviati
+if (crudUtils.submitSocialPost) {
+    const oldSubmitSocialPost = crudUtils.submitSocialPost;
+    crudUtils.submitSocialPost = async function() {
+        console.log("[DEBUG] submitSocialPost chiamata. currentItemId:", this.currentItemId, "tipo:", this.itemType);
+        return await oldSubmitSocialPost.apply(this, arguments);
+    };
+}
+

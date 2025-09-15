@@ -16,6 +16,7 @@
 <h2>I tuoi Prodotti</h2>
 <button type="button" onclick="crudUtils.openSocialFeed()">📢 Visualizza Social Network</button>
 <button type="button" onclick="toggleVisite()">👀 Visualizza visite disponibili</button>
+<button type="button" onclick="togglePrenotazioni()">📅 Visualizza prenotazioni</button>
 
 <!-- Tabella prodotti -->
 <div th:replace="fragments/table :: dashboard-table(${prodotti}, 'prodotto')"></div>
@@ -27,6 +28,13 @@
         <button type="button" onclick="toggleVisite()">Chiudi</button>
     </div>
 </div>
+<!-- Sezione prenotazioni (inizialmente nascosta) -->
+<div id="prenotazioniSection" style="display:none; margin-top: 20px;">
+    <div th:replace="fragments/prenotazioni-table :: prenotazioni-table(${prenotazioni})"></div>
+    <div style="margin-top: 10px;">
+        <button type="button" onclick="togglePrenotazioni()">Chiudi</button>
+    </div>
+</div>
 
 <!-- Modali comuni -->
 <div th:replace="fragments/modals :: delete-modals('prodotti')"></div>
@@ -35,6 +43,7 @@
 <div th:replace="fragments/modals :: social-feed-modal"></div>
 <div th:replace="fragments/modals :: social-post-modals('/produttore/dashboard')"></div>
 <div th:replace="fragments/modals :: prenotazione-visita-modals('/produttore/dashboard')"></div>
+<div th:replace="fragments/modals :: prenotazioni-delete-modals('/produttore/dashboard')"></div>
 
 <hr class="section-separator"/>
 
@@ -75,6 +84,10 @@
         } else {
             section.style.display = "none";
         }
+    }
+    function togglePrenotazioni() {
+        const section = document.getElementById("prenotazioniSection");
+        section.style.display = (section.style.display === "none") ? "block" : "none";
     }
 </script>
 </body>

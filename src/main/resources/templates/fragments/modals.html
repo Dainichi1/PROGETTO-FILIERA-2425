@@ -202,6 +202,90 @@
         </div>
     </div>
 
+    <!-- ================== MODALI ELIMINAZIONE PRENOTAZIONI ================== -->
+    <div th:fragment="prenotazioni-delete-modals(redirectPath)">
+        <!-- Conferma -->
+        <div id="deletePrenotazioneConfirmModal" class="modal">
+            <div class="modal-content">
+                <p>Sei sicuro di voler eliminare la prenotazione?</p>
+                <button type="button" id="btnDeletePrenotazioneYes">Sì</button>
+                <button type="button" id="btnDeletePrenotazioneNo">No</button>
+            </div>
+        </div>
+
+        <!-- Successo -->
+        <div id="deletePrenotazioneSuccessModal" class="modal">
+            <div class="modal-content">
+                <p>✅ Prenotazione eliminata con successo!</p>
+                <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+            </div>
+        </div>
+
+        <!-- Errore -->
+        <div id="deletePrenotazioneErrorModal" class="modal">
+            <div class="modal-content">
+                <p id="deletePrenotazioneErrorMessage">⚠ Errore durante l'eliminazione.</p>
+                <button type="button" onclick="modalUtils.closeModal('deletePrenotazioneErrorModal')">OK</button>
+            </div>
+        </div>
+
+        <script>
+            let prenotazioneToDelete = null;
+
+            function openDeletePrenotazioneModal(id) {
+                prenotazioneToDelete = id;
+                modalUtils.openModal("deletePrenotazioneConfirmModal");
+            }
+
+            document.addEventListener("DOMContentLoaded", () => {
+                // bottone NO → torna alla home
+                const btnNo = document.getElementById("btnDeletePrenotazioneNo");
+                if (btnNo) {
+                    btnNo.addEventListener("click", () => {
+                        modalUtils.closeModal("deletePrenotazioneConfirmModal");
+                        window.location.href = /*[[${redirectPath}]]*/ "/";
+                    });
+                }
+
+                // bottone SI → chiamata DELETE al backend
+                const btnYes = document.getElementById("btnDeletePrenotazioneYes");
+                if (btnYes) {
+                    btnYes.addEventListener("click", async () => {
+                        modalUtils.closeModal("deletePrenotazioneConfirmModal");
+                        try {
+                            const { header, token } = csrfUtils.getCsrf();
+
+                            const res = await fetch(`/prenotazioni-visite/${prenotazioneToDelete}`, {
+                                method: "DELETE",
+                                headers: { [header]: token },
+                                credentials: "same-origin"
+                            });
+
+                            if (res.ok) {
+                                modalUtils.openModal("deletePrenotazioneSuccessModal");
+                                // rimuovo la riga dalla tabella
+                                const btn = document.querySelector(
+                                    `button[onclick="openDeletePrenotazioneModal(${prenotazioneToDelete})"]`
+                                );
+                                if (btn) btn.closest("tr").remove();
+                            } else {
+                                const msg = await res.text();
+                                document.getElementById("deletePrenotazioneErrorMessage").textContent =
+                                    msg || "Errore durante l'eliminazione";
+                                modalUtils.openModal("deletePrenotazioneErrorModal");
+                            }
+                        } catch (err) {
+                            document.getElementById("deletePrenotazioneErrorMessage").textContent =
+                                "Errore di rete: " + err.message;
+                            modalUtils.openModal("deletePrenotazioneErrorModal");
+                        }
+                    });
+                }
+            });
+        </script>
+    </div>
+
+
     <!-- Modale già prenotata -->
     <div id="prenotazioneGiaEffettuataModal" class="modal">
         <div class="modal-content">
@@ -294,6 +378,6 @@
         });
     </script>
 
-
+</div>
 </body>
 </html>

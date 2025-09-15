@@ -16,6 +16,7 @@
 <h2>I tuoi Prodotti</h2>
 <button type="button" onclick="crudUtils.openSocialFeed()">📢 Visualizza Social Network</button>
 <button type="button" onclick="toggleVisite()">👀 Visualizza visite disponibili</button>
+<button type="button" onclick="togglePrenotazioni()">📅 Visualizza prenotazioni</button>
 
 <h2>I tuoi Pacchetti</h2>
 
@@ -29,6 +30,13 @@
         <button type="button" onclick="toggleVisite()">Chiudi</button>
     </div>
 </div>
+<!-- Sezione prenotazioni (inizialmente nascosta) -->
+<div id="prenotazioniSection" style="display:none; margin-top: 20px;">
+    <div th:replace="fragments/prenotazioni-table :: prenotazioni-table(${prenotazioni})"></div>
+    <div style="margin-top: 10px;">
+        <button type="button" onclick="togglePrenotazioni()">Chiudi</button>
+    </div>
+</div>
 
 <!-- ================= MODALI COMUNI ================= -->
 <div th:replace="fragments/modals :: delete-modals('pacchetti')"></div>
@@ -36,6 +44,7 @@
 <div th:replace="fragments/modals :: social-modal"></div> <!-- avviso social -->
 <div th:replace="fragments/modals :: social-feed-modal"></div>
 <div th:replace="fragments/modals :: social-post-modals('/distributore/dashboard')"></div>
+<div th:replace="fragments/modals :: prenotazioni-delete-modals('/produttore/dashboard')"></div>
 
 <!-- ================= MODALI PRENOTAZIONE VISITE ================= -->
 <div th:replace="fragments/modals :: prenotazione-visita-modals('/distributore/dashboard')"></div>
@@ -92,6 +101,10 @@
     function toggleVisite() {
         const section = document.getElementById("visiteSection");
         section.style.display = section.style.display === "none" ? "block" : "none";
+    }
+    function togglePrenotazioni() {
+        const section = document.getElementById("prenotazioniSection");
+        section.style.display = (section.style.display === "none") ? "block" : "none";
     }
 </script>
 </body>

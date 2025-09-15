@@ -166,18 +166,25 @@ const crudUtils = (() => {
 
     async function confirmDelete() {
         modalUtils.closeModal(config.deleteConfirmModalId);
-        const { header, token } = getCsrf();
+
+        // Recupera CSRF da csrfUtils
+        const { header, token } = csrfUtils.getCsrf();
+
         try {
             const res = await fetch(config.deleteUrl(toDelete.id), {
                 method: "DELETE",
                 headers: { [header]: token },
                 credentials: "same-origin"
             });
+
             const text = await res.text();
             if (res.ok) {
+                // Rimuove la riga dalla tabella
                 document.querySelector(`tr[data-id="${toDelete.id}"]`)?.remove();
+
                 document.getElementById(config.deleteSuccessMessageId).textContent =
                     text || `${config.labels.itemName} "${toDelete.nome}" eliminato con successo`;
+
                 modalUtils.openModal(config.deleteSuccessModalId);
             } else {
                 document.getElementById(config.deleteGenericErrorMessageId).textContent =

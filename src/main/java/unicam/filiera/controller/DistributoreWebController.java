@@ -1,19 +1,16 @@
 package unicam.filiera.controller;
 
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.bind.annotation.RequestMapping;
 import unicam.filiera.controller.base.AbstractCreationController;
 import unicam.filiera.dto.ItemTipo;
 import unicam.filiera.dto.PacchettoDto;
 import unicam.filiera.dto.PrenotazioneVisitaDto;
 import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.service.PacchettoService;
+import unicam.filiera.service.PrenotazioneVisitaService;
 import unicam.filiera.service.ProdottoService;
 import unicam.filiera.service.VisitaInvitoService;
 
@@ -24,24 +21,17 @@ public class DistributoreWebController extends AbstractCreationController<Pacche
     private final PacchettoService pacchettoService;
     private final ProdottoService prodottoService;
     private final VisitaInvitoService visitaInvitoService;
+    private final PrenotazioneVisitaService prenotazioneVisitaService;
 
     @Autowired
     public DistributoreWebController(PacchettoService pacchettoService,
                                      ProdottoService prodottoService,
-                                     VisitaInvitoService visitaInvitoService) {
+                                     VisitaInvitoService visitaInvitoService,
+                                     PrenotazioneVisitaService prenotazioneVisitaService) {
         this.pacchettoService = pacchettoService;
         this.prodottoService = prodottoService;
         this.visitaInvitoService = visitaInvitoService;
-    }
-
-    @ModelAttribute("pacchettoDto")
-    public PacchettoDto pacchettoDto() {
-        return newDto();
-    }
-
-    @ModelAttribute("prenotazioneVisitaDto")
-    public PrenotazioneVisitaDto prenotazioneVisitaDto() {
-        return new PrenotazioneVisitaDto();
+        this.prenotazioneVisitaService = prenotazioneVisitaService;
     }
 
     @Override
@@ -71,6 +61,8 @@ public class DistributoreWebController extends AbstractCreationController<Pacche
         model.addAttribute("pacchetti", pacchettoService.getPacchettiViewByCreatore(username));
         model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
         model.addAttribute("visiteDisponibili", visitaInvitoService.getVisiteByRuoloDestinatario("distributore"));
+        model.addAttribute("prenotazioni", prenotazioneVisitaService.getPrenotazioniByVenditore(username));
+        model.addAttribute("prenotazioneVisitaDto", new PrenotazioneVisitaDto());
     }
 
     @Override
@@ -86,21 +78,5 @@ public class DistributoreWebController extends AbstractCreationController<Pacche
     @Override
     protected void doDelete(Long id, String username) throws Exception {
         pacchettoService.eliminaById(id, username);
-    }
-
-    // ======= ENDPOINTS =======
-
-    @GetMapping("/dashboard")
-    public String dashboard(Model model, Authentication auth) {
-        return showDashboard(model, auth);
-    }
-
-    @PostMapping("/crea")
-    public String crea(@Valid @ModelAttribute("pacchettoDto") PacchettoDto dto,
-                       BindingResult br,
-                       Authentication auth,
-                       RedirectAttributes ra,
-                       Model model) {
-        return createItem(dto, br, auth, ra, model);
     }
 }

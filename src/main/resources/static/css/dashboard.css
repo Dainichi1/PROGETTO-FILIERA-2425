@@ -287,3 +287,18 @@ table td {
     background-color: #d0ebff; /* azzurro chiaro */
 }
 
+.btn-elimina {
+    background-color: #e74c3c;
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.btn-elimina:hover {
+    background-color: #c0392b;
+}
+
+

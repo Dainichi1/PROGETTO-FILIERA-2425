@@ -7,8 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import unicam.filiera.dto.BaseItemDto;
 
@@ -38,46 +37,54 @@ public abstract class AbstractCreationController<T extends BaseItemDto> {
 
     // ========== Utility comuni ==========
 
-    /**
-     * Recupera lo username o "demo_user" se non autenticato
-     */
     protected String resolveUsername(Authentication auth) {
         return (auth != null) ? auth.getName() : "demo_user";
     }
 
-    /**
-     * Messaggio di successo standardizzato
-     */
     protected String buildSuccessMessage(String action, String itemName) {
         return itemName + " " + action + " con successo";
     }
 
-    /**
-     * Messaggio di errore standardizzato
-     */
     protected String buildErrorMessage(String action, String itemName, Exception ex) {
         return "Errore durante " + action + " " + itemName + ": " + ex.getMessage();
     }
 
-    // ========== Template Methods comuni ==========
-
-    public String showDashboard(Model model, Authentication auth) {
+    // ========== Gestione DTO di default ==========
+    @ModelAttribute
+    public void addDefaultDto(Model model) {
         if (!model.containsAttribute(getDtoName())) {
             model.addAttribute(getDtoName(), newDto());
         }
+    }
+
+    // ========== Template Methods comuni ==========
+
+    @GetMapping("/dashboard")
+    public String dashboard(Model model, Authentication auth) {
+        return showDashboard(model, auth);
+    }
+
+    public String showDashboard(Model model, Authentication auth) {
         String username = resolveUsername(auth);
         loadDashboardLists(model, username);
         model.addAttribute("showForm", false);
         return getViewName();
     }
 
-    public String createItem(
-            @Valid @ModelAttribute T dto,
-            BindingResult bindingResult,
-            Authentication auth,
-            RedirectAttributes redirectAttrs,
-            Model model
-    ) {
+    @PostMapping("/crea")
+    public String crea(@Valid @ModelAttribute T dto,
+                       BindingResult bindingResult,
+                       Authentication auth,
+                       RedirectAttributes redirectAttrs,
+                       Model model) {
+        return createItem(dto, bindingResult, auth, redirectAttrs, model);
+    }
+
+    public String createItem(@Valid @ModelAttribute T dto,
+                             BindingResult bindingResult,
+                             Authentication auth,
+                             RedirectAttributes redirectAttrs,
+                             Model model) {
         String username = resolveUsername(auth);
 
         if (bindingResult.hasErrors()) {
@@ -101,17 +108,12 @@ public abstract class AbstractCreationController<T extends BaseItemDto> {
         }
     }
 
-    /**
-     * Metodo generico per l'update (può essere usato dai controller figli).
-     */
-    public String updateItem(
-            @Valid @ModelAttribute T dto,
-            BindingResult bindingResult,
-            Authentication auth,
-            RedirectAttributes redirectAttrs,
-            Model model,
-            BiConsumer<T, String> updateFunction
-    ) {
+    public String updateItem(@Valid @ModelAttribute T dto,
+                             BindingResult bindingResult,
+                             Authentication auth,
+                             RedirectAttributes redirectAttrs,
+                             Model model,
+                             BiConsumer<T, String> updateFunction) {
         String username = resolveUsername(auth);
 
         if (bindingResult.hasErrors()) {
@@ -136,9 +138,6 @@ public abstract class AbstractCreationController<T extends BaseItemDto> {
         }
     }
 
-    /**
-     * Metodo centralizzato per eliminazione usato dai controller figli.
-     */
     public ResponseEntity<String> deleteItem(@PathVariable Long id, Authentication auth) {
         String username = resolveUsername(auth);
         try {

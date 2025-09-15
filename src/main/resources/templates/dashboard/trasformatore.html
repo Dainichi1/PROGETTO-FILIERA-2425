@@ -35,10 +35,13 @@
 <div th:replace="fragments/modals :: social-feed-modal"></div>
 <div th:replace="fragments/modals :: social-post-modals('/trasformatore/dashboard')"></div>
 <div th:replace="fragments/modals :: prenotazione-visita-modals('/trasformatore/dashboard')"></div>
+<div th:replace="fragments/modals :: prenotazioni-delete-modals('/produttore/dashboard')"></div>
 
 <hr class="section-separator"/>
 
 <button type="button" onclick="crudUtils.toggleForm()">Crea Prodotto Trasformato</button>
+<button type="button" onclick="togglePrenotazioni()">📅 Visualizza prenotazioni</button>
+
 
 <!-- Form creazione/modifica -->
 <div id="trasformatoForm" class="form-container"
@@ -60,6 +63,13 @@
         <div th:replace="fragments/form-fields :: form-buttons('prodotto trasformato','/trasformatore/dashboard')"></div>
     </form>
 </div>
+<!-- Sezione prenotazioni (inizialmente nascosta) -->
+<div id="prenotazioniSection" style="display:none; margin-top: 20px;">
+    <div th:replace="fragments/prenotazioni-table :: prenotazioni-table(${prenotazioni})"></div>
+    <div style="margin-top: 10px;">
+        <button type="button" onclick="togglePrenotazioni()">Chiudi</button>
+    </div>
+</div>
 
 <p><a th:href="@{/}">Torna alla Home</a></p>
 
@@ -69,5 +79,12 @@
 <script src="/js/utils/csrf-utils.js" defer></script>
 <script src="/js/utils/crud-utils.js" defer></script>
 <script src="/js/pages/trasformatore.js" defer></script>
+
+<script>
+function togglePrenotazioni() {
+const section = document.getElementById("prenotazioniSection");
+section.style.display = (section.style.display === "none") ? "block" : "none";
+}
+</script>
 </body>
 </html>

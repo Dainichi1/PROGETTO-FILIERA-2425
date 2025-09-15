@@ -12,23 +12,33 @@
               ', il tuo ruolo è ' + (${utente?.ruolo ?: 'Distributore'}) + '.'">
     Benvenuto, il tuo ruolo è Distributore.
 </h1>
+
 <h2>I tuoi Prodotti</h2>
-
-
 <button type="button" onclick="crudUtils.openSocialFeed()">📢 Visualizza Social Network</button>
-
+<button type="button" onclick="toggleVisite()">👀 Visualizza visite disponibili</button>
 
 <h2>I tuoi Pacchetti</h2>
 
 <!-- Tabella pacchetti -->
 <div th:replace="fragments/table :: dashboard-table(${pacchetti}, 'pacchetto')"></div>
 
-<!-- Modali comuni -->
+<!-- Tabella visite disponibili (nascosta di default) -->
+<div id="visiteSection" style="display:none; margin-top: 20px;">
+    <div th:replace="fragments/visite-table :: visite-table(${visiteDisponibili})"></div>
+    <div style="margin-top: 10px;">
+        <button type="button" onclick="toggleVisite()">Chiudi</button>
+    </div>
+</div>
+
+<!-- ================= MODALI COMUNI ================= -->
 <div th:replace="fragments/modals :: delete-modals('pacchetti')"></div>
 <div th:replace="fragments/modals :: edit-error-modal('pacchetti')"></div>
-<div th:replace="fragments/modals :: social-modal"></div> <!-- modale avviso -->
+<div th:replace="fragments/modals :: social-modal"></div> <!-- avviso social -->
 <div th:replace="fragments/modals :: social-feed-modal"></div>
 <div th:replace="fragments/modals :: social-post-modals('/distributore/dashboard')"></div>
+
+<!-- ================= MODALI PRENOTAZIONE VISITE ================= -->
+<div th:replace="fragments/modals :: prenotazione-visita-modals('/distributore/dashboard')"></div>
 
 <hr class="section-separator"/>
 
@@ -70,11 +80,19 @@
 
 <p><a th:href="@{/}">Torna alla Home</a></p>
 
-<!-- Script -->
+<!-- ================= SCRIPT ================= -->
 <script src="/js/utils/form-utils.js" defer></script>
 <script src="/js/utils/modal-utils.js" defer></script>
 <script src="/js/utils/csrf-utils.js" defer></script>
 <script src="/js/utils/crud-utils.js" defer></script>
 <script src="/js/pages/distributore.js" defer></script>
+
+<!-- Script per toggle visite -->
+<script>
+    function toggleVisite() {
+        const section = document.getElementById("visiteSection");
+        section.style.display = section.style.display === "none" ? "block" : "none";
+    }
+</script>
 </body>
 </html>

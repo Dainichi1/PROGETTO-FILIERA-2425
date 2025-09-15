@@ -153,52 +153,147 @@
     </div>
 </div>
 
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        // --- bottone "OK" nel form social ---
-        const btnOk = document.getElementById("btnOkSocialPost");
-        if (btnOk) {
-            btnOk.onclick = () => {
-                const crud = window.currentCrud || crudUtils;
-                if (crud && typeof crud.openSocialConfirm === "function") {
-                    console.log("[DEBUG] OK SocialPost → openSocialConfirm()");
-                    crud.openSocialConfirm();
-                } else {
-                    console.error("[ERRORE] Nessuna funzione openSocialConfirm trovata!");
-                }
-            };
-        }
+<!-- ================== MODALI PRENOTAZIONE VISITE ================== -->
+<div th:fragment="prenotazione-visita-modals(redirectPath)">
+    <!-- Modale input numero persone -->
+    <div id="prenotazioneVisitaModal" class="modal">
+        <div class="modal-content">
+            <h3>Prenota Visita</h3>
+            <form id="prenotazioneVisitaForm"
+                  th:action="@{/prenotazioni-visite/prenota}"
+                  th:object="${prenotazioneVisitaDto}"
+                  method="post"
+                  novalidate>
+                <!-- id visita -->
+                <input type="hidden" th:field="*{idVisita}" id="idVisitaPrenotazione"/>
 
-        // --- bottone "Sì" nel modale di conferma ---
-        const btnConfirm = document.getElementById("btnConfirmSocialPost");
-        if (btnConfirm) {
-            btnConfirm.onclick = () => {
-                const crud = window.currentCrud || crudUtils;
-                if (crud && typeof crud.submitSocialPost === "function") {
-                    console.log("[DEBUG] Conferma social → submitSocialPost()");
-                    crud.submitSocialPost();
-                } else {
-                    console.error("[ERRORE] Nessuna funzione submitSocialPost trovata!");
-                }
-            };
-        }
+                <!-- numero persone -->
+                <label for="numeroPersone">Numero persone:</label>
+                <input type="number" id="numeroPersone" th:field="*{numeroPersone}"/>
+                <span id="numeroPersoneError" class="error-message"></span> <!-- FIX -->
 
-        // --- redirect ---
-        document.addEventListener("click", function(e) {
-            if (e.target && e.target.classList.contains("redirect-btn")) {
-                modalUtils.closeModal("socialSuccessModal");
-                modalUtils.closeModal("createSuccessModal");
-                modalUtils.closeModal("updateSuccessModal");
-                modalUtils.closeModal("createSuccessModalFiera");
+                <!-- errori server-side -->
+                <div th:if="${#fields.hasErrors('numeroPersone')}"
+                     th:errors="*{numeroPersone}"
+                     class="error-message"></div>
 
-                const url = e.target.getAttribute("data-redirect");
-                if (url) {
-                    console.log("[DEBUG] Redirect verso:", url);
-                    window.location.href = url;
-                }
+                <div class="modal-buttons">
+                    <button type="submit">Prenota visita</button>
+                    <button type="button" onclick="modalUtils.closeModal('prenotazioneVisitaModal')">Annulla</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale conferma -->
+    <div id="prenotazioneConfirmModal" class="modal">
+        <div class="modal-content">
+            <p>Vuoi confermare la prenotazione della visita?</p>
+            <button type="button" id="confirmPrenotazioneBtn">Sì</button>
+            <button type="button" onclick="modalUtils.closeModal('prenotazioneConfirmModal')">No</button>
+        </div>
+    </div>
+
+    <!-- Modale successo -->
+    <div id="prenotazioneSuccessModal" class="modal">
+        <div class="modal-content">
+            <p>✅ Prenotazione effettuata con successo!</p>
+            <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+        </div>
+    </div>
+
+    <!-- Modale già prenotata -->
+    <div id="prenotazioneGiaEffettuataModal" class="modal">
+        <div class="modal-content">
+            <p>⚠ Hai già prenotato questa visita.</p>
+            <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const prenotazioneForm = document.getElementById("prenotazioneVisitaForm");
+
+            if (prenotazioneForm) {
+                prenotazioneForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+
+                    const input = document.getElementById("numeroPersone");
+                    const errorSpan = document.getElementById("numeroPersoneError");
+                    if (errorSpan) errorSpan.textContent = ""; // reset messaggi
+
+                    const value = parseInt(input.value);
+
+                    // validazione client-side
+                    if (!input.value || isNaN(value) || value < 1) {
+                        if (errorSpan) errorSpan.textContent = "⚠ Devi inserire almeno 1 persona";
+                        return; // non inviare, non aprire conferma
+                    }
+
+                    // se valido → apri modale conferma
+                    modalUtils.openModal("prenotazioneConfirmModal");
+                });
             }
+
+            // --- conferma invio ---
+            const confirmBtn = document.getElementById("confirmPrenotazioneBtn");
+            if (confirmBtn) {
+                confirmBtn.addEventListener("click", async () => {
+                    const formData = new FormData(prenotazioneForm);
+                    const { header, token } = getCsrf();
+                    const errorSpan = document.getElementById("numeroPersoneError");
+
+                    modalUtils.closeModal("prenotazioneConfirmModal");
+                    modalUtils.closeModal("prenotazioneVisitaModal");
+
+                    try {
+                        const res = await fetch(prenotazioneForm.action, {
+                            method: "POST",
+                            headers: { [header]: token },
+                            body: formData,
+                            credentials: "same-origin"
+                        });
+
+                        if (res.ok) {
+                            modalUtils.openModal("prenotazioneSuccessModal");
+                        } else if (res.status === 409) {
+                            modalUtils.openModal("prenotazioneGiaEffettuataModal");
+                        } else if (res.status === 400) {
+                            // ⚠ errore validazione lato server
+                            const msg = await res.text();
+                            if (errorSpan) {
+                                errorSpan.textContent = msg || "⚠ Errore di validazione lato server";
+                                modalUtils.openModal("prenotazioneVisitaModal");
+                            } else {
+                                alert(msg || "⚠ Errore di validazione lato server");
+                            }
+                        } else {
+                            alert("Errore nella prenotazione: " + (await res.text()));
+                        }
+                    } catch (err) {
+                        alert("Errore di rete: " + err.message);
+                    }
+                });
+            }
+
+            // --- redirect comune ---
+            document.addEventListener("click", (e) => {
+                if (e.target && e.target.classList.contains("redirect-btn")) {
+                    [
+                        "socialSuccessModal",
+                        "createSuccessModal",
+                        "updateSuccessModal",
+                        "createSuccessModalFiera",
+                        "prenotazioneSuccessModal",
+                        "prenotazioneGiaEffettuataModal"
+                    ].forEach(modalId => modalUtils.closeModal(modalId));
+
+                    const url = e.target.getAttribute("data-redirect");
+                    if (url) window.location.href = url;
+                }
+            });
         });
-    });
-</script>
+    </script>
+
+
 </body>
 </html>

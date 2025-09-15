@@ -1,0 +1,40 @@
+<div th:fragment="visite-table(visite)">
+    <h2>Visite Disponibili</h2>
+    <div th:if="${#lists.isEmpty(visite)}">
+        <p>Nessuna visita disponibile per il tuo ruolo.</p>
+    </div>
+    <div th:unless="${#lists.isEmpty(visite)}">
+        <table border="1" style="border-collapse: collapse; width: 100%; margin-top: 20px;">
+            <thead>
+            <tr style="background-color: #f0f0f0; text-align: center;">
+                <th>Nome</th>
+                <th>Descrizione</th>
+                <th>Data Inizio</th>
+                <th>Data Fine</th>
+                <th>Indirizzo</th>
+                <th>Organizzatore</th>
+                <th>Stato</th>
+                <th>Prenota</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="v : ${visite}">
+                <td th:text="${v.nome}">Nome</td>
+                <td th:text="${v.descrizione}">Descrizione</td>
+                <td th:text="${#temporals.format(v.dataInizio, 'dd/MM/yyyy HH:mm')}">Data Inizio</td>
+                <td th:text="${#temporals.format(v.dataFine, 'dd/MM/yyyy HH:mm')}">Data Fine</td>
+                <td th:text="${v.indirizzo}">Indirizzo</td>
+                <td th:text="${v.creatoDa}">Organizzatore</td>
+                <td th:text="${v.stato}">Stato</td>
+                <td>
+                    <button type="button"
+                            th:attr="data-id=${v.id}"
+                            onclick="crudUtils.openPrenotazioneVisitaModal(this)">
+                        Prenota
+                    </button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

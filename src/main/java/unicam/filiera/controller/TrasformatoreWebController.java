@@ -10,12 +10,14 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import unicam.filiera.controller.base.AbstractCreationController;
 import unicam.filiera.dto.ItemTipo;
+import unicam.filiera.dto.PrenotazioneVisitaDto;
 import unicam.filiera.dto.ProdottoDto;
 import unicam.filiera.dto.ProdottoTrasformatoDto;
 import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.service.ProdottoService;
 import unicam.filiera.service.ProdottoTrasformatoService;
 import unicam.filiera.service.UtenteService;
+import unicam.filiera.service.VisitaInvitoService;
 
 import java.util.List;
 
@@ -26,19 +28,27 @@ public class TrasformatoreWebController extends AbstractCreationController<Prodo
     private final ProdottoTrasformatoService trasformatoService;
     private final ProdottoService prodottoService;
     private final UtenteService utenteService;
+    private final VisitaInvitoService visitaInvitoService;
 
     @Autowired
     public TrasformatoreWebController(ProdottoTrasformatoService trasformatoService,
                                       ProdottoService prodottoService,
-                                      UtenteService utenteService) {
+                                      UtenteService utenteService,
+                                      VisitaInvitoService visitaInvitoService) {
         this.trasformatoService = trasformatoService;
         this.prodottoService = prodottoService;
         this.utenteService = utenteService;
+        this.visitaInvitoService = visitaInvitoService;
     }
 
     @ModelAttribute("trasformatoDto")
     public ProdottoTrasformatoDto trasformatoDto() {
         return newDto();
+    }
+
+    @ModelAttribute("prenotazioneVisitaDto")
+    public PrenotazioneVisitaDto prenotazioneVisitaDto() {
+        return new PrenotazioneVisitaDto();
     }
 
     @Override
@@ -67,6 +77,7 @@ public class TrasformatoreWebController extends AbstractCreationController<Prodo
     protected void loadDashboardLists(Model model, String username) {
         model.addAttribute("trasformati", trasformatoService.getProdottiTrasformatiCreatiDa(username));
         model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
+        model.addAttribute("visiteDisponibili", visitaInvitoService.getVisiteByRuoloDestinatario("trasformatore"));
         model.addAttribute("produttori", utenteService.getProduttori());
     }
 
@@ -103,7 +114,7 @@ public class TrasformatoreWebController extends AbstractCreationController<Prodo
 
     /**
      * Endpoint JSON per ottenere i prodotti APPROVATI di un produttore specifico.
-     * Usato dalla modale "Aggiungi fase" (trasformatore.js).
+     * Usato dalla tabella/gestione fasi (trasformatore.js).
      */
     @GetMapping("/prodotti/{username}")
     @ResponseBody
@@ -118,5 +129,4 @@ public class TrasformatoreWebController extends AbstractCreationController<Prodo
                 })
                 .toList();
     }
-
 }

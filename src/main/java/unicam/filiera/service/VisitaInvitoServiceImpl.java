@@ -108,6 +108,16 @@ public class VisitaInvitoServiceImpl implements VisitaInvitoService {
         notifier.notificaTutti(dominio, "VISITA_ELIMINATA");
     }
 
+    @Override
+    public List<VisitaInvito> getVisiteByRuoloDestinatario(String ruolo) {
+        log.debug("Recupero visite disponibili per ruolo [{}]", ruolo);
+
+        return repository.findByRuoloAndStato(ruolo, StatoEvento.PUBBLICATA)
+                .stream()
+                .map(this::mapToDomain)
+                .collect(Collectors.toList());
+    }
+
     // =======================
     // Helpers
     // =======================

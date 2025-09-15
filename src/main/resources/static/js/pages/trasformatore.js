@@ -241,3 +241,10 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 });
+// ================= TOGGLE VISITE =================
+function toggleVisite() {
+    const section = document.getElementById("visiteSection");
+    if (section) {
+        section.style.display = section.style.display === "none" ? "block" : "none";
+    }
+}

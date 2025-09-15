@@ -18,4 +18,7 @@ public interface VisitaInvitoService {
     Optional<VisitaInvitoEntity> findEntityById(Long id);
 
     void eliminaById(Long id, String username);
+
+    // recupera tutte le visite disponibili per un ruolo
+    List<VisitaInvito> getVisiteByRuoloDestinatario(String ruolo);
 }

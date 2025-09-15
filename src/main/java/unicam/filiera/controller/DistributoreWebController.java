@@ -11,9 +11,11 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import unicam.filiera.controller.base.AbstractCreationController;
 import unicam.filiera.dto.ItemTipo;
 import unicam.filiera.dto.PacchettoDto;
+import unicam.filiera.dto.PrenotazioneVisitaDto;
 import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.service.PacchettoService;
 import unicam.filiera.service.ProdottoService;
+import unicam.filiera.service.VisitaInvitoService;
 
 @Controller
 @RequestMapping("/distributore")
@@ -21,17 +23,25 @@ public class DistributoreWebController extends AbstractCreationController<Pacche
 
     private final PacchettoService pacchettoService;
     private final ProdottoService prodottoService;
+    private final VisitaInvitoService visitaInvitoService;
 
     @Autowired
     public DistributoreWebController(PacchettoService pacchettoService,
-                                     ProdottoService prodottoService) {
+                                     ProdottoService prodottoService,
+                                     VisitaInvitoService visitaInvitoService) {
         this.pacchettoService = pacchettoService;
         this.prodottoService = prodottoService;
+        this.visitaInvitoService = visitaInvitoService;
     }
 
     @ModelAttribute("pacchettoDto")
     public PacchettoDto pacchettoDto() {
         return newDto();
+    }
+
+    @ModelAttribute("prenotazioneVisitaDto")
+    public PrenotazioneVisitaDto prenotazioneVisitaDto() {
+        return new PrenotazioneVisitaDto();
     }
 
     @Override
@@ -60,6 +70,7 @@ public class DistributoreWebController extends AbstractCreationController<Pacche
     protected void loadDashboardLists(Model model, String username) {
         model.addAttribute("pacchetti", pacchettoService.getPacchettiViewByCreatore(username));
         model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
+        model.addAttribute("visiteDisponibili", visitaInvitoService.getVisiteByRuoloDestinatario("distributore"));
     }
 
     @Override

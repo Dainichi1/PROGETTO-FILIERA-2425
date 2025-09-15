@@ -10,9 +10,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import unicam.filiera.controller.base.AbstractCreationController;
 import unicam.filiera.dto.ItemTipo;
+import unicam.filiera.dto.PrenotazioneVisitaDto;
 import unicam.filiera.dto.ProdottoDto;
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.service.ProdottoService;
+import unicam.filiera.service.VisitaInvitoService;
 
 import java.util.List;
 
@@ -21,10 +23,13 @@ import java.util.List;
 public class ProduttoreWebController extends AbstractCreationController<ProdottoDto> {
 
     private final ProdottoService prodottoService;
+    private final VisitaInvitoService visitaInvitoService;
 
     @Autowired
-    public ProduttoreWebController(ProdottoService prodottoService) {
+    public ProduttoreWebController(ProdottoService prodottoService,
+                                   VisitaInvitoService visitaInvitoService) {
         this.prodottoService = prodottoService;
+        this.visitaInvitoService = visitaInvitoService;
     }
 
     @ModelAttribute("prodottoDto")
@@ -58,6 +63,7 @@ public class ProduttoreWebController extends AbstractCreationController<Prodotto
     protected void loadDashboardLists(Model model, String username) {
         List<Prodotto> prodotti = prodottoService.getProdottiCreatiDa(username);
         model.addAttribute("prodotti", prodotti);
+        model.addAttribute("visiteDisponibili", visitaInvitoService.getVisiteByRuoloDestinatario("produttore"));
     }
 
     @Override
@@ -90,4 +96,10 @@ public class ProduttoreWebController extends AbstractCreationController<Prodotto
                        Model model) {
         return createItem(dto, br, auth, ra, model);
     }
+
+    @ModelAttribute("prenotazioneVisitaDto")
+    public PrenotazioneVisitaDto prenotazioneVisitaDto() {
+        return new PrenotazioneVisitaDto();
+    }
+
 }

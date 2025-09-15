@@ -15,9 +15,18 @@
 
 <h2>I tuoi Prodotti</h2>
 <button type="button" onclick="crudUtils.openSocialFeed()">📢 Visualizza Social Network</button>
+<button type="button" onclick="toggleVisite()">👀 Visualizza visite disponibili</button>
 
 <!-- Tabella prodotti -->
 <div th:replace="fragments/table :: dashboard-table(${prodotti}, 'prodotto')"></div>
+
+<!-- Sezione visite disponibili (inizialmente nascosta) -->
+<div id="visiteSection" style="display:none; margin-top: 20px;">
+    <div th:replace="fragments/visite-table :: visite-table(${visiteDisponibili})"></div>
+    <div style="margin-top: 10px;">
+        <button type="button" onclick="toggleVisite()">Chiudi</button>
+    </div>
+</div>
 
 <!-- Modali comuni -->
 <div th:replace="fragments/modals :: delete-modals('prodotti')"></div>
@@ -25,6 +34,7 @@
 <div th:replace="fragments/modals :: social-modal"></div> <!-- avviso Social -->
 <div th:replace="fragments/modals :: social-feed-modal"></div>
 <div th:replace="fragments/modals :: social-post-modals('/produttore/dashboard')"></div>
+<div th:replace="fragments/modals :: prenotazione-visita-modals('/produttore/dashboard')"></div>
 
 <hr class="section-separator"/>
 
@@ -55,5 +65,17 @@
 <script src="/js/utils/csrf-utils.js" defer></script>
 <script src="/js/utils/crud-utils.js" defer></script>
 <script src="/js/pages/produttore.js" defer></script>
+
+<!-- Script per toggle visite -->
+<script>
+    function toggleVisite() {
+        const section = document.getElementById("visiteSection");
+        if (section.style.display === "none") {
+            section.style.display = "block";
+        } else {
+            section.style.display = "none";
+        }
+    }
+</script>
 </body>
 </html>

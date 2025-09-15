@@ -15,9 +15,18 @@
 
 <h2>I tuoi Prodotti Trasformati</h2>
 <button type="button" onclick="crudUtils.openSocialFeed()">📢 Visualizza Social Network</button>
+<button type="button" onclick="toggleVisite()">👀 Visualizza visite disponibili</button>
 
 <!-- Tabella prodotti trasformati -->
 <div th:replace="fragments/table :: dashboard-table(${trasformati}, 'trasformato')"></div>
+
+<!-- Tabella visite disponibili (inizialmente nascosta) -->
+<div id="visiteSection" style="display:none; margin-top:20px;">
+    <div th:replace="fragments/visite-table :: visite-table(${visiteDisponibili})"></div>
+    <div style="margin-top: 10px;">
+        <button type="button" onclick="toggleVisite()">Chiudi</button>
+    </div>
+</div>
 
 <!-- Modali comuni -->
 <div th:replace="fragments/modals :: delete-modals('prodotti trasformati')"></div>
@@ -25,6 +34,7 @@
 <div th:replace="fragments/modals :: social-modal"></div> <!-- avviso Social -->
 <div th:replace="fragments/modals :: social-feed-modal"></div>
 <div th:replace="fragments/modals :: social-post-modals('/trasformatore/dashboard')"></div>
+<div th:replace="fragments/modals :: prenotazione-visita-modals('/trasformatore/dashboard')"></div>
 
 <hr class="section-separator"/>
 

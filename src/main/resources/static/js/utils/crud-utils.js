@@ -314,6 +314,37 @@ const crudUtils = (() => {
         }
     });
 
+    // ===== PRENOTAZIONE VISITE =====
+    function openPrenotazioneVisitaModal(button) {
+        const visitaId = button.getAttribute("data-id");
+        document.getElementById("idVisitaPrenotazione").value = visitaId;
+        modalUtils.openModal("prenotazioneVisitaModal");
+    }
+
+    function attachPrenotazioneVisitaValidation() {
+        const form = document.getElementById("prenotazioneVisitaForm");
+        if (!form) return;
+
+        form.setAttribute("novalidate", "true"); // disattiva messaggi standard del browser
+
+        form.addEventListener("submit", (e) => {
+            const input = document.getElementById("numeroPersone");
+            const errorSpan = document.getElementById("numeroPersoneError");
+
+            if (errorSpan) errorSpan.textContent = ""; // reset messaggi
+
+            if (!input.value || parseInt(input.value) < 1) {
+                e.preventDefault(); // blocca invio
+                if (errorSpan) {
+                    errorSpan.textContent = "⚠ Devi inserire almeno 1 persona";
+                } else {
+                    alert("⚠ Devi inserire almeno 1 persona");
+                }
+            }
+        });
+    }
+
+
     return {
         init,
         createInstance,
@@ -325,6 +356,8 @@ const crudUtils = (() => {
         handleSocialClick,
         openSocialConfirm,
         submitSocialPost,
-        openSocialFeed
+        openSocialFeed,
+        openPrenotazioneVisitaModal,
+        attachPrenotazioneVisitaValidation
     };
 })();

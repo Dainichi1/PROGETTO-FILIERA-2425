@@ -6,6 +6,7 @@
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/css/tables.css}">
 </head>
 <body>
 <h1 th:text="'Benvenuto ' + (${utente?.nome ?: 'Utente'}) +
@@ -13,47 +14,49 @@
     Benvenuto, il tuo ruolo è Distributore.
 </h1>
 
-<h2>I tuoi Prodotti</h2>
-<button type="button" onclick="crudUtils.openSocialFeed()">📢 Visualizza Social Network</button>
-<button type="button" onclick="toggleVisite()">👀 Visualizza visite disponibili</button>
-<button type="button" onclick="togglePrenotazioni()">📅 Visualizza prenotazioni</button>
+<!-- ================== BOTTONI PRINCIPALI ================== -->
+<div class="actions-container">
+    <button type="button" class="btn-primary" id="btnSocialFeed">📢 Visualizza Social Network</button>
+    <button type="button" class="btn-primary" id="btnVisite">👀 Visualizza visite disponibili</button>
+    <button type="button" class="btn-primary" id="btnPrenotazioni">📅 Visualizza prenotazioni</button>
+</div>
 
 <h2>I tuoi Pacchetti</h2>
 
 <!-- Tabella pacchetti -->
-<div th:replace="fragments/table :: dashboard-table(${pacchetti}, 'pacchetto')"></div>
+<div th:replace="fragments/dashboard-table :: dashboard-table(${pacchetti}, 'pacchetto')"></div>
 
 <!-- Tabella visite disponibili (nascosta di default) -->
-<div id="visiteSection" style="display:none; margin-top: 20px;">
+<div id="visiteSection" class="toggle-section">
     <div th:replace="fragments/visite-table :: visite-table(${visiteDisponibili})"></div>
-    <div style="margin-top: 10px;">
-        <button type="button" onclick="toggleVisite()">Chiudi</button>
+    <div class="actions-container">
+        <button type="button" class="btn-secondary" id="btnCloseVisite">Chiudi</button>
     </div>
 </div>
+
 <!-- Sezione prenotazioni (inizialmente nascosta) -->
-<div id="prenotazioniSection" style="display:none; margin-top: 20px;">
+<div id="prenotazioniSection" class="toggle-section">
     <div th:replace="fragments/prenotazioni-table :: prenotazioni-table(${prenotazioni})"></div>
-    <div style="margin-top: 10px;">
-        <button type="button" onclick="togglePrenotazioni()">Chiudi</button>
+    <div class="actions-container">
+        <button type="button" class="btn-secondary" id="btnClosePrenotazioni">Chiudi</button>
     </div>
 </div>
 
 <!-- ================= MODALI COMUNI ================= -->
-<div th:replace="fragments/modals :: delete-modals('pacchetti')"></div>
-<div th:replace="fragments/modals :: edit-error-modal('pacchetti')"></div>
-<div th:replace="fragments/modals :: social-modal"></div> <!-- avviso social -->
+<div th:replace="fragments/modals :: delete-modals('Pacchetto')"></div>
+<div th:replace="fragments/modals :: edit-error-modal('Pacchetto')"></div>
+<div th:replace="fragments/modals :: create-update-modals('Pacchetto','/distributore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-modals('/distributore/dashboard')"></div>
 <div th:replace="fragments/modals :: social-feed-modal"></div>
-<div th:replace="fragments/modals :: social-post-modals('/distributore/dashboard')"></div>
-<div th:replace="fragments/modals :: prenotazioni-delete-modals('/produttore/dashboard')"></div>
-
-<!-- ================= MODALI PRENOTAZIONE VISITE ================= -->
+<div th:replace="fragments/modals :: prenotazioni-delete-modals('/distributore/dashboard')"></div>
 <div th:replace="fragments/modals :: prenotazione-visita-modals('/distributore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-not-available-modal"></div>
 
 <hr class="section-separator"/>
 
-<button type="button" onclick="crudUtils.toggleForm()">Crea Pacchetto</button>
+<!-- ================== FORM CREAZIONE PACCHETTO ================== -->
+<button type="button" class="btn-primary" id="btnCreatePacchetto">➕ Crea Pacchetto</button>
 
-<!-- Form creazione/modifica -->
 <div id="pacchettoForm" class="form-container"
      th:style="${showForm} ? 'display:block;' : 'display:none;'">
     <h3 id="formTitle">Nuovo Pacchetto</h3>
@@ -83,29 +86,15 @@
         </span>
 
         <!-- Pulsanti -->
-        <div th:replace="fragments/form-fields :: form-buttons('pacchetto','/distributore/dashboard')"></div>
+        <div th:replace="fragments/form-fields :: form-buttons('Pacchetto','/distributore/dashboard')"></div>
     </form>
 </div>
 
-<p><a th:href="@{/}">Torna alla Home</a></p>
+<!-- ================== LINK HOME ================== -->
+<p><a th:href="@{/}" class="btn-secondary">⬅ Torna alla Home</a></p>
 
-<!-- ================= SCRIPT ================= -->
-<script src="/js/utils/form-utils.js" defer></script>
-<script src="/js/utils/modal-utils.js" defer></script>
-<script src="/js/utils/csrf-utils.js" defer></script>
-<script src="/js/utils/crud-utils.js" defer></script>
-<script src="/js/pages/distributore.js" defer></script>
+<!-- ================= SCRIPT ================== -->
+<script type="module" src="/js/pages/distributore.js"></script>
 
-<!-- Script per toggle visite -->
-<script>
-    function toggleVisite() {
-        const section = document.getElementById("visiteSection");
-        section.style.display = section.style.display === "none" ? "block" : "none";
-    }
-    function togglePrenotazioni() {
-        const section = document.getElementById("prenotazioniSection");
-        section.style.display = (section.style.display === "none") ? "block" : "none";
-    }
-</script>
 </body>
 </html>

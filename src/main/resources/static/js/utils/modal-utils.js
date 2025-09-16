@@ -4,7 +4,7 @@
 function openModal(id) {
     const modal = document.getElementById(id);
     if (modal) {
-        modal.style.display = "flex";
+        modal.classList.add("show");
 
         // chiudi al click esterno
         modal.addEventListener("click", function handler(e) {
@@ -31,9 +31,8 @@ function openModal(id) {
 function closeModal(id) {
     const modal = document.getElementById(id);
     if (modal) {
-        modal.style.display = "none";
+        modal.classList.remove("show");
     }
 }
 
-// Rende disponibili globalmente
-window.modalUtils = { openModal, closeModal };
+export const modalUtils = { openModal, closeModal };

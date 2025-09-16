@@ -1,6 +1,7 @@
 <div th:fragment="prenotazioni-table(prenotazioni)">
-    <h3>Le tue prenotazioni</h3>
-    <table>
+    <h3>📌 Le tue prenotazioni</h3>
+
+    <table class="table-standard">
         <thead>
         <tr>
             <th>ID</th>
@@ -17,11 +18,13 @@
             <td th:text="${prenotazione.idVisita}">12</td>
             <td th:text="${prenotazione.numeroPersone}">4</td>
             <td th:text="${prenotazione.usernameVenditore}">venditoreA</td>
-            <td th:text="${#temporals.format(prenotazione.dataPrenotazione, 'dd/MM/yyyy HH:mm')}">2025-09-15</td>
+            <td th:text="${#temporals.format(prenotazione.dataPrenotazione, 'dd/MM/yyyy HH:mm')}">
+                2025-09-15
+            </td>
             <td>
                 <button type="button"
-                        class="btn-elimina"
-                        th:onclick="|openDeletePrenotazioneModal(${prenotazione.id})|">
+                        class="btn-danger btn-delete-prenotazione"
+                        th:attr="data-id=${prenotazione.id}">
                     ❌ Elimina
                 </button>
             </td>

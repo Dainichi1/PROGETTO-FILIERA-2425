@@ -2,20 +2,18 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 
-<!-- ================== MODALI CREAZIONE ================== -->
+<!-- ================== MODALI CREAZIONE / UPDATE ANIMATORE ================== -->
 <div th:fragment="animatore-create-modals(redirectPath)">
 
-    <!-- ================== VISITA ================== -->
-    <!-- Conferma pubblicazione Visita -->
+    <!-- === VISITA === -->
     <div id="createConfirmModalVisita" class="modal">
         <div class="modal-content">
             <p>Vuoi pubblicare la visita?</p>
-            <button type="button" onclick="visitaCrud.submitForm()">✅ Sì</button>
-            <button type="button" onclick="modalUtils.closeModal('createConfirmModalVisita')">❌ No</button>
+            <button id="btnConfirmCreateVisita" type="button">Sì</button>
+            <button type="button" onclick="modalUtils.closeModal('createConfirmModalVisita')">No</button>
         </div>
     </div>
 
-    <!-- Successo pubblicazione Visita -->
     <div id="createSuccessModalVisita" class="modal">
         <div class="modal-content">
             <p>✅ Visita pubblicata con successo!</p>
@@ -23,17 +21,31 @@
         </div>
     </div>
 
-    <!-- ================== FIERA ================== -->
-    <!-- Conferma pubblicazione Fiera -->
-    <div id="createConfirmModalFiera" class="modal">
+    <!-- Update -->
+    <div id="updateConfirmModalVisita" class="modal">
         <div class="modal-content">
-            <p>Vuoi pubblicare la fiera?</p>
-            <button type="button" onclick="fieraCrud.submitForm()">✅ Sì</button>
-            <button type="button" onclick="modalUtils.closeModal('createConfirmModalFiera')">❌ No</button>
+            <p>Vuoi salvare le modifiche alla visita?</p>
+            <button id="btnConfirmUpdateVisita" type="button">Sì</button>
+            <button type="button" onclick="modalUtils.closeModal('updateConfirmModalVisita')">No</button>
         </div>
     </div>
 
-    <!-- Successo pubblicazione Fiera -->
+    <div id="updateSuccessModalVisita" class="modal">
+        <div class="modal-content">
+            <p>💾 Modifiche alla visita salvate con successo!</p>
+            <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+        </div>
+    </div>
+
+    <!-- === FIERA === -->
+    <div id="createConfirmModalFiera" class="modal">
+        <div class="modal-content">
+            <p>Vuoi pubblicare la fiera?</p>
+            <button id="btnConfirmCreateFiera" type="button">Sì</button>
+            <button type="button" onclick="modalUtils.closeModal('createConfirmModalFiera')">No</button>
+        </div>
+    </div>
+
     <div id="createSuccessModalFiera" class="modal">
         <div class="modal-content">
             <p>✅ Fiera pubblicata con successo!</p>
@@ -41,29 +53,23 @@
         </div>
     </div>
 
+    <!-- Update -->
+    <div id="updateConfirmModalFiera" class="modal">
+        <div class="modal-content">
+            <p>Vuoi salvare le modifiche alla fiera?</p>
+            <button id="btnConfirmUpdateFiera" type="button">Sì</button>
+            <button type="button" onclick="modalUtils.closeModal('updateConfirmModalFiera')">No</button>
+        </div>
+    </div>
+
+    <div id="updateSuccessModalFiera" class="modal">
+        <div class="modal-content">
+            <p>💾 Modifiche alla fiera salvate con successo!</p>
+            <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+        </div>
+    </div>
+
 </div>
-
-<!-- ================== SCRIPT DI SUPPORTO ================== -->
-<script>
-    document.addEventListener("click", function(e) {
-        if (e.target && e.target.classList.contains("redirect-btn")) {
-            console.log("[DEBUG] Redirect button premuto:", e.target);
-
-            // Chiudo entrambi i modali in caso siano ancora aperti
-            modalUtils.closeModal("createSuccessModalVisita");
-            modalUtils.closeModal("createSuccessModalFiera");
-
-            // Reindirizzamento
-            const url = e.target.getAttribute("data-redirect");
-            if (url) {
-                console.log("[DEBUG] Redirect verso:", url);
-                window.location.href = url;
-            } else {
-                console.warn("[DEBUG] Nessun redirect URL trovato!");
-            }
-        }
-    });
-</script>
 
 </body>
 </html>

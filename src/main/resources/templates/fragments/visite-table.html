@@ -1,12 +1,14 @@
 <div th:fragment="visite-table(visite)">
     <h2>Visite Disponibili</h2>
+
     <div th:if="${#lists.isEmpty(visite)}">
         <p>Nessuna visita disponibile per il tuo ruolo.</p>
     </div>
+
     <div th:unless="${#lists.isEmpty(visite)}">
-        <table border="1" style="border-collapse: collapse; width: 100%; margin-top: 20px;">
+        <table class="table-standard">
             <thead>
-            <tr style="background-color: #f0f0f0; text-align: center;">
+            <tr>
                 <th>Nome</th>
                 <th>Descrizione</th>
                 <th>Data Inizio</th>
@@ -27,10 +29,9 @@
                 <td th:text="${v.creatoDa}">Organizzatore</td>
                 <td th:text="${v.stato}">Stato</td>
                 <td>
-                    <button type="button"
-                            th:attr="data-id=${v.id}"
-                            onclick="crudUtils.openPrenotazioneVisitaModal(this)">
-                        Prenota
+                    <button type="button" class="btn-primary btn-prenota-visita"
+                            th:attr="data-id=${v.id}">
+                        📅 Prenota
                     </button>
                 </td>
             </tr>

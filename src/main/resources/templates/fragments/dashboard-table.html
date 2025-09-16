@@ -2,9 +2,9 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 <div th:fragment="dashboard-table(items, itemType)">
-    <table border="1" style="border-collapse: collapse; width: 100%; margin-top: 20px;">
+    <table class="table-standard">
         <thead>
-        <tr style="background-color: #f0f0f0; text-align: center;">
+        <tr>
             <th>Nome</th>
             <th>Descrizione</th>
             <th>Quantità</th>
@@ -29,11 +29,13 @@
             <td th:text="${item.prezzo}">0.00</td>
             <td th:text="${item.indirizzo}">Indirizzo</td>
             <td>
-                <a th:each="cert : ${item.certificati}" th:href="@{'/file/certificati/' + ${cert}}"
+                <a th:each="cert : ${item.certificati}"
+                   th:href="@{'/file/certificati/' + ${cert}}"
                    target="_blank" th:text="${cert}">Certificato</a>
             </td>
             <td>
-                <a th:each="foto : ${item.foto}" th:href="@{'/file/foto/' + ${foto}}"
+                <a th:each="foto : ${item.foto}"
+                   th:href="@{'/file/foto/' + ${foto}}"
                    target="_blank" th:text="${foto}">Foto</a>
             </td>
             <td th:if="${itemType == 'pacchetto'}">
@@ -53,33 +55,30 @@
             <td th:text="${item.stato}">In attesa</td>
             <td th:text="${item.commento}">Commento</td>
 
-            <!-- Pulsanti con stato e nome -->
+            <!-- Pulsanti azione -->
             <td>
-                <button type="button"
+                <button type="button" class="btn-danger btn-delete"
                         th:attr="data-id=${item.id},
                                  data-stato=${item.stato},
-                                 data-nome=${item.nome}"
-                        onclick="crudUtils.handleDeleteClick(this)">
-                    Elimina
+                                 data-nome=${item.nome}">
+                    ❌ Elimina
                 </button>
             </td>
             <td>
-                <button type="button"
+                <button type="button" class="btn-warning btn-edit"
                         th:attr="data-id=${item.id},
                                  data-stato=${item.stato},
-                                 data-nome=${item.nome}"
-                        onclick="crudUtils.handleEditClick(this)">
-                    Modifica
+                                 data-nome=${item.nome}">
+                    ✏️ Modifica
                 </button>
             </td>
             <td>
-                <button type="button" class="btn-social"
+                <button type="button" class="btn-social btn-publish"
                         th:attr="data-id=${item.id},
-                     data-nome=${item.nome},
-                     data-stato=${item.stato},
-                     data-type=${itemType}"
-                        onclick="crudUtils.handleSocialClick(this)">
-                    Pubblica sui Social
+                                 data-nome=${item.nome},
+                                 data-stato=${item.stato},
+                                 data-type=${itemType}">
+                    📢 Pubblica sui Social
                 </button>
             </td>
         </tr>

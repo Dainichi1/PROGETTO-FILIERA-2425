@@ -6,6 +6,7 @@
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/css/tables.css}">
 </head>
 <body>
 <h1 th:text="'Benvenuto ' + (${utente?.nome ?: 'Utente'}) +
@@ -14,48 +15,53 @@
 </h1>
 
 <!-- ================== BOTTONI PRINCIPALI ================== -->
-<div style="display: flex; gap: 20px; margin: 20px 0;">
-    <button type="button" class="btn-primary" onclick="crudUtils.openSocialFeed()">
+<div class="actions-container">
+    <button type="button" class="btn-primary" id="btnSocialFeed">
         📢 Visualizza Social Network
     </button>
 </div>
 
 <!-- ================== SEZIONE PUBBLICATI ================== -->
-<div th:replace="fragments/animatore-table.html :: pubblicati-section(${visite}, ${fiere})"></div>
+<div th:replace="fragments/animatore-table :: pubblicati-section(${visite}, ${fiere})"></div>
 
 <!-- ================== MODALI CREAZIONE EVENTI ================== -->
 <div th:replace="fragments/animatore-modals :: animatore-create-modals('/animatore/dashboard')"></div>
 
-<!-- ================== MODALI SOCIAL (COMUNI) ================== -->
-<div th:replace="fragments/modals :: social-modal"></div>
+<!-- ================== MODALI COMUNI ================== -->
+<div th:replace="fragments/modals :: delete-modals('Evento')"></div>
+<div th:replace="fragments/modals :: edit-error-modal('Evento')"></div>
+<div th:replace="fragments/modals :: create-update-modals('Evento','/animatore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-modals('/animatore/dashboard')"></div>
 <div th:replace="fragments/modals :: social-feed-modal"></div>
-<div th:replace="fragments/modals :: social-post-modals('/animatore/dashboard')"></div>
+<div th:replace="fragments/modals :: prenotazione-visita-modals('/animatore/dashboard')"></div>
+<div th:replace="fragments/modals :: prenotazioni-delete-modals('/animatore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-not-available-modal"></div>
 
 <hr class="section-separator"/>
 
 <!-- ================== BOTTONI APERTURA FORM ================== -->
-<button type="button" class="btn-primary" onclick="visitaCrud.toggleForm()">
-    ➕ Pubblica Visita ad Invito
-</button>
-<button type="button" class="btn-primary" onclick="fieraCrud.toggleForm()">
-    ➕ Pubblica Fiera
-</button>
+<div class="actions-container">
+    <button type="button" class="btn-primary" id="btnOpenVisita">
+        ➕ Pubblica Visita ad Invito
+    </button>
+    <button type="button" class="btn-primary" id="btnOpenFiera">
+        ➕ Pubblica Fiera
+    </button>
+</div>
 
 <!-- ================== FORM CREAZIONE VISITA ================== -->
-<div id="visitaFormContainer" class="form-container"
-     th:style="${showForm} ? 'display:block;' : 'display:none;'">
-
-    <h3 id="formTitle">Nuova Visita ad Invito</h3>
+<div id="visitaFormContainer" class="form-container" style="display:none;">
+    <h3 id="formTitleVisita">Nuova Visita ad Invito</h3>
     <form id="visitaForm" th:action="@{/animatore/crea-visita}" th:object="${visitaDto}"
           method="post" novalidate>
         <input type="hidden" th:field="*{id}" id="visitaId"/>
-        <input type="hidden" th:field="*{tipo}" id="eventoTipo" value="VISITA"/>
+        <input type="hidden" th:field="*{tipo}" id="eventoTipoVisita" value="VISITA"/>
+
         <div th:replace="fragments/animatore-fields :: visita-fields('visitaDto')"></div>
-        <div id="createButtons" class="form-actions">
-            <button type="button" class="btn-primary"
-                    onclick="modalUtils.openModal('createConfirmModalVisita')">✅ Pubblica</button>
-            <button type="button" class="btn-secondary"
-                    onclick="visitaCrud.toggleForm()">❌ Annulla</button>
+
+        <div id="createButtonsVisita" class="form-actions">
+            <button type="button" class="btn-primary" id="btnPubblicaVisita">✅ Pubblica</button>
+            <button type="button" class="btn-secondary" id="btnCancelVisita">❌ Annulla</button>
         </div>
     </form>
 </div>
@@ -67,43 +73,21 @@
           method="post" novalidate>
         <input type="hidden" th:field="*{id}" id="fieraId"/>
         <input type="hidden" th:field="*{tipo}" id="eventoTipoFiera" value="FIERA"/>
+
         <div th:replace="fragments/animatore-fields :: fiera-fields('fieraDto')"></div>
+
         <div id="createButtonsFiera" class="form-actions">
-            <button type="button" class="btn-primary"
-                    onclick="modalUtils.openModal('createConfirmModalFiera')">✅ Pubblica</button>
-            <button type="button" class="btn-secondary"
-                    onclick="fieraCrud.toggleForm()">❌ Annulla</button>
+            <button type="button" class="btn-primary" id="btnPubblicaFiera">✅ Pubblica</button>
+            <button type="button" class="btn-secondary" id="btnCancelFiera">❌ Annulla</button>
         </div>
     </form>
 </div>
 
 <!-- ================== LINK HOME ================== -->
-<p><a th:href="@{/}">⬅ Torna alla Home</a></p>
+<p><a th:href="@{/}" class="btn-secondary">⬅ Torna alla Home</a></p>
 
 <!-- ================== SCRIPT ================== -->
-<script src="/js/utils/form-utils.js" defer></script>
-<script src="/js/utils/modal-utils.js" defer></script>
-<script src="/js/utils/csrf-utils.js" defer></script>
-<script src="/js/utils/crud-utils.js" defer></script>
-<script src="/js/utils/crud-utils-animatore.js" defer></script>
-<script src="/js/pages/animatore.js" defer></script>
-
-<!-- ================== FIX SOCIAL POST ================== -->
-<script defer>
-    document.addEventListener("DOMContentLoaded", () => {
-        const confirmBtn = document.getElementById("btnConfirmSocialPost");
-        if (confirmBtn) {
-            confirmBtn.onclick = () => {
-                if (window.currentCrud && typeof window.currentCrud.submitSocialPost === "function") {
-                    console.log("[DEBUG] Conferma social → submitSocialPost()");
-                    window.currentCrud.submitSocialPost();
-                } else {
-                    console.error("[ERRORE] Nessuna istanza CRUD attiva trovata!");
-                }
-            };
-        }
-    });
-</script>
+<script type="module" src="/js/pages/animatore.js"></script>
 
 </body>
 </html>

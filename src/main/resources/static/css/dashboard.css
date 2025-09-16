@@ -301,4 +301,10 @@ table td {
     background-color: #c0392b;
 }
 
+/* Sezioni toggle chiuse di default */
+.toggle-section {
+    display: none;
+}
+
+
 

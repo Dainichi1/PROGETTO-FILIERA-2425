@@ -68,6 +68,7 @@ public abstract class AbstractCreationController<T extends BaseItemDto> {
         String username = resolveUsername(auth);
         loadDashboardLists(model, username);
         model.addAttribute("showForm", false);
+        model.addAttribute("redirectPath", getRedirectPath());
         return getViewName();
     }
 

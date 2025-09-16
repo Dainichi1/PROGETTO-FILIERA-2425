@@ -6,6 +6,7 @@
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/css/tables.css}">
 </head>
 <body>
 <h1 th:text="'Benvenuto ' + (${utente?.nome ?: 'Utente'}) +
@@ -13,44 +14,57 @@
     Benvenuto, il tuo ruolo è Produttore.
 </h1>
 
+<!-- ================== BOTTONI PRINCIPALI ================== -->
+<div class="actions-container">
+    <button id="btnSocialFeed" type="button" class="btn-primary">📢 Visualizza Social Network</button>
+    <button id="btnVisite" type="button" class="btn-primary">👀 Visualizza visite disponibili</button>
+    <button id="btnPrenotazioni" type="button" class="btn-primary">📅 Visualizza prenotazioni</button>
+</div>
+
 <h2>I tuoi Prodotti</h2>
-<button type="button" onclick="crudUtils.openSocialFeed()">📢 Visualizza Social Network</button>
-<button type="button" onclick="toggleVisite()">👀 Visualizza visite disponibili</button>
-<button type="button" onclick="togglePrenotazioni()">📅 Visualizza prenotazioni</button>
 
 <!-- Tabella prodotti -->
-<div th:replace="fragments/table :: dashboard-table(${prodotti}, 'prodotto')"></div>
+<div th:replace="fragments/dashboard-table :: dashboard-table(${prodotti}, 'prodotto')"></div>
 
-<!-- Sezione visite disponibili (inizialmente nascosta) -->
-<div id="visiteSection" style="display:none; margin-top: 20px;">
+<!-- Sezione visite disponibili -->
+<div id="visiteSection" class="toggle-section">
     <div th:replace="fragments/visite-table :: visite-table(${visiteDisponibili})"></div>
-    <div style="margin-top: 10px;">
-        <button type="button" onclick="toggleVisite()">Chiudi</button>
-    </div>
-</div>
-<!-- Sezione prenotazioni (inizialmente nascosta) -->
-<div id="prenotazioniSection" style="display:none; margin-top: 20px;">
-    <div th:replace="fragments/prenotazioni-table :: prenotazioni-table(${prenotazioni})"></div>
-    <div style="margin-top: 10px;">
-        <button type="button" onclick="togglePrenotazioni()">Chiudi</button>
+    <div class="actions-container">
+        <button type="button" class="btn-secondary" onclick="toggleUtils.toggleSection('visiteSection')">Chiudi</button>
     </div>
 </div>
 
-<!-- Modali comuni -->
-<div th:replace="fragments/modals :: delete-modals('prodotti')"></div>
-<div th:replace="fragments/modals :: edit-error-modal('prodotti')"></div>
-<div th:replace="fragments/modals :: social-modal"></div> <!-- avviso Social -->
+<!-- Sezione prenotazioni -->
+<div id="prenotazioniSection" class="toggle-section">
+    <div th:replace="fragments/prenotazioni-table :: prenotazioni-table(${prenotazioni})"></div>
+    <div class="actions-container">
+        <button type="button" class="btn-secondary" onclick="toggleUtils.toggleSection('prenotazioniSection')">Chiudi
+        </button>
+    </div>
+</div>
+
+<!-- ================== MODALI COMUNI ================== -->
+<div th:replace="fragments/modals :: delete-modals('Prodotto Trasformato')"></div>
+<div th:replace="fragments/modals :: edit-error-modal('Prodotto Trasformato')"></div>
+<div th:replace="fragments/modals :: create-update-modals('Prodotto Trasformato','/trasformatore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-modals('/trasformatore/dashboard')"></div>
 <div th:replace="fragments/modals :: social-feed-modal"></div>
-<div th:replace="fragments/modals :: social-post-modals('/produttore/dashboard')"></div>
-<div th:replace="fragments/modals :: prenotazione-visita-modals('/produttore/dashboard')"></div>
-<div th:replace="fragments/modals :: prenotazioni-delete-modals('/produttore/dashboard')"></div>
+<div th:replace="fragments/modals :: prenotazione-visita-modals('/trasformatore/dashboard')"></div>
+<div th:replace="fragments/modals :: prenotazioni-delete-modals('/trasformatore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-not-available-modal"></div>
+
 
 <hr class="section-separator"/>
 
-<button type="button" onclick="crudUtils.toggleForm()">Crea Prodotto</button>
+<!-- ================== FORM CREAZIONE PRODOTTO ================== -->
+<button type="button"
+        id="btnCreateProdotto"
+        class="btn-primary">
+    ➕ Crea Prodotto
+</button>
 
-<!-- Form creazione/modifica -->
-<div id="prodottoForm" class="form-container" th:style="${showForm} ? 'display:block;' : 'display:none;'">
+<div id="prodottoForm" class="form-container"
+     th:style="${showForm} ? 'display:block;' : 'display:none;'">
     <h3 id="formTitle">Nuovo Prodotto</h3>
     <form id="itemForm" th:action="@{/produttore/crea}" th:object="${prodottoDto}"
           method="post" enctype="multipart/form-data" novalidate>
@@ -66,29 +80,11 @@
     </form>
 </div>
 
-<p><a th:href="@{/}">Torna alla Home</a></p>
+<!-- ================== LINK HOME ================== -->
+<p><a th:href="@{/}" class="btn-secondary">⬅ Torna alla Home</a></p>
 
-<!-- Script -->
-<script src="/js/utils/form-utils.js" defer></script>
-<script src="/js/utils/modal-utils.js" defer></script>
-<script src="/js/utils/csrf-utils.js" defer></script>
-<script src="/js/utils/crud-utils.js" defer></script>
-<script src="/js/pages/produttore.js" defer></script>
+<!-- ================== SCRIPT ================== -->
+<script type="module" src="/js/pages/produttore.js"></script>
 
-<!-- Script per toggle visite -->
-<script>
-    function toggleVisite() {
-        const section = document.getElementById("visiteSection");
-        if (section.style.display === "none") {
-            section.style.display = "block";
-        } else {
-            section.style.display = "none";
-        }
-    }
-    function togglePrenotazioni() {
-        const section = document.getElementById("prenotazioniSection");
-        section.style.display = (section.style.display === "none") ? "block" : "none";
-    }
-</script>
 </body>
 </html>

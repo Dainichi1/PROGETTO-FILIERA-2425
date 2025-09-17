@@ -48,6 +48,10 @@ public abstract class Item {
         this.tipo = tipo;
     }
 
+    public abstract Long getId();
+    public abstract int getQuantita();
+    public abstract double getPrezzo();
+
     @Override
     public String toString() {
         return String.format(

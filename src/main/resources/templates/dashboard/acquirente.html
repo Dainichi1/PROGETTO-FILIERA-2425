@@ -30,6 +30,7 @@
 <!-- ================== SEZIONE AZIONI PRINCIPALI ================== -->
 <div class="actions-container">
     <button id="btnVisualizzaMarketplace" type="button">🛒 Visualizza Marketplace</button>
+    <button id="btnVisualizzaCarrello" type="button">🧺 Visualizza Carrello</button>
 </div>
 
 <!-- ================== SEZIONE MARKETPLACE ================== -->
@@ -41,9 +42,23 @@
 
     <!-- la tabella -->
     <div th:replace="~{fragments/marketplace-table :: marketplace-table(
-        ${prodotti}, ${pacchetti}, ${trasformati}, ${fiere}
+        ${prodotti}, ${pacchetti}, ${trasformati}
      )}"></div>
 </div>
+
+<!-- ================== SEZIONE CARRELLO ================== -->
+<div id="cartSection" class="marketplace-section">
+    <!-- bottone chiudi -->
+    <div style="text-align: right; margin-bottom: 10px;">
+        <button id="btnChiudiCarrello" type="button">❌ Chiudi</button>
+    </div>
+
+    <!-- tabella carrello -->
+    <div th:replace="~{fragments/cart-table :: cart-table}"></div>
+</div>
+
+<!-- ================== MODALI CARRELLO ================== -->
+<div th:replace="~{fragments/cart-modals :: cart-modals}"></div>
 
 <hr class="section-separator"/>
 

@@ -1,14 +1,18 @@
 package unicam.filiera.dto;
 
+import lombok.*;
+
+/**
+ * DTO che rappresenta i totali globali del carrello (quantità + costo totale).
+ */
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@ToString
+@EqualsAndHashCode
 public class CartTotalsDto {
-    private final int    totaleArticoli;
-    private final double costoTotale;
-
-    public CartTotalsDto(int totaleArticoli, double costoTotale) {
-        this.totaleArticoli = totaleArticoli;
-        this.costoTotale    = costoTotale;
-    }
-
-    public int    getTotaleArticoli() { return totaleArticoli; }
-    public double getCostoTotale()    { return costoTotale;    }
+    private int totaleArticoli;
+    private double costoTotale;
 }

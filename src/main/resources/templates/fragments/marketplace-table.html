@@ -26,14 +26,15 @@
             <tbody>
 
             <!-- ============ PRODOTTI ============ -->
-            <tr th:each="p : ${prodotti}">
+            <tr th:each="p : ${prodotti}"
+                th:attr="data-id=${p.id}, data-tipo='PRODOTTO', data-disponibilita=${p.quantita}">
                 <td><input type="checkbox" class="select-checkbox" th:value="${p.id}"/></td>
                 <td>Prodotto</td>
                 <td th:text="${p.nome}"></td>
                 <td th:text="${p.descrizione.length() > 100 ? p.descrizione.substring(0,100) + '…' : p.descrizione}"></td>
                 <td th:text="${p.creatoDa}"></td>
                 <td th:text="${p.quantita}"></td>
-                <td><input type="number" name="quantitaProdotto" min="1" max="999"/></td>
+                <td><input type="number" class="quantita-input" name="quantitaProdotto" min="1" max="999"/></td>
                 <td>
                     <span th:each="f, iter : ${p.foto}" th:if="${f != null}">
                         <a th:href="@{'/file/foto/' + ${f}}" th:text="${f}"></a>
@@ -55,14 +56,15 @@
             </tr>
 
             <!-- ============ PACCHETTI ============ -->
-            <tr th:each="pac : ${pacchetti}">
+            <tr th:each="pac : ${pacchetti}"
+                th:attr="data-id=${pac.id}, data-tipo='PACCHETTO', data-disponibilita=${pac.quantita}">
                 <td><input type="checkbox" class="select-checkbox" th:value="${pac.id}"/></td>
                 <td>Pacchetto</td>
                 <td th:text="${pac.nome}"></td>
                 <td th:text="${pac.descrizione.length() > 100 ? pac.descrizione.substring(0,100) + '…' : pac.descrizione}"></td>
                 <td th:text="${pac.creatoDa}"></td>
                 <td th:text="${pac.quantita}"></td>
-                <td><input type="number" name="quantitaPacchetto" min="1" max="999"/></td>
+                <td><input type="number" class="quantita-input" name="quantitaPacchetto" min="1" max="999"/></td>
                 <td>
                     <span th:each="f, iter : ${pac.foto}" th:if="${f != null}">
                         <a th:href="@{'/file/foto/' + ${f}}" th:text="${f}"></a>
@@ -89,14 +91,15 @@
             </tr>
 
             <!-- ============ PRODOTTI TRASFORMATI ============ -->
-            <tr th:each="t : ${trasformati}">
+            <tr th:each="t : ${trasformati}"
+                th:attr="data-id=${t.id}, data-tipo='TRASFORMATO', data-disponibilita=${t.quantita}">
                 <td><input type="checkbox" class="select-checkbox" th:value="${t.id}"/></td>
                 <td>Prodotto trasformato</td>
                 <td th:text="${t.nome}"></td>
                 <td th:text="${t.descrizione.length() > 100 ? t.descrizione.substring(0,100) + '…' : t.descrizione}"></td>
                 <td th:text="${t.creatoDa}"></td>
                 <td th:text="${t.quantita}"></td>
-                <td><input type="number" name="quantitaTrasformato" min="1" max="999"/></td>
+                <td><input type="number" class="quantita-input" name="quantitaTrasformato" min="1" max="999"/></td>
                 <td>
                     <span th:each="f, iter : ${t.foto}" th:if="${f != null}">
                         <a th:href="@{'/file/foto/' + ${f}}" th:text="${f}"></a>
@@ -121,8 +124,6 @@
                 <td></td>
                 <td class="action-cell"></td>
             </tr>
-
-
 
             </tbody>
         </table>

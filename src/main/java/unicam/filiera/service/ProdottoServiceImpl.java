@@ -103,6 +103,11 @@ public class ProdottoServiceImpl implements ProdottoService {
     }
 
     @Override
+    public Optional<ProdottoEntity> getProdottoById(Long id) {
+        return repository.findById(id);
+    }
+
+    @Override
     public List<Prodotto> getProdottiApprovatiByProduttore(String usernameProduttore) {
         return repository.findByStatoAndCreatoDa(StatoProdotto.APPROVATO, usernameProduttore)
                 .stream()

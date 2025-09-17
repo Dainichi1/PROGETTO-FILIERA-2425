@@ -28,4 +28,6 @@ public interface ProdottoService {
 
     void eliminaById(Long id, String username);
 
+    Optional<ProdottoEntity> getProdottoById(Long id);
+
 }

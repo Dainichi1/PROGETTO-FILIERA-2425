@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<body>
+<div th:fragment="marketplace-table (prodotti, pacchetti, trasformati, fiere)">
+    <div class="table-container">
+        <table class="acquirente-table">
+            <thead>
+            <tr>
+                <th>Seleziona</th>
+                <th>Tipo</th>
+                <th>Nome</th>
+                <th>Descrizione</th>
+                <th>Creato da</th>
+                <th>Disponibilità</th>
+                <th>Quantità</th>
+                <th>Foto</th>
+                <th>Certificati</th>
+                <th>Prezzo (€)</th>
+                <th>Prodotti inclusi</th>
+                <th>Fasi di produzione</th>
+                <th>Indirizzo</th>
+                <th>Periodo</th>
+                <th>Azione</th>
+            </tr>
+            </thead>
+            <tbody>
+
+            <!-- ============ PRODOTTI ============ -->
+            <tr th:each="p : ${prodotti}">
+                <td><input type="checkbox" class="select-checkbox" th:value="${p.id}"/></td>
+                <td>Prodotto</td>
+                <td th:text="${p.nome}"></td>
+                <td th:text="${p.descrizione.length() > 100 ? p.descrizione.substring(0,100) + '…' : p.descrizione}"></td>
+                <td th:text="${p.creatoDa}"></td>
+                <td th:text="${p.quantita}"></td>
+                <td><input type="number" name="quantitaProdotto" min="1" max="999"/></td>
+                <td>
+                    <span th:each="f, iter : ${p.foto}" th:if="${f != null}">
+                        <a th:href="@{'/file/foto/' + ${f}}" th:text="${f}"></a>
+                        <span th:if="${!iter.last}"> · </span>
+                    </span>
+                </td>
+                <td>
+                    <span th:each="c, iter : ${p.certificati}" th:if="${c != null}">
+                        <a th:href="@{'/file/certificati/' + ${c}}" th:text="${c}"></a>
+                        <span th:if="${!iter.last}"> · </span>
+                    </span>
+                </td>
+                <td th:text="${p.prezzo}"></td>
+                <td></td>
+                <td></td>
+                <td th:text="${p.indirizzo}"></td>
+                <td></td>
+                <td class="action-cell"></td>
+            </tr>
+
+            <!-- ============ PACCHETTI ============ -->
+            <tr th:each="pac : ${pacchetti}">
+                <td><input type="checkbox" class="select-checkbox" th:value="${pac.id}"/></td>
+                <td>Pacchetto</td>
+                <td th:text="${pac.nome}"></td>
+                <td th:text="${pac.descrizione.length() > 100 ? pac.descrizione.substring(0,100) + '…' : pac.descrizione}"></td>
+                <td th:text="${pac.creatoDa}"></td>
+                <td th:text="${pac.quantita}"></td>
+                <td><input type="number" name="quantitaPacchetto" min="1" max="999"/></td>
+                <td>
+                    <span th:each="f, iter : ${pac.foto}" th:if="${f != null}">
+                        <a th:href="@{'/file/foto/' + ${f}}" th:text="${f}"></a>
+                        <span th:if="${!iter.last}"> · </span>
+                    </span>
+                </td>
+                <td>
+                    <span th:each="c, iter : ${pac.certificati}" th:if="${c != null}">
+                        <a th:href="@{'/file/certificati/' + ${c}}" th:text="${c}"></a>
+                        <span th:if="${!iter.last}"> · </span>
+                    </span>
+                </td>
+                <td th:text="${pac.prezzo}"></td>
+                <td>
+                    <span th:each="nome, iter : ${pac.prodottiNomi}">
+                        <span th:text="${nome}"></span>
+                        <span th:if="${!iter.last}"> · </span>
+                    </span>
+                </td>
+                <td></td>
+                <td th:text="${pac.indirizzo}"></td>
+                <td></td>
+                <td class="action-cell"></td>
+            </tr>
+
+            <!-- ============ PRODOTTI TRASFORMATI ============ -->
+            <tr th:each="t : ${trasformati}">
+                <td><input type="checkbox" class="select-checkbox" th:value="${t.id}"/></td>
+                <td>Prodotto trasformato</td>
+                <td th:text="${t.nome}"></td>
+                <td th:text="${t.descrizione.length() > 100 ? t.descrizione.substring(0,100) + '…' : t.descrizione}"></td>
+                <td th:text="${t.creatoDa}"></td>
+                <td th:text="${t.quantita}"></td>
+                <td><input type="number" name="quantitaTrasformato" min="1" max="999"/></td>
+                <td>
+                    <span th:each="f, iter : ${t.foto}" th:if="${f != null}">
+                        <a th:href="@{'/file/foto/' + ${f}}" th:text="${f}"></a>
+                        <span th:if="${!iter.last}"> · </span>
+                    </span>
+                </td>
+                <td>
+                    <span th:each="c, iter : ${t.certificati}" th:if="${c != null}">
+                        <a th:href="@{'/file/certificati/' + ${c}}" th:text="${c}"></a>
+                        <span th:if="${!iter.last}"> · </span>
+                    </span>
+                </td>
+                <td th:text="${t.prezzo}"></td>
+                <td></td>
+                <td>
+                    <span th:each="fase, iter : ${t.fasiProduzione}">
+                        <span th:text="${fase.descrizioneFase} + ' (prod: ' + ${fase.produttoreUsername} + ')'"></span>
+                        <span th:if="${!iter.last}"> · </span>
+                    </span>
+                </td>
+                <td th:text="${t.indirizzo}"></td>
+                <td></td>
+                <td class="action-cell"></td>
+            </tr>
+
+            <!-- ============ FIERE ============ -->
+            <tr th:each="f : ${fiere}">
+                <td><input type="checkbox" class="select-checkbox" th:value="${f.id}"/></td>
+                <td>Fiera</td>
+                <td th:text="${f.nome}"></td>
+                <td th:text="${f.descrizione.length() > 100 ? f.descrizione.substring(0,100) + '…' : f.descrizione}"></td>
+                <td th:text="${f.creatoDa}"></td>
+                <td></td>
+                <td><input type="number" name="quantitaFiera" min="1" max="999"/></td>
+                <td></td>
+                <td></td>
+                <td th:text="${f.prezzo}"></td>
+                <td></td>
+                <td></td>
+                <td th:text="${f.indirizzo}"></td>
+                <td>
+                    <span th:text="${#temporals.format(f.dataInizio, 'dd/MM/yyyy')}"></span>
+                    -
+                    <span th:text="${#temporals.format(f.dataFine, 'dd/MM/yyyy')}"></span>
+                </td>
+                <td class="action-cell"></td>
+            </tr>
+
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

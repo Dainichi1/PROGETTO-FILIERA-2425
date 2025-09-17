@@ -18,4 +18,6 @@ public interface FieraService {
     Optional<FieraEntity> findEntityById(Long id);
 
     void eliminaById(Long id, String username);
+
+    List<Fiera> getFierePubblicate();
 }

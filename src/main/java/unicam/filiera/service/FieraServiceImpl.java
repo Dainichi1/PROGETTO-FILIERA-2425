@@ -108,6 +108,16 @@ public class FieraServiceImpl implements FieraService {
         notifier.notificaTutti(dominio, "FIERA_ELIMINATA");
     }
 
+    @Override
+    public List<Fiera> getFierePubblicate() {
+        log.debug("Recupero fiere con stato PUBBLICATA");
+
+        return repository.findAll().stream()
+                .filter(f -> f.getStato() == StatoEvento.PUBBLICATA)
+                .map(this::mapToDomain)
+                .collect(Collectors.toList());
+    }
+
     // =======================
     // Helpers
     // =======================

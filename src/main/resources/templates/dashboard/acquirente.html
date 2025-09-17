@@ -1,10 +1,61 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="it">
-<head><title>Dashboard Acquirente</title></head>
+<head>
+    <title>Dashboard Acquirente</title>
+    <meta charset="UTF-8"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/css/acquirente-tables.css}">
+    <style>
+        .marketplace-section { display: none; margin-top: 2rem; }
+        .actions-container button { margin-right: 1rem; }
+    </style>
+</head>
 <body>
-<h1 th:text="'Ciao ' + ${utente.nome} + '!'">Ciao!</h1>
+
+<!-- ================== MESSAGGIO DI BENVENUTO ================== -->
+<h1 th:text="'Benvenuto ' + (${utente?.nome ?: 'Utente'}) +
+              ', il tuo ruolo è ' + (${utente?.ruolo ?: 'Acquirente'}) + '.'">
+    Benvenuto, il tuo ruolo è Acquirente.
+</h1>
+
+<!-- ================== INFORMAZIONI UTENTE ================== -->
+<p th:text="'Fondi disponibili: ' + (${utente?.fondi ?: 0}) + ' €'">
+    Fondi disponibili: 0 €
+</p>
+
+<hr class="section-separator"/>
+
+<!-- ================== SEZIONE AZIONI PRINCIPALI ================== -->
+<div class="actions-container">
+    <button id="btnVisualizzaMarketplace" type="button">🛒 Visualizza Marketplace</button>
+</div>
+
+<!-- ================== SEZIONE MARKETPLACE ================== -->
+<div id="marketplaceSection" class="marketplace-section">
+    <!-- bottone chiudi -->
+    <div style="text-align: right; margin-bottom: 10px;">
+        <button id="btnChiudiMarketplace" type="button">❌ Chiudi</button>
+    </div>
+
+    <!-- la tabella -->
+    <div th:replace="~{fragments/marketplace-table :: marketplace-table(
+        ${prodotti}, ${pacchetti}, ${trasformati}, ${fiere}
+     )}"></div>
+</div>
+
+<hr class="section-separator"/>
+
+<!-- ================== SEZIONI FUTURE ================== -->
 <h2>Dashboard Acquirente</h2>
-<p th:text="'Fondi disponibili: ' + ${utente.fondi} + ' €'"></p>
-<p><a href="/">Torna alla Home</a></p>
+<p>Qui potrai vedere i tuoi ordini, prenotazioni ed eventi disponibili.</p>
+
+<!-- ================== LINK HOME ================== -->
+<p><a th:href="@{/}" class="btn-secondary">⬅ Torna alla Home</a></p>
+
+<!-- ================== SCRIPT ================== -->
+<script type="module" src="/js/pages/acquirente.js"></script>
+
 </body>
 </html>

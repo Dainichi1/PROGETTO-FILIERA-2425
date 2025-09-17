@@ -13,7 +13,7 @@ import unicam.filiera.repository.UtenteRepository;
 import unicam.filiera.service.*;
 
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Controller
@@ -24,20 +24,17 @@ public class AcquirenteWebController {
     private final ProdottoService prodottoService;
     private final PacchettoService pacchettoService;
     private final ProdottoTrasformatoService trasformatoService;
-    private final FieraService fieraService;
 
     public AcquirenteWebController(
             UtenteRepository repo,
             ProdottoService prodottoService,
             PacchettoService pacchettoService,
-            ProdottoTrasformatoService trasformatoService,
-            FieraService fieraService
+            ProdottoTrasformatoService trasformatoService
     ) {
         this.repo = repo;
         this.prodottoService = prodottoService;
         this.pacchettoService = pacchettoService;
         this.trasformatoService = trasformatoService;
-        this.fieraService = fieraService;
     }
 
     @GetMapping("/dashboard")
@@ -61,10 +58,11 @@ public class AcquirenteWebController {
 
                     model.addAttribute("utente", acquirente);
 
-                    // ✅ Prodotti
-                    model.addAttribute("prodotti", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
+                    // Prodotti
+                    model.addAttribute("prodotti",
+                            prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
 
-                    // ✅ Pacchetti (conversione in DTO con prodottiNomi)
+                    // Pacchetti (DTO)
                     List<PacchettoViewDto> pacchettiDto = pacchettoService.getPacchettiByStato(StatoProdotto.APPROVATO)
                             .stream()
                             .map(p -> {
@@ -79,18 +77,17 @@ public class AcquirenteWebController {
                                 dto.setStato(p.getStato().name());
                                 dto.setCommento(p.getCommento());
 
-                                // certificati e foto sono già liste
                                 dto.setCertificati(p.getCertificati() != null ? p.getCertificati() : List.of());
                                 dto.setFoto(p.getFoto() != null ? p.getFoto() : List.of());
 
-                                // recupera i nomi dei prodotti inclusi dal service
-                                List<String> prodottiNomi = p.getProdottiIds().stream()
-                                        .map(id -> prodottoService.getProdottoById(id).orElse(null)) // Optional -> Entity/null
-                                        .filter(Objects::nonNull)
-                                        .map(ProdottoEntity::getNome)
-                                        .collect(Collectors.toList());
-
-                                dto.setProdottiNomi(prodottiNomi);
+                                // Recupero nomi prodotti inclusi
+                                dto.setProdottiNomi(
+                                        p.getProdottiIds().stream()
+                                                .map(id -> prodottoService.getProdottoById(id))
+                                                .flatMap(Optional::stream)
+                                                .map(ProdottoEntity::getNome)
+                                                .toList()
+                                );
 
                                 return dto;
                             })
@@ -98,11 +95,9 @@ public class AcquirenteWebController {
 
                     model.addAttribute("pacchetti", pacchettiDto);
 
-                    // ✅ Trasformati
-                    model.addAttribute("trasformati", trasformatoService.getProdottiTrasformatiByStato(StatoProdotto.APPROVATO));
-
-                    // ✅ Fiere
-                    model.addAttribute("fiere", fieraService.getFierePubblicate());
+                    // Trasformati
+                    model.addAttribute("trasformati",
+                            trasformatoService.getProdottiTrasformatiByStato(StatoProdotto.APPROVATO));
 
                     return "dashboard/acquirente";
                 })

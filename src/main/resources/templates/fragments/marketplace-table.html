@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="it">
 <body>
-<div th:fragment="marketplace-table (prodotti, pacchetti, trasformati, fiere)">
+<div th:fragment="marketplace-table (prodotti, pacchetti, trasformati)">
     <div class="table-container">
         <table class="acquirente-table">
             <thead>
@@ -122,28 +122,7 @@
                 <td class="action-cell"></td>
             </tr>
 
-            <!-- ============ FIERE ============ -->
-            <tr th:each="f : ${fiere}">
-                <td><input type="checkbox" class="select-checkbox" th:value="${f.id}"/></td>
-                <td>Fiera</td>
-                <td th:text="${f.nome}"></td>
-                <td th:text="${f.descrizione.length() > 100 ? f.descrizione.substring(0,100) + '…' : f.descrizione}"></td>
-                <td th:text="${f.creatoDa}"></td>
-                <td></td>
-                <td><input type="number" name="quantitaFiera" min="1" max="999"/></td>
-                <td></td>
-                <td></td>
-                <td th:text="${f.prezzo}"></td>
-                <td></td>
-                <td></td>
-                <td th:text="${f.indirizzo}"></td>
-                <td>
-                    <span th:text="${#temporals.format(f.dataInizio, 'dd/MM/yyyy')}"></span>
-                    -
-                    <span th:text="${#temporals.format(f.dataFine, 'dd/MM/yyyy')}"></span>
-                </td>
-                <td class="action-cell"></td>
-            </tr>
+
 
             </tbody>
         </table>

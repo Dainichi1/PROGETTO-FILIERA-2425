@@ -16,10 +16,10 @@ import lombok.*;
 public class CartItemDto {
 
     @EqualsAndHashCode.Include
-    private ItemTipo tipo;   // usa enum invece di String
+    private ItemTipo tipo;
 
     @EqualsAndHashCode.Include
-    private Long id;         // id dell’item originale
+    private Long id;
 
     private String nome;
     private int quantita;
@@ -27,27 +27,20 @@ public class CartItemDto {
     private double totale;
 
     /**
-     * Disponibilità residua dell'item (presa da prodotto/pacchetto/trasformato).
+     * Disponibilità residua per l’utente (calcolata come magazzino - quantità in carrello).
      */
     private int disponibilita;
 
     /**
-     * Setter customizzato: aggiorna il totale e controlla i vincoli.
+     * Quantità totale reale a magazzino (serve per ricalcoli).
      */
+    private int disponibilitaMagazzino;
+
     public void setQuantita(int quantita) {
-        if (quantita <= 0) {
-            throw new IllegalArgumentException("⚠ La quantità deve essere maggiore di 0");
-        }
-        if (disponibilita > 0 && quantita > disponibilita) {
-            throw new IllegalArgumentException("⚠ Quantità richiesta superiore alla disponibilità (" + disponibilita + ")");
-        }
         this.quantita = quantita;
         this.totale = this.prezzoUnitario * this.quantita;
     }
 
-    /**
-     * Utility per aggiornare il totale (es. se cambia il prezzo).
-     */
     public void recalculateTotale() {
         this.totale = this.prezzoUnitario * this.quantita;
     }

@@ -1,69 +1,60 @@
 // ================== IMPORT ==================
-import { toggleUtils } from "../utils/toggle-utils.js";
-import { modalUtils } from "../utils/modal-utils.js";
-import { csrfUtils } from "../utils/csrf-utils.js";
+import {toggleUtils} from "../utils/toggle-utils.js";
+import {modalUtils} from "../utils/modal-utils.js";
+import {csrfUtils} from "../utils/csrf-utils.js";
 
 window.toggleUtils = toggleUtils;
 
-// ================== VALIDAZIONE ITEM CARRELLO ==================
-function clientValidateCartItem(quantita, disponibilita) {
-    if (Number.isNaN(quantita) || quantita <= 0) {
+// ================== VALIDAZIONE ==================
+function clientValidateCartItem(quantita, allowZero = false) {
+    if (Number.isNaN(quantita) || quantita < 0) {
         modalUtils.openModal("quantityErrorModal");
         return false;
     }
-    if (disponibilita <= 0) {
-        modalUtils.openModal("availabilityErrorModal");
-        return false;
-    }
-    if (quantita > disponibilita) {
-        modalUtils.openModal("availabilityErrorModal");
+    if (!allowZero && quantita === 0) {
+        modalUtils.openModal("quantityErrorModal");
         return false;
     }
     return true;
 }
 
-// ================== FUNZIONI SPECIFICHE ACQUIRENTE ==================
-
-// Toggle sezione marketplace
+// ================== TOGGLE SEZIONI ==================
 function initMarketplaceToggle() {
     const btnMarketplace = document.getElementById("btnVisualizzaMarketplace");
     const btnChiudi = document.getElementById("btnChiudiMarketplace");
-    const marketplaceSection = document.getElementById("marketplaceSection");
+    const section = document.getElementById("marketplaceSection");
 
-    if (btnMarketplace && marketplaceSection) {
+    if (btnMarketplace && section) {
         btnMarketplace.addEventListener("click", () => {
-            marketplaceSection.style.display = "block";
+            section.style.display = "block";
             initCheckboxActions();
         });
     }
-
-    if (btnChiudi && marketplaceSection) {
+    if (btnChiudi && section) {
         btnChiudi.addEventListener("click", () => {
-            marketplaceSection.style.display = "none";
+            section.style.display = "none";
         });
     }
 }
 
-// Toggle sezione carrello
 function initCartToggle() {
     const btnCarrello = document.getElementById("btnVisualizzaCarrello");
     const btnChiudi = document.getElementById("btnChiudiCarrello");
-    const cartSection = document.getElementById("cartSection");
+    const section = document.getElementById("cartSection");
 
-    if (btnCarrello && cartSection) {
+    if (btnCarrello && section) {
         btnCarrello.addEventListener("click", () => {
-            cartSection.style.display = "block";
+            section.style.display = "block";
         });
     }
-
-    if (btnChiudi && cartSection) {
+    if (btnChiudi && section) {
         btnChiudi.addEventListener("click", () => {
-            cartSection.style.display = "none";
+            section.style.display = "none";
         });
     }
 }
 
-// Gestione checkbox → mostra bottone "Aggiungi al carrello"
+// ================== MARKETPLACE: CHECKBOX ==================
 function initCheckboxActions() {
     document.querySelectorAll(".select-checkbox").forEach(cb => {
         cb.addEventListener("change", function () {
@@ -81,19 +72,16 @@ function initCheckboxActions() {
     });
 }
 
-// ================== GESTIONE "AGGIUNGI AL CARRELLO" ==================
+// ================== MARKETPLACE: AGGIUNTA AL CARRELLO ==================
 function attachAddToCartHandler(button) {
     button.addEventListener("click", () => {
         const row = button.closest("tr");
-        const tipo = (row.getAttribute("data-tipo") || "").trim().toUpperCase();
-        const id = Number(row.getAttribute("data-id"));
-        const disponibilita = Number(row.getAttribute("data-disponibilita"));
+        const tipo = (row.dataset.tipo || "").trim().toUpperCase();
+        const id = Number(row.dataset.id);
         const quantitaInput = row.querySelector(".quantita-input");
         const quantita = quantitaInput ? Number(quantitaInput.value) : 1;
 
-        if (!clientValidateCartItem(quantita, disponibilita)) {
-            return;
-        }
+        if (!clientValidateCartItem(quantita, false)) return;
 
         const csrf = csrfUtils.getCsrf();
 
@@ -103,48 +91,20 @@ function attachAddToCartHandler(button) {
                 "Content-Type": "application/json",
                 [csrf.header]: csrf.token
             },
-            body: JSON.stringify({ tipo, id, quantita })
+            body: JSON.stringify({tipo, id, quantita})
         })
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    console.log("✅ Item aggiunto al carrello", data.items);
                     updateCartTable(data.items, data.totali);
+                    applyCartToMarketplace(data.items);
 
-                    // Modale di successo
-                    const successMsg = document.getElementById("successAddMessage");
-                    if (successMsg) {
-                        successMsg.innerText = data.message || "✅ Item aggiunto al carrello!";
+                    // Mostra modale di successo
+                    const msgEl = document.getElementById("successAddMessage");
+                    if (msgEl) {
+                        msgEl.innerText = `✅ ${data.items[0].nome} (${data.items[0].quantita}) aggiunto al carrello!`;
                     }
                     modalUtils.openModal("successAddModal");
-
-                    // Aggiorna disponibilità nel marketplace
-                    const updatedItem = data.items.find(i => i.id === id && i.tipo === tipo);
-                    if (updatedItem) {
-                        const marketRow = document.querySelector(
-                            `tr[data-id="${id}"][data-tipo="${tipo}"]`
-                        );
-                        if (marketRow) {
-                            const dispCell = marketRow.querySelector("td:nth-child(6)");
-                            const cb = marketRow.querySelector(".select-checkbox");
-                            const qtyInput = marketRow.querySelector(".quantita-input");
-                            const actionCell = marketRow.querySelector(".action-cell");
-
-                            if (dispCell) {
-                                dispCell.innerText = updatedItem.disponibilita;
-                            }
-                            marketRow.setAttribute(
-                                "data-disponibilita",
-                                updatedItem.disponibilita
-                            );
-
-                            if (updatedItem.disponibilita <= 0) {
-                                if (cb) { cb.checked = false; cb.disabled = true; }
-                                if (qtyInput) { qtyInput.value = 0; qtyInput.disabled = true; }
-                                if (actionCell) { actionCell.innerHTML = '<span style="font-style:italic;">Esaurito</span>'; }
-                            }
-                        }
-                    }
 
                 } else {
                     handleCartError(data.message || "Errore generico");
@@ -154,7 +114,8 @@ function attachAddToCartHandler(button) {
     });
 }
 
-// ================== UPDATE TABELLA CARRELLO ==================
+
+// ================== CARRELLO: UPDATE TABELLA ==================
 function updateCartTable(items, totali) {
     const tbody = document.querySelector("#cartSection table tbody");
     if (!tbody) return;
@@ -173,40 +134,128 @@ function updateCartTable(items, totali) {
 
     items.forEach(item => {
         tbody.innerHTML += `
-            <tr data-id="${item.id}" data-tipo="${item.tipo}" data-disponibilita="${item.disponibilita}">
-                <td>${item.tipo}</td>
-                <td>${item.nome}</td>
-                <td>${item.quantita}</td>
-                <td>€ ${item.prezzoUnitario.toFixed(2)}</td>
-                <td>€ ${item.totale.toFixed(2)}</td>
-                <td><button class="btn-update">Aggiorna</button></td>
-                <td><button class="btn-delete">Elimina</button></td>
-            </tr>`;
+        <tr data-id="${item.id}" data-tipo="${item.tipo}" data-disponibilita="${item.disponibilita}">
+            <td>${item.tipo}</td>
+            <td>${item.nome}</td>
+            <td>
+                <input 
+                    type="number" 
+                    class="cart-quantity-input" 
+                    value="${item.quantita}" 
+                    min="0" 
+                    max="${item.quantita + item.disponibilita}" 
+                    style="width: 60px; text-align: center;" 
+                />
+            </td>
+            <td>€ ${item.prezzoUnitario.toFixed(2)}</td>
+            <td>€ ${item.totale.toFixed(2)}</td>
+            <td><button class="btn-update">Aggiorna</button></td>
+            <td><button class="btn-delete">Elimina</button></td>
+        </tr>`;
     });
 
-    // Handler aggiorna
+    attachCartHandlers();
+}
+
+// ================== CARRELLO: HANDLER AGGIORNA/ELIMINA ==================
+function attachCartHandlers() {
+    const tbody = document.querySelector("#cartSection table tbody");
+
+    // Aggiorna
     tbody.querySelectorAll(".btn-update").forEach(btn => {
         btn.addEventListener("click", () => {
             const row = btn.closest("tr");
-            console.log("TODO: aggiorna item", row.dataset);
-            // TODO: fetch POST /carrello/aggiorna
+            const id = Number(row.dataset.id);
+            const tipo = row.dataset.tipo;
+            const input = row.querySelector(".cart-quantity-input");
+            const nuovaQuantita = Number(input.value);
+
+            if (!clientValidateCartItem(nuovaQuantita, true)) return;
+
+            const csrf = csrfUtils.getCsrf();
+
+            fetch("/carrello/aggiorna", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    [csrf.header]: csrf.token
+                },
+                body: JSON.stringify({id, tipo: tipo.toUpperCase(), nuovaQuantita})
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        updateCartTable(data.items, data.totali);
+                        applyCartToMarketplace(data.items);
+
+                        // ✅ Se backend manda removedItem, aggiorno subito la riga marketplace
+                        if (data.removedItem) {
+                            updateMarketplaceRowRemoved(data.removedItem);
+                        }
+                    } else {
+                        handleCartError(data.message || "Errore generico");
+                    }
+                })
+                .catch(() => modalUtils.openModal("genericErrorModal"));
         });
     });
 
-    // Handler elimina
+    // Elimina
     tbody.querySelectorAll(".btn-delete").forEach(btn => {
         btn.addEventListener("click", () => {
             const row = btn.closest("tr");
-            console.log("TODO: elimina item", row.dataset);
-            // TODO: fetch POST /carrello/rimuovi
+            const id = Number(row.dataset.id);
+            const tipo = row.dataset.tipo;
+
+            const csrf = csrfUtils.getCsrf();
+
+            fetch("/carrello/rimuovi", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    [csrf.header]: csrf.token
+                },
+                body: JSON.stringify({id, tipo})
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        updateCartTable(data.items, data.totali);
+                        applyCartToMarketplace(data.items);
+
+                        // anche qui supporto removedItem
+                        if (data.removedItem) {
+                            updateMarketplaceRowRemoved(data.removedItem);
+                        }
+                    } else {
+                        handleCartError(data.message || "Errore generico");
+                    }
+                })
+                .catch(() => modalUtils.openModal("genericErrorModal"));
         });
     });
+}
 
-    // Aggiorna totali
-    if (totali) {
-        const totEl = document.getElementById("cartTotals");
-        if (totEl) {
-            totEl.innerText = `Totale articoli: ${totali.totaleArticoli}, Costo: € ${totali.costoTotale.toFixed(2)}`;
+// ================== RIPRISTINA RIGA MARKETPLACE (da removedItem) ==================
+function updateMarketplaceRowRemoved(removedItem) {
+    const row = document.querySelector(`tr[data-id="${removedItem.id}"][data-tipo="${removedItem.tipo}"]`);
+    if (!row) return;
+
+    const dispCell = row.querySelector("td:nth-child(6)");
+    const cb = row.querySelector(".select-checkbox");
+    const qtyInput = row.querySelector(".quantita-input");
+    const actionCell = row.querySelector(".action-cell");
+
+    if (dispCell) dispCell.innerText = removedItem.disponibilita;
+    row.dataset.disponibilita = removedItem.disponibilita;
+
+    if (removedItem.disponibilita > 0) {
+        if (cb) cb.disabled = false;
+        if (qtyInput) qtyInput.disabled = false;
+        if (actionCell) {
+            actionCell.innerHTML =
+                '<button type="button" class="btn-add-cart">Aggiungi al carrello</button>';
+            attachAddToCartHandler(actionCell.querySelector(".btn-add-cart"));
         }
     }
 }
@@ -222,24 +271,30 @@ function applyCartToMarketplace(items) {
         const qtyInput = row.querySelector(".quantita-input");
         const actionCell = row.querySelector(".action-cell");
 
-        if (dispCell) {
-            dispCell.innerText = i.disponibilita;
-        }
-        row.setAttribute("data-disponibilita", i.disponibilita);
+        if (dispCell) dispCell.innerText = i.disponibilita;
+        row.dataset.disponibilita = i.disponibilita;
 
         if (i.disponibilita <= 0) {
             if (cb) { cb.checked = false; cb.disabled = true; }
             if (qtyInput) { qtyInput.value = 0; qtyInput.disabled = true; }
-            if (actionCell) { actionCell.innerHTML = '<span style="font-style:italic;">Esaurito</span>'; }
+            if (actionCell) actionCell.innerHTML = '<span style="font-style:italic;">Esaurito</span>';
+        } else {
+            if (cb) cb.disabled = false;
+            if (qtyInput) qtyInput.disabled = false;
+            if (actionCell && !actionCell.querySelector(".btn-add-cart")) {
+                actionCell.innerHTML =
+                    '<button type="button" class="btn-add-cart">Aggiungi al carrello</button>';
+                attachAddToCartHandler(actionCell.querySelector(".btn-add-cart"));
+            }
         }
     });
 }
 
-// ================== CARICAMENTO CARRELLO ALL'AVVIO ==================
+// ================== CARICAMENTO INIZIALE ==================
 function loadCart() {
     fetch("/carrello", {
         method: "GET",
-        headers: { "Content-Type": "application/json" }
+        headers: {"Content-Type": "application/json"}
     })
         .then(r => r.json())
         .then(data => {
@@ -257,30 +312,25 @@ function handleCartError(msg) {
         modalUtils.openModal("genericErrorModal");
         return;
     }
-    if (msg.includes("maggiore di 0")) {
-        modalUtils.openModal("quantityErrorModal");
-    } else if (msg.includes("superiore alla disponibilità")) {
+    if (msg.includes("disponibilità")) {
         modalUtils.openModal("availabilityErrorModal");
     } else {
         modalUtils.openModal("genericErrorModal");
     }
 }
 
-// ================== INIZIALIZZAZIONE ==================
+// ================== INIT ==================
 document.addEventListener("DOMContentLoaded", () => {
     initMarketplaceToggle();
     initCartToggle();
     initCheckboxActions();
-    loadCart(); // carica il carrello già presente in sessione
+    loadCart();
 
-    // Gestione chiusura modali
     document.querySelectorAll(".btn-close-modal").forEach(btn => {
         btn.addEventListener("click", e => {
             e.stopPropagation();
-            const target = btn.getAttribute("data-target");
-            if (target) {
-                modalUtils.closeModal(target);
-            }
+            const target = btn.dataset.target;
+            if (target) modalUtils.closeModal(target);
         });
     });
 });

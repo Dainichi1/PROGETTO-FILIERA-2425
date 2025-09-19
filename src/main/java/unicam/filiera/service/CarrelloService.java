@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpSession;
 import unicam.filiera.dto.CartItemDto;
 import unicam.filiera.dto.CartTotalsDto;
 import unicam.filiera.dto.ItemTipo;
+import unicam.filiera.model.Item;
 
 import java.util.List;
 
@@ -17,12 +18,12 @@ public interface CarrelloService {
     /**
      * Aggiorna la quantità di un item esistente.
      */
-    void aggiornaQuantitaItem(String nomeItem, int nuovaQuantita, HttpSession session);
+    void aggiornaQuantitaItem(ItemTipo tipo, Long id, int nuovaQuantita, HttpSession session);
 
     /**
      * Rimuove un item dal carrello.
      */
-    void rimuoviItem(String nomeItem, HttpSession session);
+    void rimuoviItem(ItemTipo tipo, Long id, HttpSession session);
 
     /**
      * Svuota il carrello.
@@ -38,4 +39,6 @@ public interface CarrelloService {
      * Calcola i totali.
      */
     CartTotalsDto calcolaTotali(HttpSession session);
+
+    Item getItemFromDb(ItemTipo tipo, Long id);
 }

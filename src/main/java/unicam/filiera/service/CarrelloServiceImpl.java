@@ -40,6 +40,9 @@ public class CarrelloServiceImpl implements CarrelloService {
         if (tipo == null) {
             throw new IllegalArgumentException("Tipo item mancante");
         }
+        if (quantita <= 0) {
+            throw new IllegalArgumentException("⚠ La quantità deve essere maggiore di 0");
+        }
 
         List<CartItemDto> items = getOrInitCart(session);
 
@@ -61,7 +64,7 @@ public class CarrelloServiceImpl implements CarrelloService {
                 throw new IllegalArgumentException("⚠ Quantità richiesta superiore alla disponibilità (" + disponibilitaMagazzino + ")");
             }
 
-            existing.setDisponibilita(disponibilitaMagazzino);
+            // aggiorna quantità e disponibilità residua
             existing.setQuantita(nuovaQuantita);
             existing.setDisponibilita(Math.max(0, disponibilitaMagazzino - nuovaQuantita));
             existing.recalculateTotale();
@@ -74,7 +77,6 @@ public class CarrelloServiceImpl implements CarrelloService {
                     .prezzoUnitario(item.getPrezzo())
                     .build();
 
-            dto.setDisponibilita(disponibilitaMagazzino);
             dto.setQuantita(quantita);
             dto.setDisponibilita(Math.max(0, disponibilitaMagazzino - quantita));
             dto.recalculateTotale();
@@ -86,31 +88,37 @@ public class CarrelloServiceImpl implements CarrelloService {
     }
 
     @Override
-    public void aggiornaQuantitaItem(String nomeItem, int nuovaQuantita, HttpSession session) {
+    public void aggiornaQuantitaItem(ItemTipo tipo, Long id, int nuovaQuantita, HttpSession session) {
         List<CartItemDto> items = getOrInitCart(session);
 
         CartItemDto itemCarrello = items.stream()
-                .filter(i -> i.getNome().equals(nomeItem))
+                .filter(i -> i.getId().equals(id) && i.getTipo() == tipo)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Item non trovato"));
 
-        Item itemDb = caricaItem(itemCarrello.getTipo(), itemCarrello.getId());
-        int disponibilitaMagazzino = itemDb.getQuantita();
+        int disponibilitaTotale = itemCarrello.getQuantita() + itemCarrello.getDisponibilita();
 
-        if (nuovaQuantita > disponibilitaMagazzino) {
-            throw new IllegalArgumentException("⚠ Quantità richiesta superiore alla disponibilità (" + disponibilitaMagazzino + ")");
+        if (nuovaQuantita <= 0) {
+            // Se la quantità è 0 → elimino l'item dal carrello
+            items.remove(itemCarrello);
+        } else {
+            if (nuovaQuantita > disponibilitaTotale) {
+                throw new IllegalArgumentException("⚠ Quantità richiesta superiore alla disponibilità (" + disponibilitaTotale + ")");
+            }
+            // aggiorna quantità e disponibilità residua
+            itemCarrello.setQuantita(nuovaQuantita);
+            itemCarrello.setDisponibilita(disponibilitaTotale - nuovaQuantita);
+            itemCarrello.recalculateTotale();
         }
-
-        itemCarrello.setQuantita(nuovaQuantita);
-        itemCarrello.setDisponibilita(Math.max(0, disponibilitaMagazzino - nuovaQuantita));
 
         session.setAttribute(SESSION_KEY, items);
     }
 
+
     @Override
-    public void rimuoviItem(String nomeItem, HttpSession session) {
+    public void rimuoviItem(ItemTipo tipo, Long id, HttpSession session) {
         List<CartItemDto> items = getOrInitCart(session);
-        items.removeIf(i -> i.getNome().equals(nomeItem));
+        items.removeIf(i -> i.getId().equals(id) && i.getTipo() == tipo);
         session.setAttribute(SESSION_KEY, items);
     }
 
@@ -130,6 +138,11 @@ public class CarrelloServiceImpl implements CarrelloService {
         int totQta = items.stream().mapToInt(CartItemDto::getQuantita).sum();
         double totCost = items.stream().mapToDouble(CartItemDto::getTotale).sum();
         return new CartTotalsDto(totQta, totCost);
+    }
+
+    @Override
+    public Item getItemFromDb(ItemTipo tipo, Long id) {
+        return caricaItem(tipo, id);
     }
 
     // ======================

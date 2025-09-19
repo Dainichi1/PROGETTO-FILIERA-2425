@@ -2,6 +2,7 @@
 import {toggleUtils} from "../utils/toggle-utils.js";
 import {modalUtils} from "../utils/modal-utils.js";
 import {csrfUtils} from "../utils/csrf-utils.js";
+import {crudUtils} from "../utils/crud-utils.js";
 
 window.toggleUtils = toggleUtils;
 
@@ -114,7 +115,6 @@ function attachAddToCartHandler(button) {
     });
 }
 
-
 // ================== CARRELLO: UPDATE TABELLA ==================
 function updateCartTable(items, totali) {
     const tbody = document.querySelector("#cartSection table tbody");
@@ -188,7 +188,6 @@ function attachCartHandlers() {
                         updateCartTable(data.items, data.totali);
                         applyCartToMarketplace(data.items);
 
-                        // ✅ Se backend manda removedItem, aggiorno subito la riga marketplace
                         if (data.removedItem) {
                             updateMarketplaceRowRemoved(data.removedItem);
                         }
@@ -223,7 +222,6 @@ function attachCartHandlers() {
                         updateCartTable(data.items, data.totali);
                         applyCartToMarketplace(data.items);
 
-                        // anche qui supporto removedItem
                         if (data.removedItem) {
                             updateMarketplaceRowRemoved(data.removedItem);
                         }
@@ -325,6 +323,11 @@ document.addEventListener("DOMContentLoaded", () => {
     initCartToggle();
     initCheckboxActions();
     loadCart();
+
+    // Usa lo stesso social feed degli altri attori
+    document.getElementById("btnSocialFeed")?.addEventListener("click", () => {
+        crudUtils.openSocialFeed();
+    });
 
     document.querySelectorAll(".btn-close-modal").forEach(btn => {
         btn.addEventListener("click", e => {

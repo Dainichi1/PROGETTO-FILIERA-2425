@@ -8,8 +8,14 @@
     <link rel="stylesheet" th:href="@{/css/dashboard.css}">
     <link rel="stylesheet" th:href="@{/css/acquirente-tables.css}">
     <style>
-        .marketplace-section { display: none; margin-top: 2rem; }
-        .actions-container button { margin-right: 1rem; }
+        .marketplace-section {
+            display: none;
+            margin-top: 2rem;
+        }
+
+        .actions-container button {
+            margin-right: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -29,6 +35,9 @@
 
 <!-- ================== SEZIONE AZIONI PRINCIPALI ================== -->
 <div class="actions-container">
+    <button id="btnSocialFeed" type="button" class="btn-primary">
+        📢 Visualizza Social Network
+    </button>
     <button id="btnVisualizzaMarketplace" type="button">🛒 Visualizza Marketplace</button>
     <button id="btnVisualizzaCarrello" type="button">🧺 Visualizza Carrello</button>
 </div>
@@ -59,6 +68,11 @@
 
 <!-- ================== MODALI CARRELLO ================== -->
 <div th:replace="~{fragments/cart-modals :: cart-modals}"></div>
+
+<!-- ================== MODALI SOCIAL ================== -->
+<div th:replace="fragments/modals :: social-modals('/acquirente/dashboard')"></div>
+<div th:replace="fragments/modals :: social-feed-modal"></div>
+<div th:replace="fragments/modals :: social-not-available-modal"></div>
 
 <hr class="section-separator"/>
 

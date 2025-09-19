@@ -1,20 +1,22 @@
 package unicam.filiera.controller;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import unicam.filiera.dto.PacchettoViewDto;
 import unicam.filiera.entity.ProdottoEntity;
 import unicam.filiera.model.Acquirente;
 import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.repository.UtenteRepository;
 import unicam.filiera.service.*;
+import unicam.filiera.validation.FondiValidator;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/acquirente")
@@ -103,4 +105,51 @@ public class AcquirenteWebController {
                 })
                 .orElse("error/utente_non_trovato");
     }
+
+    // ================== aggiorna fondi ==================
+    @PostMapping("/update-fondi")
+    @ResponseBody
+    public ResponseEntity<?> updateFondi(@RequestBody Map<String, Double> body, Authentication auth) {
+        Double importo = body.get("importo");
+        if (importo == null) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "⚠ Importo mancante"
+            ));
+        }
+
+        try {
+            FondiValidator.valida(importo); // usa il validator
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", e.getMessage()
+            ));
+        }
+
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "success", false,
+                    "message", "Utente non autenticato"
+            ));
+        }
+
+        String username = auth.getName();
+        return repo.findById(username)
+                .map(utente -> {
+                    double nuoviFondi = (utente.getFondi() != null ? utente.getFondi() : 0.0) + importo;
+                    utente.setFondi(nuoviFondi);
+                    repo.save(utente);
+
+                    return ResponseEntity.ok(Map.of(
+                            "success", true,
+                            "nuoviFondi", nuoviFondi
+                    ));
+                })
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                        "success", false,
+                        "message", "Utente non trovato"
+                )));
+    }
+
 }

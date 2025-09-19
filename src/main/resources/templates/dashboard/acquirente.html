@@ -16,6 +16,16 @@
         .actions-container button {
             margin-right: 1rem;
         }
+
+        .fondi-container {
+            margin: 1rem 0;
+        }
+
+        .fondi-container input {
+            width: 120px;
+            text-align: right;
+            margin-right: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -27,9 +37,16 @@
 </h1>
 
 <!-- ================== INFORMAZIONI UTENTE ================== -->
-<p th:text="'Fondi disponibili: ' + (${utente?.fondi ?: 0}) + ' €'">
-    Fondi disponibili: 0 €
-</p>
+<div class="fondi-container">
+    <p id="fondiDisponibili"
+       th:text="'Fondi disponibili: ' + (${utente?.fondi ?: 0}) + ' €'">
+        Fondi disponibili: 0 €
+    </p>
+    <form id="fondiForm" novalidate>
+        <input id="fondiInput" type="number" step="0.01" placeholder="Importo in €">
+        <button type="submit" id="btnAggiornaFondi">💰 Aggiorna</button>
+    </form>
+</div>
 
 <hr class="section-separator"/>
 
@@ -74,11 +91,16 @@
 <div th:replace="fragments/modals :: social-feed-modal"></div>
 <div th:replace="fragments/modals :: social-not-available-modal"></div>
 
+<!-- ================== MODALI FONDI ================== -->
+<div th:replace="~{fragments/fondi-modals :: fondi-modals}"></div>
+<!-- ================== MODALI PAGAMENTO ================== -->
+<div th:replace="~{fragments/payment-modals :: payment-modals}"></div>
+
+
 <hr class="section-separator"/>
 
-<!-- ================== SEZIONI FUTURE ================== -->
 <h2>Dashboard Acquirente</h2>
-<p>Qui potrai vedere i tuoi ordini, prenotazioni ed eventi disponibili.</p>
+<p>Qui potrai vedere i tuoi ordini, prenotazioni e fiere disponibili.</p>
 
 <!-- ================== LINK HOME ================== -->
 <p><a th:href="@{/}" class="btn-secondary">⬅ Torna alla Home</a></p>

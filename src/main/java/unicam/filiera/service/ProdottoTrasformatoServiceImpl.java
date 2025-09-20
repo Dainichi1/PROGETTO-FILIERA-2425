@@ -13,6 +13,7 @@ import unicam.filiera.model.ProdottoTrasformato;
 import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.observer.ProdottoTrasformatoNotifier;
 import unicam.filiera.repository.ProdottoTrasformatoRepository;
+import unicam.filiera.validation.TrasformatoValidator;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,21 +47,18 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
 
     @Override
     public void creaProdottoTrasformato(ProdottoTrasformatoDto dto, String creatore) {
-        ProdottoTrasformato prodottoTrasformato = ItemFactory.creaProdottoTrasformato(dto, creatore);
+        // Validazione centralizzata
+        TrasformatoValidator.valida(dto);
 
-        // Forza lo stato a IN_ATTESA
+        ProdottoTrasformato prodottoTrasformato = ItemFactory.creaProdottoTrasformato(dto, creatore);
         prodottoTrasformato.setStato(StatoProdotto.IN_ATTESA);
         prodottoTrasformato.setCommento(null);
 
         ProdottoTrasformatoEntity entity = mapToEntity(prodottoTrasformato, dto, null);
         repository.save(entity);
 
-        // Log per debug
-        System.out.println("📨 Notifico Curatore nuovo prodotto trasformato: " + prodottoTrasformato.getNome());
-
         notifier.notificaTutti(prodottoTrasformato, "NUOVO_PRODOTTO_TRASFORMATO");
     }
-
 
     @Override
     public void aggiornaProdottoTrasformato(Long id, ProdottoTrasformatoDto dto, String creatore) {
@@ -74,11 +72,25 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
             throw new IllegalStateException("Puoi modificare solo prodotti trasformati con stato RIFIUTATO");
         }
 
+        // Validazione centralizzata
+        TrasformatoValidator.valida(dto);
+
         ProdottoTrasformato updated = ProdottoTrasformatoFactory.creaProdottoTrasformato(dto, creatore);
         updated.setCommento(null);
         updated.setStato(StatoProdotto.IN_ATTESA);
 
         ProdottoTrasformatoEntity entity = mapToEntity(updated, dto, existing.getId());
+
+        boolean nessunCertNuovo = dto.getCertificati() == null || dto.getCertificati().stream().allMatch(MultipartFile::isEmpty);
+        boolean nessunaFotoNuova = dto.getFoto() == null || dto.getFoto().stream().allMatch(MultipartFile::isEmpty);
+
+        if (nessunCertNuovo) {
+            entity.setCertificati(existing.getCertificati());
+        }
+        if (nessunaFotoNuova) {
+            entity.setFoto(existing.getFoto());
+        }
+
         repository.save(entity);
 
         notifier.notificaTutti(updated, "NUOVO_PRODOTTO_TRASFORMATO");
@@ -181,12 +193,17 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
     }
 
     private ProdottoTrasformato mapToDomain(ProdottoTrasformatoEntity e) {
+        int quantita = e.getQuantita();
+        if (quantita < 0) {
+            throw new IllegalStateException("La quantità del prodotto trasformato non può essere negativa");
+        }
+
         return new ProdottoTrasformato.Builder()
                 .id(e.getId())
                 .nome(e.getNome())
                 .descrizione(e.getDescrizione())
                 .indirizzo(e.getIndirizzo())
-                .quantita(e.getQuantita())
+                .quantita(quantita) // 0 ammesso (esaurito), negativo no
                 .prezzo(e.getPrezzo())
                 .creatoDa(e.getCreatoDa())
                 .stato(e.getStato())

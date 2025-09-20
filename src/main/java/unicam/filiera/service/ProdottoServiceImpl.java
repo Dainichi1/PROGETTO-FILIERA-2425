@@ -11,6 +11,7 @@ import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.observer.ProdottoNotifier;
 import unicam.filiera.repository.ProdottoRepository;
+import unicam.filiera.validation.ProdottoValidator;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,6 +44,9 @@ public class ProdottoServiceImpl implements ProdottoService {
 
     @Override
     public void creaProdotto(ProdottoDto dto, String creatore) {
+        // Validazione centralizzata
+        ProdottoValidator.valida(dto);
+
         Prodotto prodotto = ItemFactory.creaProdotto(dto, creatore);
 
         ProdottoEntity entity = mapToEntity(prodotto, dto, null);
@@ -63,14 +67,15 @@ public class ProdottoServiceImpl implements ProdottoService {
             throw new IllegalStateException("Puoi modificare solo prodotti con stato RIFIUTATO");
         }
 
+        // Validazione centralizzata anche in aggiornamento
+        ProdottoValidator.valida(dto);
+
         Prodotto updated = ProdottoFactory.creaProdotto(dto, creatore);
         updated.setCommento(null);
         updated.setStato(StatoProdotto.IN_ATTESA);
 
-        // Mappo dai nuovi dati
         ProdottoEntity entity = mapToEntity(updated, dto, existing.getId());
 
-        // === PRESERVAZIONE FILE: se non sono stati ricaricati, mantieni quelli esistenti ===
         boolean nessunCertNuovo = dto.getCertificati()==null || dto.getCertificati().stream().allMatch(MultipartFile::isEmpty);
         boolean nessunaFotoNuova = dto.getFoto()==null || dto.getFoto().stream().allMatch(MultipartFile::isEmpty);
 
@@ -85,6 +90,7 @@ public class ProdottoServiceImpl implements ProdottoService {
 
         notifier.notificaTutti(updated, "NUOVO_PRODOTTO");
     }
+
 
     @Override
     public List<Prodotto> getProdottiCreatiDa(String creatore) {
@@ -128,7 +134,7 @@ public class ProdottoServiceImpl implements ProdottoService {
                 nuovoStato == StatoProdotto.APPROVATO ? "APPROVATO" : "RIFIUTATO");
     }
 
-    // === NUOVO: finder per l'entity (serve per prefill JSON) ===
+    // === finder per l'entity (serve per prefill JSON) ===
     @Override
     public Optional<ProdottoEntity> findEntityById(Long id) {
         return repository.findById(id);
@@ -199,12 +205,17 @@ public class ProdottoServiceImpl implements ProdottoService {
     }
 
     private Prodotto mapToDomain(ProdottoEntity e) {
+        int quantita = e.getQuantita();
+        if (quantita < 0) {
+            throw new IllegalStateException("La quantità del prodotto non può essere negativa");
+        }
+
         return new Prodotto.Builder()
                 .id(e.getId())
                 .nome(e.getNome())
                 .descrizione(e.getDescrizione())
                 .indirizzo(e.getIndirizzo())
-                .quantita(e.getQuantita())
+                .quantita(quantita) // 0 ammesso (esaurito), negativo no
                 .prezzo(e.getPrezzo())
                 .creatoDa(e.getCreatoDa())
                 .stato(e.getStato())

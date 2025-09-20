@@ -1,9 +1,11 @@
 package unicam.filiera.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import unicam.filiera.entity.ProdottoEntity;
 import unicam.filiera.model.StatoProdotto;
 
@@ -26,4 +28,10 @@ public interface ProdottoRepository extends JpaRepository<ProdottoEntity, Long> 
 
     // prodotti approvati di un produttore
     List<ProdottoEntity> findByStatoAndCreatoDa(StatoProdotto stato, String creatore);
+
+    // aggiorna quantità disponibile dopo un acquisto
+    @Modifying
+    @Transactional
+    @Query("UPDATE ProdottoEntity p SET p.quantita = p.quantita - :qta WHERE p.id = :id AND p.quantita >= :qta")
+    int decrementaQuantita(@Param("id") Long id, @Param("qta") int qta);
 }

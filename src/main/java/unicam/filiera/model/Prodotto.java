@@ -74,8 +74,8 @@ public class Prodotto extends Item {
         public Prodotto build() {
             if (nome == null || descrizione == null || creatoDa == null || stato == null)
                 throw new IllegalStateException("Campi obbligatori mancanti");
-            if (quantita <= 0)
-                throw new IllegalStateException("La quantità deve essere maggiore di 0");
+            if (quantita < 0)
+                throw new IllegalStateException("La quantità non può essere negativa");
             if (prezzo <= 0)
                 throw new IllegalStateException("Il prezzo deve essere maggiore di 0");
             return new Prodotto(this);

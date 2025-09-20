@@ -20,10 +20,6 @@ public class ProdottoValidator implements Validator {
         validaInterno(dto, errors, false);
     }
 
-    /**
-     * Metodo statico per validazione manuale in Service.
-     * Lancia IllegalArgumentException in caso di errore.
-     */
     public static void valida(ProdottoDto dto) {
         if (dto == null) {
             throw new IllegalArgumentException("⚠ Il DTO non può essere null");
@@ -31,10 +27,16 @@ public class ProdottoValidator implements Validator {
         validaInterno(dto, null, true);
     }
 
-    // Logica condivisa
     private static void validaInterno(ProdottoDto dto, Errors errors, boolean throwException) {
         boolean isCreazione = (dto.getId() == null);
 
+        // Quantità > 0 obbligatoria in fase di creazione/aggiornamento
+        if (dto.getQuantita() <= 0) {
+            if (throwException) throw new IllegalArgumentException("⚠ La quantità deve essere maggiore di zero");
+            errors.rejectValue("quantita", "error.quantita", "La quantità deve essere maggiore di zero");
+        }
+
+        // Certificati obbligatori solo in creazione
         if (isCreazione) {
             if (dto.getCertificati() == null || dto.getCertificati().isEmpty()
                     || dto.getCertificati().stream().allMatch(MultipartFile::isEmpty)) {

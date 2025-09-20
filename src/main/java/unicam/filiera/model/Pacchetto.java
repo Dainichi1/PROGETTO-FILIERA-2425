@@ -84,8 +84,8 @@ public class Pacchetto extends Item {
                 throw new IllegalStateException("Campi obbligatori mancanti");
             if (prodottiIds == null || prodottiIds.stream().filter(Objects::nonNull).distinct().count() < 2)
                 throw new IllegalStateException("Un pacchetto deve contenere almeno 2 prodotti");
-            if (quantita <= 0)
-                throw new IllegalStateException("La quantità deve essere maggiore di 0");
+            if (quantita < 0)
+                throw new IllegalStateException("La quantità non può essere negativa");
             if (prezzo <= 0)
                 throw new IllegalStateException("Il prezzo deve essere maggiore di 0");
             return new Pacchetto(this);

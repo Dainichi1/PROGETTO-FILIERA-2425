@@ -1,6 +1,7 @@
 package unicam.filiera.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
 import lombok.Getter;
 import lombok.Setter;
 import unicam.filiera.model.StatoProdotto;
@@ -24,7 +25,13 @@ public class ProdottoEntity {
     @Column(nullable = false)
     private String indirizzo;
 
+    /**
+     * Regola:
+     * - In fase di creazione: validazione nel Service → deve essere > 0
+     * - In fase di acquisto: può diventare 0
+     */
     @Column(nullable = false)
+    @Min(0) // garantisce che non possa mai essere negativo
     private int quantita;
 
     @Column(nullable = false)

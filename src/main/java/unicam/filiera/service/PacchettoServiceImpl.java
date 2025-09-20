@@ -14,6 +14,7 @@ import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.observer.PacchettoNotifier;
 import unicam.filiera.repository.PacchettoRepository;
 import unicam.filiera.repository.ProdottoRepository;
+import unicam.filiera.validation.PacchettoValidator;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,9 +52,13 @@ public class PacchettoServiceImpl implements PacchettoService {
 
     @Override
     public void creaPacchetto(PacchettoDto dto, String creatore) {
+        // Validazione centralizzata
+        PacchettoValidator.valida(dto);
+
         Pacchetto pacchetto = ItemFactory.creaPacchetto(dto, creatore);
         PacchettoEntity entity = mapToEntity(pacchetto, dto, null);
         pacchettoRepository.save(entity);
+
         notifier.notificaTutti(pacchetto, "NUOVO_PACCHETTO");
     }
 
@@ -69,19 +74,27 @@ public class PacchettoServiceImpl implements PacchettoService {
             throw new IllegalStateException("Puoi modificare solo pacchetti con stato RIFIUTATO");
         }
 
+        // Validazione centralizzata anche in aggiornamento
+        PacchettoValidator.valida(dto);
+
         Pacchetto updated = PacchettoFactory.creaPacchetto(dto, creatore);
         updated.setCommento(null);
         updated.setStato(StatoProdotto.IN_ATTESA);
 
         PacchettoEntity entity = mapToEntity(updated, dto, existing.getId());
 
-        // preserva file esistenti se non sostituiti
         boolean nessunCertNuovo = dto.getCertificati() == null || dto.getCertificati().stream().allMatch(MultipartFile::isEmpty);
         boolean nessunaFotoNuova = dto.getFoto() == null || dto.getFoto().stream().allMatch(MultipartFile::isEmpty);
-        if (nessunCertNuovo) entity.setCertificati(existing.getCertificati());
-        if (nessunaFotoNuova) entity.setFoto(existing.getFoto());
+
+        if (nessunCertNuovo) {
+            entity.setCertificati(existing.getCertificati());
+        }
+        if (nessunaFotoNuova) {
+            entity.setFoto(existing.getFoto());
+        }
 
         pacchettoRepository.save(entity);
+
         notifier.notificaTutti(updated, "NUOVO_PACCHETTO");
     }
 
@@ -231,12 +244,17 @@ public class PacchettoServiceImpl implements PacchettoService {
     }
 
     private Pacchetto mapToDomain(PacchettoEntity e) {
+        int quantita = e.getQuantita();
+        if (quantita < 0) {
+            throw new IllegalStateException("La quantità del pacchetto non può essere negativa");
+        }
+
         return new Pacchetto.Builder()
                 .id(e.getId())
                 .nome(e.getNome())
                 .descrizione(e.getDescrizione())
                 .indirizzo(e.getIndirizzo())
-                .quantita(e.getQuantita())
+                .quantita(quantita) // 0 consentito (esaurito), negativo no
                 .prezzo(e.getPrezzo())
                 .creatoDa(e.getCreatoDa())
                 .stato(e.getStato())

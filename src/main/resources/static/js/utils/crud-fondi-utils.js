@@ -33,7 +33,7 @@ export const fondiUtils = {
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        // ✅ Aggiorna fondi a schermo
+                        // Aggiorna fondi a schermo
                         const fondiEl = document.getElementById("fondiDisponibili");
                         if (fondiEl) {
                             fondiEl.innerText = `Fondi disponibili: ${data.nuoviFondi} €`;

@@ -6,6 +6,7 @@ import unicam.filiera.entity.UtenteEntity;
 import unicam.filiera.model.Ruolo;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface UtenteRepository extends JpaRepository<UtenteEntity, String> {
@@ -23,4 +24,7 @@ public interface UtenteRepository extends JpaRepository<UtenteEntity, String> {
      * Recupera tutti gli utenti filtrati da una lista di ruoli.
      */
     List<UtenteEntity> findByRuoloIn(List<Ruolo> ruoli);
+
+    Optional<UtenteEntity> findByUsername(String username);
+
 }

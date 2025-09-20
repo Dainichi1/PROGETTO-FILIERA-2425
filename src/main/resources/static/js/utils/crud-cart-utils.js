@@ -172,10 +172,23 @@ function attachSelectionHandlers() {
 function getSelectedCartItem() {
     const selected = document.querySelector('input[name="selectedCartItem"]:checked');
     if (!selected) return null;
-    return {
-        id: Number(selected.value),
-        tipo: selected.dataset.tipo
-    };
+
+    const row = selected.closest("tr");
+    if (!row) return null;
+
+    const id = Number(selected.value);
+    const tipo = selected.dataset.tipo;
+
+    const nome = row.children[1]?.innerText || "Item";
+    const quantita = Number(row.querySelector(".cart-quantity-input")?.value || 1);
+
+    const prezzoUnitarioText = row.children[3]?.innerText.replace("€", "").trim();
+    const prezzoUnitario = Number(prezzoUnitarioText.replace(",", "."));
+
+    const totaleText = row.children[4]?.innerText.replace("€", "").trim();
+    const totale = Number(totaleText.replace(",", "."));
+
+    return { id, tipo, nome, quantita, prezzoUnitario, totale };
 }
 
 // ================== CARRELLO: HANDLER AGGIORNA/ELIMINA ==================

@@ -93,7 +93,7 @@ export const formUtilsCrudAnimatore = (() => {
                     ? (config.updateSuccessModalId || "updateSuccessModal")
                     : (config.createSuccessModalId || "createSuccessModal");
 
-                // ✅ Apri la modale giusta senza sovrascrivere il testo
+                // Apre la modale giusta senza sovrascrivere il testo
                 modalUtils.openModal(modalId);
 
                 if (isUpdate && typeof config.onUpdateSuccess === "function") {

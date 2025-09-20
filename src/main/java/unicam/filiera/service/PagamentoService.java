@@ -6,5 +6,3 @@ import unicam.filiera.model.StatoPagamento;
 public interface PagamentoService {
     StatoPagamento effettuaPagamento(DatiAcquistoDto dati);
 }
-
-

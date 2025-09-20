@@ -74,7 +74,7 @@ public class CarrelloWebController {
             resp.put("items", items);
             resp.put("totali", totali);
 
-            // ✅ se l’item è stato eliminato (nuovaQuantita = 0), ritorna disponibilità aggiornata dal DB
+            // se l’item è stato eliminato (nuovaQuantita = 0), ritorna disponibilità aggiornata dal DB
             if (nuovaQuantita == 0) {
                 Item removedItem = carrelloService.getItemFromDb(tipo, id);
                 resp.put("removedItem", Map.of(
@@ -110,7 +110,7 @@ public class CarrelloWebController {
             List<CartItemDto> items = carrelloService.getItems(session);
             CartTotalsDto totali = carrelloService.calcolaTotali(session);
 
-            // ✅ ritorno anche la disponibilità aggiornata per il marketplace
+            // ritorno anche la disponibilità aggiornata per il marketplace
             Item removedItem = carrelloService.getItemFromDb(tipo, id);
 
             resp.put("success", true);

@@ -28,29 +28,20 @@ public class PacchettoValidator implements Validator {
         if (dto == null) {
             throw new IllegalArgumentException("⚠ Il DTO non può essere null");
         }
-
-        boolean isCreazione = (dto.getId() == null);
-
-        if (isCreazione) {
-            if (dto.getCertificati() == null || dto.getCertificati().isEmpty()
-                    || dto.getCertificati().stream().allMatch(MultipartFile::isEmpty)) {
-                throw new IllegalArgumentException("⚠ Devi caricare almeno un certificato");
-            }
-            if (dto.getFoto() == null || dto.getFoto().isEmpty()
-                    || dto.getFoto().stream().allMatch(MultipartFile::isEmpty)) {
-                throw new IllegalArgumentException("⚠ Devi caricare almeno una foto");
-            }
-        }
-
-        if (dto.getProdottiSelezionati() == null || dto.getProdottiSelezionati().size() < 2) {
-            throw new IllegalArgumentException("⚠ Devi selezionare almeno 2 prodotti per creare il pacchetto");
-        }
+        validaInterno(dto, null, true);
     }
 
     // Metodo interno per riuso della logica tra Errors e Exception
     private static void validaInterno(PacchettoDto dto, Errors errors, boolean throwException) {
         boolean isCreazione = (dto.getId() == null);
 
+        // Quantità > 0 obbligatoria in creazione/aggiornamento
+        if (dto.getQuantita() <= 0) {
+            if (throwException) throw new IllegalArgumentException("⚠ La quantità del pacchetto deve essere maggiore di zero");
+            errors.rejectValue("quantita", "error.quantita", "La quantità del pacchetto deve essere maggiore di zero");
+        }
+
+        // Certificati e foto obbligatori solo in creazione
         if (isCreazione) {
             if (dto.getCertificati() == null || dto.getCertificati().isEmpty()
                     || dto.getCertificati().stream().allMatch(MultipartFile::isEmpty)) {
@@ -64,6 +55,7 @@ public class PacchettoValidator implements Validator {
             }
         }
 
+        // Deve contenere almeno 2 prodotti
         if (dto.getProdottiSelezionati() == null || dto.getProdottiSelezionati().size() < 2) {
             if (throwException) throw new IllegalArgumentException("⚠ Devi selezionare almeno 2 prodotti per creare il pacchetto");
             errors.rejectValue("prodottiSelezionati", "error.prodottiSelezionati",

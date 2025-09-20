@@ -83,8 +83,8 @@ public class ProdottoTrasformato extends Item {
                 throw new IllegalStateException("Campi obbligatori mancanti");
             if (fasiProduzione == null || fasiProduzione.size() < 2)
                 throw new IllegalStateException("Un prodotto trasformato deve contenere almeno 2 fasi di produzione");
-            if (quantita <= 0)
-                throw new IllegalStateException("La quantità deve essere maggiore di 0");
+            if (quantita < 0)
+                throw new IllegalStateException("La quantità non può essere negativa");
             if (prezzo <= 0)
                 throw new IllegalStateException("Il prezzo deve essere maggiore di 0");
             return new ProdottoTrasformato(this);

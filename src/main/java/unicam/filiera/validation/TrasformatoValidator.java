@@ -28,24 +28,35 @@ public class TrasformatoValidator implements Validator {
     }
 
     private static void validaInterno(ProdottoTrasformatoDto dto, Errors errors, boolean throwException) {
+        boolean isCreazione = (dto.getId() == null);
 
-        // certificati obbligatori SEMPRE
-        if (dto.getCertificati() == null || dto.getCertificati().isEmpty()
-                || dto.getCertificati().stream().allMatch(MultipartFile::isEmpty)) {
-            if (throwException) throw new IllegalArgumentException("⚠ Devi caricare almeno un certificato");
+        // 🔹 Quantità > 0 obbligatoria in creazione/aggiornamento
+        if (dto.getQuantita() <= 0) {
+            if (throwException) throw new IllegalArgumentException("⚠ La quantità deve essere maggiore di zero");
             if (errors != null) {
-                errors.rejectValue("certificati", "error.certificati", "Devi caricare almeno un certificato");
+                errors.rejectValue("quantita", "error.quantita", "La quantità deve essere maggiore di zero");
             }
         }
 
-        if (dto.getFoto() == null || dto.getFoto().isEmpty()
-                || dto.getFoto().stream().allMatch(MultipartFile::isEmpty)) {
-            if (throwException) throw new IllegalArgumentException("⚠ Devi caricare almeno una foto");
-            if (errors != null) {
-                errors.rejectValue("foto", "error.foto", "Devi caricare almeno una foto");
+        // 🔹 Certificati e foto obbligatori solo in creazione
+        if (isCreazione) {
+            if (dto.getCertificati() == null || dto.getCertificati().isEmpty()
+                    || dto.getCertificati().stream().allMatch(MultipartFile::isEmpty)) {
+                if (throwException) throw new IllegalArgumentException("⚠ Devi caricare almeno un certificato");
+                if (errors != null) {
+                    errors.rejectValue("certificati", "error.certificati", "Devi caricare almeno un certificato");
+                }
+            }
+            if (dto.getFoto() == null || dto.getFoto().isEmpty()
+                    || dto.getFoto().stream().allMatch(MultipartFile::isEmpty)) {
+                if (throwException) throw new IllegalArgumentException("⚠ Devi caricare almeno una foto");
+                if (errors != null) {
+                    errors.rejectValue("foto", "error.foto", "Devi caricare almeno una foto");
+                }
             }
         }
 
+        // 🔹 Almeno 2 fasi di produzione valide obbligatorie
         long fasiValide = (dto.getFasiProduzione() == null) ? 0 :
                 dto.getFasiProduzione().stream()
                         .filter(f -> f != null

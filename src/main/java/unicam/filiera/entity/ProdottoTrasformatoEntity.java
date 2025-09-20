@@ -1,6 +1,7 @@
 package unicam.filiera.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,6 +30,7 @@ public class ProdottoTrasformatoEntity {
     private String indirizzo;
 
     @Column(nullable = false)
+    @Min(0) // garantisce che non possa mai essere negativa
     private int quantita;
 
     @Column(nullable = false)

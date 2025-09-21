@@ -42,10 +42,23 @@ export let toggleUtils = (() => {
         toggleSection("prenotazioniSection");
     }
 
+    /**
+     * Nuove funzioni per apertura/chiusura esplicita
+     */
+    function show(el) {
+        if (el) el.style.display = "block";
+    }
+
+    function hide(el) {
+        if (el) el.style.display = "none";
+    }
+
     return {
         toggleSection,
         togglePubblicati,
         toggleVisite,
-        togglePrenotazioni
+        togglePrenotazioni,
+        show,
+        hide
     };
 })();

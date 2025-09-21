@@ -1,27 +1,170 @@
 // ================== IMPORT ==================
-import {toggleUtils} from "../utils/toggle-utils.js";
-import {modalUtils} from "../utils/modal-utils.js";
-import {crudUtils} from "../utils/crud-utils.js";
-import {cartUtils} from "../utils/crud-cart-utils.js";
-import {fondiUtils} from "../utils/crud-fondi-utils.js";
+import { toggleUtils } from "../utils/toggle-utils.js";
+import { modalUtils } from "../utils/modal-utils.js";
+import { crudUtils } from "../utils/crud-utils.js";
+import { cartUtils } from "../utils/crud-cart-utils.js";
+import { fondiUtils } from "../utils/crud-fondi-utils.js";
 import { csrfUtils } from "../utils/csrf-utils.js";
+import { formUtils } from "../utils/form-utils.js";
 
 window.toggleUtils = toggleUtils;
 
 // ================== INIT ==================
 document.addEventListener("DOMContentLoaded", () => {
-    // Carrello + Marketplace
+
+    // ================== CARRELLO + MARKETPLACE ==================
     cartUtils.initMarketplaceToggle();
     cartUtils.initCartToggle();
     cartUtils.initCheckboxActions();
     cartUtils.loadCart();
 
-    // Fondi
+    // ================== FONDI ==================
     fondiUtils.initFondiForm();
 
-    // Social feed
+    // ================== SOCIAL FEED ==================
     document.getElementById("btnSocialFeed")?.addEventListener("click", () => {
         crudUtils.openSocialFeed();
+    });
+
+    // ================== ACQUISTI ==================
+    const acquistiSection = document.getElementById("acquistiSection");
+    const btnVisualizzaAcquisti = document.getElementById("btnVisualizzaAcquisti");
+    const btnChiudiAcquisti = document.getElementById("btnChiudiAcquisti");
+
+    if (btnVisualizzaAcquisti && acquistiSection) {
+        btnVisualizzaAcquisti.addEventListener("click", () => {
+            toggleUtils.show(acquistiSection);
+        });
+    }
+
+    if (btnChiudiAcquisti && acquistiSection) {
+        btnChiudiAcquisti.addEventListener("click", () => {
+            toggleUtils.hide(acquistiSection);
+        });
+    }
+
+    // ================== PULSANTE RECENSIONE ==================
+    document.querySelectorAll(".btn-pubblica-recensione").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const id = btn.dataset.id;      // acquistoId
+            const stato = btn.dataset.stato;
+
+            console.log(">>> Pubblica recensione per acquisto ID:", id, "stato:", stato);
+
+            // Salvo i dati nel body
+            document.body.dataset.recensioneId = id;
+            document.body.dataset.recensioneStato = stato;
+
+            // Reset campi
+            const titleEl = document.getElementById("recensioneTitle");
+            const textEl = document.getElementById("recensioneText");
+            if (titleEl) {
+                titleEl.value = "";
+                formUtils.clearFieldError(titleEl);
+            }
+            if (textEl) {
+                textEl.value = "";
+                formUtils.clearFieldError(textEl);
+            }
+
+            // Apro la modale recensione
+            modalUtils.openModal("recensionePostModal");
+        });
+    });
+
+    // ================== PUBBLICAZIONE RECENSIONI ==================
+    document.getElementById("btnOkRecensionePost")?.addEventListener("click", () => {
+        const titleEl = document.getElementById("recensioneTitle");
+        const textEl = document.getElementById("recensioneText");
+
+        let ok = true;
+        formUtils.clearFieldError(titleEl);
+        formUtils.clearFieldError(textEl);
+
+        if (!titleEl.value.trim()) {
+            formUtils.setFieldError("recensioneTitle", "⚠ Il titolo è obbligatorio");
+            ok = false;
+        }
+        if (!textEl.value.trim()) {
+            formUtils.setFieldError("recensioneText", "⚠ Il testo è obbligatorio");
+            ok = false;
+        }
+
+        if (!ok) return;
+
+        // messaggio di conferma
+        const confirmMsg = document.getElementById("recensioneConfirmMessage");
+        if (confirmMsg) {
+            confirmMsg.innerText = "Sei sicuro di voler pubblicare la recensione sull’acquisto?";
+        }
+
+        modalUtils.closeModal("recensionePostModal");
+        modalUtils.openModal("recensioneConfirmModal");
+    });
+
+    document.getElementById("btnConfirmRecensionePost")?.addEventListener("click", () => {
+        const acquistoId = document.body.dataset.recensioneId || null;
+        const titolo = document.getElementById("recensioneTitle")?.value.trim();
+        const testo = document.getElementById("recensioneText")?.value.trim();
+
+        if (!acquistoId) {
+            const errMsg = document.getElementById("recensioneErrorMessage");
+            if (errMsg) errMsg.innerText = "❌ Errore: ID acquisto non trovato.";
+            modalUtils.openModal("recensioneErrorModal");
+            return;
+        }
+
+        const csrf = csrfUtils.getCsrf();
+        const payload = { titolo, testo };
+
+        const url = `/api/social/pubblica-recensione/${acquistoId}`;
+        console.log(">>> Invio recensione al backend:", payload, "URL:", url);
+
+        fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                [csrf.header]: csrf.token
+            },
+            body: JSON.stringify(payload)
+        })
+            .then(r => {
+                if (!r.ok) throw new Error("Errore HTTP " + r.status);
+                return r.json();
+            })
+            .then(data => {
+                modalUtils.closeModal("recensioneConfirmModal");
+
+                if (data && data.id) {
+                    const successMsg = document.getElementById("recensioneSuccessMessage");
+                    if (successMsg) {
+                        successMsg.innerText = "✅ Recensione pubblicata con successo!";
+                    }
+                    modalUtils.openModal("recensioneSuccessModal");
+                } else {
+                    const errMsg = document.getElementById("recensioneErrorMessage");
+                    if (errMsg) {
+                        errMsg.innerText = "❌ Impossibile pubblicare la recensione.";
+                    }
+                    modalUtils.openModal("recensioneErrorModal");
+                }
+            })
+            .catch(err => {
+                const errMsg = document.getElementById("recensioneErrorMessage");
+                if (errMsg) {
+                    errMsg.innerText = "❌ Errore imprevisto: " + err.message;
+                }
+                modalUtils.openModal("recensioneErrorModal");
+            });
+    });
+
+    // ================== LIVE VALIDATION RECENSIONI ==================
+    ["recensioneTitle", "recensioneText"].forEach(id => {
+        const field = document.getElementById(id);
+        if (field) {
+            field.addEventListener("input", () => formUtils.clearFieldError(field));
+            field.addEventListener("change", () => formUtils.clearFieldError(field));
+        }
     });
 
     // ================== ACQUISTO ==================
@@ -37,12 +180,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Submit del form pagamento
+    // ================== SUBMIT PAGAMENTO ==================
     const paymentForm = document.getElementById("paymentForm");
     if (paymentForm) {
         paymentForm.addEventListener("submit", e => {
             e.preventDefault();
             const metodo = document.getElementById("paymentMethod").value;
+
             if (!metodo) {
                 alert("⚠ Devi selezionare un metodo di pagamento");
                 return;
@@ -77,7 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ================== Conferma acquisto ==================
+    // ================== CONFERMA ACQUISTO ==================
     const btnConfirmPurchase = document.getElementById("btnConfirmPurchase");
     if (btnConfirmPurchase) {
         btnConfirmPurchase.addEventListener("click", () => {
@@ -89,10 +233,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // Calcolo totale lato frontend
             const totale = selected.quantita * selected.prezzoUnitario;
 
-            // Costruzione payload
             const payload = {
                 totaleAcquisto: totale,
                 tipoMetodoPagamento: metodo.toUpperCase(),
@@ -108,8 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ]
             };
 
-            // LOG per debug
-            console.log(">>> Payload inviato al backend:", JSON.stringify(payload, null, 2));
+            console.log(">>> Payload acquisto:", JSON.stringify(payload, null, 2));
 
             const csrf = csrfUtils.getCsrf();
 
@@ -130,11 +271,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         if (msg) msg.innerText = data.message || "✅ Acquisto completato con successo!";
                         modalUtils.openModal("purchaseSuccessModal");
 
-                        // Svuota carrello frontend
                         cartUtils.updateCartTable([], {});
                         document.getElementById("btnAcquista")?.setAttribute("disabled", "disabled");
 
-                        // (opzionale) ricarica marketplace dal backend
                         cartUtils.loadCart();
                     } else {
                         const msg = document.getElementById("purchaseErrorMessage");
@@ -146,16 +285,15 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ================== Gestione errore pagamento ==================
+    // ================== GESTIONE ERRORE PAGAMENTO ==================
     const purchaseErrorModal = document.getElementById("purchaseErrorModal");
     if (purchaseErrorModal) {
         purchaseErrorModal.addEventListener("hidden.bs.modal", () => {
-            // Torna alla modale di scelta metodo pagamento
             modalUtils.openModal("paymentChoiceModal");
         });
     }
 
-    // ================== Chiusura modali generiche ==================
+    // ================== CHIUSURA MODALI GENERICHE ==================
     document.querySelectorAll(".btn-close-modal").forEach(btn => {
         btn.addEventListener("click", e => {
             e.stopPropagation();

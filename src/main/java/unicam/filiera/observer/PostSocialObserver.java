@@ -28,6 +28,12 @@ public class PostSocialObserver implements OsservatorePostSocial {
                             post.getAutoreUsername(),
                             post.getTitolo());
 
+            case "NUOVA_RECENSIONE" ->
+                    log.info("⭐ Nuova recensione pubblicata da {} per acquisto {}: {}",
+                            post.getAutoreUsername(),
+                            post.getIdAcquisto(),
+                            post.getTitolo());
+
             default ->
                     log.warn("⚠️ Evento sconosciuto '{}' per post di {}", evento, post.getAutoreUsername());
         }

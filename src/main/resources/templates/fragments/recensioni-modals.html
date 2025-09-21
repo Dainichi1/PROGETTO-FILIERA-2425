@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ================== MODALI RECENSIONI (solo Acquirente) ================== -->
+<div th:fragment="recensioni-modals(redirectPath)">
+  <!-- Modale inserimento recensione -->
+  <div id="recensionePostModal" class="modal">
+    <div class="modal-content">
+      <h3>✍️ Pubblica Recensione</h3>
+      <form id="recensionePostForm" onsubmit="return false;">
+        <label for="recensioneTitle">Titolo* (max 100):</label>
+        <input type="text" id="recensioneTitle" maxlength="100"/>
+        <span class="error-message"></span>
+
+        <label for="recensioneText">Testo* (max 1000):</label>
+        <textarea id="recensioneText" maxlength="1000"></textarea>
+        <span class="error-message"></span>
+
+        <div class="modal-buttons">
+          <button id="btnOkRecensionePost" type="button">OK</button>
+          <button type="button" class="btn-close-modal" data-target="recensionePostModal">Annulla</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Conferma pubblicazione -->
+  <div id="recensioneConfirmModal" class="modal">
+    <div class="modal-content">
+      <p id="recensioneConfirmMessage">
+        Sei sicuro di voler pubblicare la recensione sull’acquisto?
+      </p>
+      <button id="btnConfirmRecensionePost" type="button">Sì</button>
+      <button type="button" class="btn-close-modal" data-target="recensioneConfirmModal">No</button>
+    </div>
+  </div>
+
+  <!-- Successo -->
+  <div id="recensioneSuccessModal" class="modal">
+    <div class="modal-content">
+      <p id="recensioneSuccessMessage">✅ Recensione pubblicata con successo!</p>
+      <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+    </div>
+  </div>
+
+  <!-- Errore -->
+  <div id="recensioneErrorModal" class="modal">
+    <div class="modal-content">
+      <p id="recensioneErrorMessage">❌ Errore durante la pubblicazione della recensione.</p>
+      <button type="button" class="btn-close-modal" data-target="recensioneErrorModal">OK</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

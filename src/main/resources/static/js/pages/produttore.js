@@ -190,8 +190,12 @@ document.addEventListener("DOMContentLoaded", () => {
         prodottoCrud.confirmDelete();
     });
 
-    // Bottone OK nel form social (apre la conferma)
+    // Social post modale
     document.getElementById("btnOkSocialPost")?.addEventListener("click", () => {
         prodottoCrud.openSocialConfirm();
     });
+    document.getElementById("btnConfirmSocialPost")?.addEventListener("click", () => {
+        prodottoCrud.submitSocialPost();
+    });
+
 });

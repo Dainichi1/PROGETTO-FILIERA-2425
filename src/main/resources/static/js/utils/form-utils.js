@@ -13,9 +13,12 @@ function getErrorSpan(field) {
 function setFieldError(fieldOrId, message) {
     const field = typeof fieldOrId === "string" ? document.getElementById(fieldOrId) : fieldOrId;
     if (!field) return;
-    field.classList.add("error");
+
+    field.classList.add("input-error"); // stile rosso per il campo
     const span = getErrorSpan(field);
-    if (span) span.textContent = message || "Campo obbligatorio";
+    if (span) {
+        span.textContent = message || "⚠ Campo obbligatorio";
+    }
 }
 
 /**
@@ -24,9 +27,12 @@ function setFieldError(fieldOrId, message) {
 function clearFieldError(fieldOrId) {
     const field = typeof fieldOrId === "string" ? document.getElementById(fieldOrId) : fieldOrId;
     if (!field) return;
-    field.classList.remove("error");
+
+    field.classList.remove("input-error");
     const span = getErrorSpan(field);
-    if (span) span.textContent = "";
+    if (span) {
+        span.textContent = "";
+    }
 }
 
 /**
@@ -35,8 +41,16 @@ function clearFieldError(fieldOrId) {
 function clearAllErrors(formId) {
     const form = document.getElementById(formId);
     if (!form) return;
-    form.querySelectorAll(".error").forEach(el => el.classList.remove("error"));
-    form.querySelectorAll(".error-message").forEach(span => { span.textContent = ""; });
+
+    form.querySelectorAll(".input-error").forEach(el => el.classList.remove("input-error"));
+    form.querySelectorAll(".error-message").forEach(span => {
+        span.textContent = "";
+    });
 }
 
-export const formUtils = { getErrorSpan, setFieldError, clearFieldError, clearAllErrors };
+export const formUtils = {
+    getErrorSpan,
+    setFieldError,
+    clearFieldError,
+    clearAllErrors
+};

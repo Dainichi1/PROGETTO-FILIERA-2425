@@ -7,6 +7,7 @@
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <link rel="stylesheet" th:href="@{/css/dashboard.css}">
     <link rel="stylesheet" th:href="@{/css/acquirente-tables.css}">
+
     <style>
         .marketplace-section {
             display: none;
@@ -57,52 +58,57 @@
     </button>
     <button id="btnVisualizzaMarketplace" type="button">🛒 Visualizza Marketplace</button>
     <button id="btnVisualizzaCarrello" type="button">🧺 Visualizza Carrello</button>
+    <button id="btnVisualizzaAcquisti" type="button">📦 Visualizza Acquisti</button>
 </div>
 
 <!-- ================== SEZIONE MARKETPLACE ================== -->
 <div id="marketplaceSection" class="marketplace-section">
-    <!-- bottone chiudi -->
     <div style="text-align: right; margin-bottom: 10px;">
         <button id="btnChiudiMarketplace" type="button">❌ Chiudi</button>
     </div>
-
-    <!-- la tabella -->
     <div th:replace="~{fragments/marketplace-table :: marketplace-table(
         ${prodotti}, ${pacchetti}, ${trasformati}
-     )}"></div>
+    )}"></div>
 </div>
 
 <!-- ================== SEZIONE CARRELLO ================== -->
 <div id="cartSection" class="marketplace-section">
-    <!-- bottone chiudi -->
     <div style="text-align: right; margin-bottom: 10px;">
         <button id="btnChiudiCarrello" type="button">❌ Chiudi</button>
     </div>
-
-    <!-- tabella carrello -->
     <div th:replace="~{fragments/cart-table :: cart-table}"></div>
 </div>
 
-<!-- ================== MODALI CARRELLO ================== -->
+<!-- ================== SEZIONE ACQUISTI ================== -->
+<div id="acquistiSection" class="marketplace-section">
+    <div style="text-align: right; margin-bottom: 10px;">
+        <button id="btnChiudiAcquisti" type="button">❌ Chiudi</button>
+    </div>
+    <div th:replace="~{fragments/acquisti-table :: acquisti-table}"></div>
+</div>
+
+<!-- ================== MODALI ================== -->
+<!-- Carrello -->
 <div th:replace="~{fragments/cart-modals :: cart-modals}"></div>
 
-<!-- ================== MODALI SOCIAL ================== -->
-<div th:replace="fragments/modals :: social-modals('/acquirente/dashboard')"></div>
+<!-- ================== MODALI RECENSIONI (solo Acquirente) ================== -->
+<div th:replace="fragments/recensioni-modals :: recensioni-modals('/acquirente/dashboard')"></div>
+
+<!-- Social -->
 <div th:replace="fragments/modals :: social-feed-modal"></div>
 <div th:replace="fragments/modals :: social-not-available-modal"></div>
 
-<!-- ================== MODALI FONDI ================== -->
+<!-- Fondi -->
 <div th:replace="~{fragments/fondi-modals :: fondi-modals}"></div>
-<!-- ================== MODALI PAGAMENTO ================== -->
-<div th:replace="~{fragments/payment-modals :: payment-modals}"></div>
 
+<!-- Pagamenti -->
+<div th:replace="~{fragments/payment-modals :: payment-modals}"></div>
 
 <hr class="section-separator"/>
 
 <h2>Dashboard Acquirente</h2>
 <p>Qui potrai vedere i tuoi ordini, prenotazioni e fiere disponibili.</p>
 
-<!-- ================== LINK HOME ================== -->
 <p><a th:href="@{/}" class="btn-secondary">⬅ Torna alla Home</a></p>
 
 <!-- ================== SCRIPT ================== -->

@@ -10,6 +10,8 @@ import unicam.filiera.dto.PacchettoViewDto;
 import unicam.filiera.entity.ProdottoEntity;
 import unicam.filiera.model.Acquirente;
 import unicam.filiera.model.StatoProdotto;
+import unicam.filiera.repository.AcquistoItemRepository;
+import unicam.filiera.repository.AcquistoRepository;
 import unicam.filiera.repository.UtenteRepository;
 import unicam.filiera.service.*;
 import unicam.filiera.validation.FondiValidator;
@@ -26,17 +28,22 @@ public class AcquirenteWebController {
     private final ProdottoService prodottoService;
     private final PacchettoService pacchettoService;
     private final ProdottoTrasformatoService trasformatoService;
+    private final AcquistoItemRepository acquistoItemRepository;
+    private final AcquistoRepository acquistoRepository;
 
     public AcquirenteWebController(
             UtenteRepository repo,
             ProdottoService prodottoService,
             PacchettoService pacchettoService,
-            ProdottoTrasformatoService trasformatoService
-    ) {
+            ProdottoTrasformatoService trasformatoService,
+            AcquistoItemRepository acquistoItemRepository,
+            AcquistoRepository acquistoRepository) {
         this.repo = repo;
         this.prodottoService = prodottoService;
         this.pacchettoService = pacchettoService;
         this.trasformatoService = trasformatoService;
+        this.acquistoItemRepository = acquistoItemRepository;
+        this.acquistoRepository = acquistoRepository;
     }
 
     @GetMapping("/dashboard")
@@ -101,10 +108,19 @@ public class AcquirenteWebController {
                     model.addAttribute("trasformati",
                             trasformatoService.getProdottiTrasformatiByStato(StatoProdotto.APPROVATO));
 
+                    // Acquisti
+                    model.addAttribute("acquisti",
+                            acquistoRepository.findAll()
+                                    .stream()
+                                    .filter(a -> a.getUsernameAcquirente().equals(username))
+                                    .toList()
+                    );
+
                     return "dashboard/acquirente";
                 })
                 .orElse("error/utente_non_trovato");
     }
+
 
     // ================== aggiorna fondi ==================
     @PostMapping("/update-fondi")

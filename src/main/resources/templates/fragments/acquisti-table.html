@@ -1,0 +1,73 @@
+<div th:fragment="acquisti-table">
+    <h3>I tuoi acquisti</h3>
+
+    <div class="table-container">
+        <table class="acquirente-table">
+            <thead>
+            <tr>
+                <th>Data/Ora</th>
+                <th>Fondi prima</th>
+                <th>Fondi dopo</th>
+                <th>Stato Pagamento</th>
+                <th>Metodo Pagamento</th>
+                <th>Totale (€)</th>
+                <th>Azioni</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="a : ${acquisti}">
+                <td th:text="${#temporals.format(a.dataOra, 'dd/MM/yyyy HH:mm')}"></td>
+                <td th:text="${a.fondiPreAcquisto}"></td>
+                <td th:text="${a.fondiPostAcquisto}"></td>
+                <td th:text="${a.statoPagamento}"></td>
+                <td th:text="${a.tipoMetodoPagamento}"></td>
+                <td th:text="${a.totale}"></td>
+                <td>
+                    <!-- Pulsante per aprire la modale recensione -->
+                    <button type="button"
+                            class="btn-pubblica-recensione"
+                            th:attr="data-id=${a.id},
+                                     data-stato=${a.statoPagamento.name()}">
+                        ✍ Pubblica recensione
+                    </button>
+                </td>
+            </tr>
+
+            <!-- Riga secondaria: tabella item -->
+            <tr th:each="a : ${acquisti}">
+                <td colspan="7">
+                    <div class="table-container" style="margin:0.5rem 0;">
+                        <table class="acquirente-table">
+                            <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Tipo</th>
+                                <th>Quantità</th>
+                                <th>Prezzo Unitario</th>
+                                <th>Totale Item</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="item : ${a.items}">
+                                <td th:text="${item.nomeItem}"></td>
+                                <td th:text="${item.tipoItem}"></td>
+                                <td th:text="${item.quantita}"></td>
+                                <td th:text="${item.prezzoUnitario}"></td>
+                                <td th:text="${item.totale}"></td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(a.items)}">
+                                <td colspan="5" style="text-align:center;">Nessun item trovato</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
+            </tr>
+
+            <tr th:if="${#lists.isEmpty(acquisti)}">
+                <td colspan="7" style="text-align:center;">Nessun acquisto disponibile</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

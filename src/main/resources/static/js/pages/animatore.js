@@ -1,9 +1,9 @@
 // ================== IMPORT ==================
-import { validationUtilsCrud } from "../utils/crud-validation-utils.js";
-import { modalUtils } from "../utils/modal-utils.js";
-import { crudUtilsAnimatore } from "../utils/crud-utils-animatore.js";
-import { socialSelectionUtils } from "../utils/social-selection-utils.js";
-import { crudUtils } from "../utils/crud-utils.js";
+import {validationUtilsCrud} from "../utils/crud-validation-utils.js";
+import {modalUtils} from "../utils/modal-utils.js";
+import {crudUtilsAnimatore} from "../utils/crud-utils-animatore.js";
+import {socialSelectionUtils} from "../utils/social-selection-utils.js";
+import {crudUtils} from "../utils/crud-utils.js";
 
 // ================== CRUD VISITA ==================
 const visitaCrud = crudUtilsAnimatore({
@@ -19,7 +19,7 @@ const visitaCrud = crudUtilsAnimatore({
     updateTitle: "Modifica Visita",
     createAction: "/animatore/crea-visita",
     updateAction: "/animatore/modifica-visita",
-    labels: { itemName: "Visita ad invito" },
+    labels: {itemName: "Visita ad invito"},
     validateFn: validationUtilsCrud.validateVisita,
     confirmModalId: "createConfirmModalVisita",
     createSuccessModalId: "createSuccessModalVisita",
@@ -48,7 +48,7 @@ const fieraCrud = crudUtilsAnimatore({
     updateTitle: "Modifica Fiera",
     createAction: "/animatore/crea-fiera",
     updateAction: "/animatore/modifica-fiera",
-    labels: { itemName: "Fiera" },
+    labels: {itemName: "Fiera"},
     validateFn: validationUtilsCrud.validateFiera,
     confirmModalId: "createConfirmModalFiera",
     createSuccessModalId: "createSuccessModalFiera",
@@ -114,6 +114,14 @@ document.addEventListener("DOMContentLoaded", () => {
         ?.addEventListener("click", () => visitaCrud.toggleForm(true));
     document.getElementById("btnOpenFiera")
         ?.addEventListener("click", () => fieraCrud.toggleForm(true));
+// ================== CHIUSURA MODALI GENERICHE ==================
+    document.querySelectorAll(".btn-close-modal").forEach(btn => {
+        btn.addEventListener("click", e => {
+            e.stopPropagation();
+            const target = btn.getAttribute("data-target");
+            if (target) modalUtils.closeModal(target);
+        });
+    });
 });
 
 // ================== ESPORTO GLOBALMENTE ==================

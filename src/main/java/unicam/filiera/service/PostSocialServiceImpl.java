@@ -13,6 +13,7 @@ import unicam.filiera.factory.PostSocialFactory;
 import unicam.filiera.model.Item;
 import unicam.filiera.model.Evento;
 import unicam.filiera.model.PostSocial;
+import unicam.filiera.model.StatoPagamento;
 import unicam.filiera.observer.OsservatorePostSocial;
 import unicam.filiera.repository.*;
 import unicam.filiera.validation.PostValidator;
@@ -29,11 +30,13 @@ public class PostSocialServiceImpl implements PostSocialService {
     private final FieraRepository fieraRepo;
     private final VisitaInvitoRepository visitaRepo;
     private final List<OsservatorePostSocial> observers;
+    private final AcquistoRepository acquistoRepo;
 
     @Autowired
     public PostSocialServiceImpl(PostSocialRepository postRepo,
                                  ProdottoRepository prodottoRepo,
                                  PacchettoRepository pacchettoRepo,
+                                 AcquistoRepository acquistoRepo,
                                  ProdottoTrasformatoRepository trasformatoRepo,
                                  FieraRepository fieraRepo,
                                  VisitaInvitoRepository visitaRepo,
@@ -45,6 +48,7 @@ public class PostSocialServiceImpl implements PostSocialService {
         this.fieraRepo = fieraRepo;
         this.visitaRepo = visitaRepo;
         this.observers = observers;
+        this.acquistoRepo = acquistoRepo;
     }
 
     @Override
@@ -100,5 +104,33 @@ public class PostSocialServiceImpl implements PostSocialService {
                 .stream()
                 .map(e -> PostSocialDto.fromModel(e.toModel()))
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public PostSocialDto pubblicaRecensione(Long acquistoId, String autoreUsername, PostSocialDto dto) {
+        PostValidator.valida(dto);
+
+        var acquisto = acquistoRepo.findById(acquistoId)
+                .orElseThrow(() -> new IllegalArgumentException("❌ Acquisto non trovato"));
+
+        // verifica che l’acquisto appartenga all’autore
+        if (!acquisto.getUsernameAcquirente().equals(autoreUsername)) {
+            throw new IllegalArgumentException("❌ Non puoi recensire un acquisto non tuo");
+        }
+
+// verifica stato pagamento
+        if (acquisto.getStatoPagamento() != StatoPagamento.APPROVATO) {
+            throw new IllegalArgumentException("❌ Puoi recensire solo acquisti approvati");
+        }
+
+        PostSocialEntity entity = PostSocialFactory.creaRecensione(dto, acquisto, autoreUsername);
+
+        var saved = postRepo.save(entity);
+        PostSocial model = saved.toModel();
+
+        observers.forEach(obs -> obs.notifica(model, "NUOVA_RECENSIONE"));
+
+        return PostSocialDto.fromModel(model);
     }
 }

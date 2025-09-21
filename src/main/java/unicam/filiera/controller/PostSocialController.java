@@ -41,6 +41,23 @@ public class PostSocialController {
         }
     }
 
+    @PostMapping("/pubblica-recensione/{acquistoId}")
+    public ResponseEntity<?> pubblicaRecensione(@PathVariable Long acquistoId,
+                                                @Valid @RequestBody PostSocialDto dto,
+                                                Authentication auth) {
+        try {
+            String autore = auth.getName();
+
+            // qui il tuo service dovrà distinguere se è post "normale" o "recensione"
+            PostSocialDto saved = service.pubblicaRecensione(acquistoId, autore, dto);
+
+            return ResponseEntity.ok(saved);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
+    }
+
+
     /**
      * Restituisce tutti i post in ordine cronologico decrescente
      */

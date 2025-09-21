@@ -308,3 +308,79 @@ table td {
 
 
 
+/* ======== INPUT E TEXTAREA BASE ======== */
+.modal-content input[type="text"],
+.modal-content textarea {
+    width: 100%;
+    padding: 8px 10px;
+    margin: 6px 0 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.modal-content input[type="text"]:focus,
+.modal-content textarea:focus {
+    outline: none;
+    border-color: #2563eb; /* blu elegante */
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+/* ======== CAMPI CON ERRORE ======== */
+.input-error {
+    border-color: #dc2626 !important;   /* rosso */
+    background-color: #fef2f2; /* leggero sfondo rosato */
+}
+
+/* messaggio di errore */
+.error-message {
+    display: block;
+    font-size: 13px;
+    color: #dc2626; /* rosso scuro */
+    margin-top: 4px;  /* spazio dal campo */
+    margin-bottom: 8px; /* separazione col campo successivo */
+    line-height: 1.2;
+}
+
+/* ======== BOTTONI NELLE MODALI ======== */
+.modal-buttons {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.modal-buttons button {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+}
+
+.modal-buttons button.btn-close-modal {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.modal-buttons button.btn-close-modal:hover {
+    background: #d1d5db;
+}
+
+.modal-buttons button#btnOkRecensionePost,
+.modal-buttons button#btnConfirmRecensionePost,
+.modal-buttons button#btnOkSocialPost,
+.modal-buttons button#btnConfirmSocialPost {
+    background: #2563eb;
+    color: #fff;
+}
+
+.modal-buttons button#btnOkRecensionePost:hover,
+.modal-buttons button#btnConfirmRecensionePost:hover,
+.modal-buttons button#btnOkSocialPost:hover,
+.modal-buttons button#btnConfirmSocialPost:hover {
+    background: #1d4ed8;
+}
+

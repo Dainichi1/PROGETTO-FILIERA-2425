@@ -33,15 +33,21 @@ export const fondiUtils = {
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
+                        // formatter per uniformare
+                        const formattedFondi = data.nuoviFondi.toLocaleString("it-IT", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+
                         // Aggiorna fondi a schermo
                         const fondiEl = document.getElementById("fondiDisponibili");
                         if (fondiEl) {
-                            fondiEl.innerText = `Fondi disponibili: ${data.nuoviFondi} €`;
+                            fondiEl.innerText = `Fondi disponibili: ${formattedFondi} €`;
                         }
 
                         const msgEl = document.getElementById("fondiSuccessMessage");
                         if (msgEl) {
-                            msgEl.innerText = `✅ Fondi aggiornati: saldo attuale ${data.nuoviFondi} €`;
+                            msgEl.innerText = `✅ Fondi aggiornati: saldo attuale ${formattedFondi} €`;
                         }
 
                         modalUtils.openModal("fondiSuccessModal");

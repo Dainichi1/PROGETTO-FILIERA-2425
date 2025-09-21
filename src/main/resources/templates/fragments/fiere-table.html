@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<body>
+<div th:fragment="fiere-table (fiere)">
+    <div class="table-container">
+        <table class="acquirente-table">
+            <thead>
+            <tr>
+                <th>Seleziona</th>
+                <th>Nome</th>
+                <th>Descrizione</th>
+                <th>Creato da</th>
+                <th>Indirizzo</th>
+                <th>Data inizio</th>
+                <th>Data fine</th>
+                <th>Prezzo (€)</th>
+                <th>Stato</th>
+                <th>Azioni</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="fiera : ${fiere}" th:attr="data-id=${fiera.id}">
+                <td>
+                    <input type="radio" name="fieraSelezionata"
+                           class="radio-fiera"
+                           th:value="${fiera.id}"/>
+                </td>
+                <td th:text="${fiera.nome}"></td>
+                <td th:text="${fiera.descrizione}"></td>
+                <td th:text="${fiera.creatoDa}"></td>
+                <td th:text="${fiera.indirizzo}"></td>
+                <td th:text="${#temporals.format(fiera.dataInizio, 'dd/MM/yyyy')}"></td>
+                <td th:text="${#temporals.format(fiera.dataFine, 'dd/MM/yyyy')}"></td>
+                <td th:text="${fiera.prezzo}"></td>
+                <td th:text="${fiera.stato}"></td>
+                <td class="action-cell">
+                    <button type="button"
+                            class="btn-prenota"
+                            th:attr="data-id=${fiera.id}"
+                            disabled>🎟 Prenota ingresso</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

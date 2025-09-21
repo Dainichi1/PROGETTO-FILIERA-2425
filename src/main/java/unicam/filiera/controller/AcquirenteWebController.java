@@ -7,6 +7,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import unicam.filiera.dto.PacchettoViewDto;
+import unicam.filiera.dto.PrenotazioneFieraDto;
 import unicam.filiera.entity.ProdottoEntity;
 import unicam.filiera.model.Acquirente;
 import unicam.filiera.model.StatoProdotto;
@@ -30,6 +31,8 @@ public class AcquirenteWebController {
     private final ProdottoTrasformatoService trasformatoService;
     private final AcquistoItemRepository acquistoItemRepository;
     private final AcquistoRepository acquistoRepository;
+    private final FieraService fieraService;
+    private final PrenotazioneFieraService prenotazioneFieraService;
 
     public AcquirenteWebController(
             UtenteRepository repo,
@@ -37,13 +40,18 @@ public class AcquirenteWebController {
             PacchettoService pacchettoService,
             ProdottoTrasformatoService trasformatoService,
             AcquistoItemRepository acquistoItemRepository,
-            AcquistoRepository acquistoRepository) {
+            AcquistoRepository acquistoRepository,
+            FieraService fieraService,
+            PrenotazioneFieraService prenotazioneFieraService
+    ) {
         this.repo = repo;
         this.prodottoService = prodottoService;
         this.pacchettoService = pacchettoService;
         this.trasformatoService = trasformatoService;
         this.acquistoItemRepository = acquistoItemRepository;
         this.acquistoRepository = acquistoRepository;
+        this.fieraService = fieraService;
+        this.prenotazioneFieraService = prenotazioneFieraService;
     }
 
     @GetMapping("/dashboard")
@@ -71,7 +79,7 @@ public class AcquirenteWebController {
                     model.addAttribute("prodotti",
                             prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
 
-                    // Pacchetti (DTO)
+                    // Pacchetti
                     List<PacchettoViewDto> pacchettiDto = pacchettoService.getPacchettiByStato(StatoProdotto.APPROVATO)
                             .stream()
                             .map(p -> {
@@ -89,7 +97,6 @@ public class AcquirenteWebController {
                                 dto.setCertificati(p.getCertificati() != null ? p.getCertificati() : List.of());
                                 dto.setFoto(p.getFoto() != null ? p.getFoto() : List.of());
 
-                                // Recupero nomi prodotti inclusi
                                 dto.setProdottiNomi(
                                         p.getProdottiIds().stream()
                                                 .map(id -> prodottoService.getProdottoById(id))
@@ -116,11 +123,17 @@ public class AcquirenteWebController {
                                     .toList()
                     );
 
+                    // Fiere disponibili (solo quelle pubblicate)
+                    model.addAttribute("fiere", fieraService.getFierePubblicate());
+
+                    // Prenotazioni fiere dell’utente
+                    List<PrenotazioneFieraDto> prenotazioni = prenotazioneFieraService.getPrenotazioniByAcquirente(username);
+                    model.addAttribute("prenotazioniFiere", prenotazioni);
+
                     return "dashboard/acquirente";
                 })
                 .orElse("error/utente_non_trovato");
     }
-
 
     // ================== aggiorna fondi ==================
     @PostMapping("/update-fondi")

@@ -93,7 +93,7 @@ public class AcquistiWebController {
                 return ResponseEntity.ok(Map.of(
                         "success", true,
                         "message", "Acquisto completato con successo!",
-                        "clearCart", false, // 👉 NON svuoto tutto
+                        "clearCart", false, // NON svuoto tutto
                         "items", carrelloAggiornato
                 ));
             } else {

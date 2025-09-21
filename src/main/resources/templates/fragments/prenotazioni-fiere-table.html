@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<body>
+
+<!-- Fragment vero e proprio -->
+<div th:fragment="prenotazioni-fiere-table(prenotazioniFiere)">
+    <h3>Ingressi prenotati</h3>
+
+    <div class="table-container">
+        <table class="acquirente-table">
+            <thead>
+            <tr>
+                <th>🎪 Fiera</th>
+                <th>👥 Numero Persone</th>
+                <th>📅 Data Prenotazione</th>
+                <th>⚡ Azioni</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="pren : ${prenotazioniFiere}">
+                <td th:text="${pren.nomeFiera}">Nome fiera</td>
+                <td th:text="${pren.numeroPersone}">2</td>
+                <td th:text="${#temporals.format(pren.dataPrenotazione, 'dd/MM/yyyy HH:mm')}">
+                    01/01/2025 10:00
+                </td>
+                <td>
+                    <button class="btn-delete-prenotazione-fiera"
+                            th:attr="data-id=${pren.id}">
+                        ❌ Elimina
+                    </button>
+                </td>
+            </tr>
+
+            <tr th:if="${#lists.isEmpty(prenotazioniFiere)}">
+                <td colspan="4" style="text-align:center; font-style: italic;">
+                    ⚠ Nessuna prenotazione trovata
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>

@@ -6,6 +6,7 @@ import { cartUtils } from "../utils/crud-cart-utils.js";
 import { fondiUtils } from "../utils/crud-fondi-utils.js";
 import { csrfUtils } from "../utils/csrf-utils.js";
 import { formUtils } from "../utils/form-utils.js";
+import { prenotazioniFiereUtils } from "../utils/crud-prenotazioni-fiere-utils.js";
 
 window.toggleUtils = toggleUtils;
 
@@ -32,42 +33,95 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnChiudiAcquisti = document.getElementById("btnChiudiAcquisti");
 
     if (btnVisualizzaAcquisti && acquistiSection) {
-        btnVisualizzaAcquisti.addEventListener("click", () => {
-            toggleUtils.show(acquistiSection);
+        btnVisualizzaAcquisti.addEventListener("click", () => toggleUtils.show(acquistiSection));
+    }
+    if (btnChiudiAcquisti && acquistiSection) {
+        btnChiudiAcquisti.addEventListener("click", () => toggleUtils.hide(acquistiSection));
+    }
+
+    // ================== FIERE DISPONIBILI ==================
+    const fiereSection = document.getElementById("fiereSection");
+    const btnVisualizzaFiere = document.getElementById("btnVisualizzaFiere");
+    const btnChiudiFiere = document.getElementById("btnChiudiFiere");
+
+    if (btnVisualizzaFiere && fiereSection) {
+        btnVisualizzaFiere.addEventListener("click", () => {
+            toggleUtils.show(fiereSection);
+
+            // attiva/disattiva bottoni prenota
+            const radios = document.querySelectorAll(".radio-fiera");
+            const buttons = document.querySelectorAll(".btn-prenota");
+
+            radios.forEach(radio => {
+                radio.addEventListener("change", () => {
+                    buttons.forEach(btn => btn.setAttribute("disabled", "disabled"));
+                    const row = radio.closest("tr");
+                    const btn = row.querySelector(".btn-prenota");
+                    if (btn) btn.removeAttribute("disabled");
+                });
+            });
+
+            // apertura modale
+            buttons.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    window.prenotazioniFiereUtils.openPrenotazioneFieraModal(btn);
+                });
+            });
+
+            // attach validation al form
+            window.prenotazioniFiereUtils.attachPrenotazioneFieraValidation();
         });
     }
 
-    if (btnChiudiAcquisti && acquistiSection) {
-        btnChiudiAcquisti.addEventListener("click", () => {
-            toggleUtils.hide(acquistiSection);
+    if (btnChiudiFiere && fiereSection) {
+        btnChiudiFiere.addEventListener("click", () => {
+            toggleUtils.hide(fiereSection);
         });
     }
+
+    // ================== PRENOTAZIONE FIERE ==================
+    document.querySelectorAll(".btn-prenota").forEach(btn => {
+        btn.addEventListener("click", () => prenotazioniFiereUtils.openPrenotazioneFieraModal(btn));
+    });
+    prenotazioniFiereUtils.attachPrenotazioneFieraValidation();
+
+    // ================== PRENOTAZIONI FIERE ELIMINAZIONE ==================
+    const prenotazioniFiereSection = document.getElementById("prenotazioniFiereSection");
+    const btnVisualizzaPrenotazioni = document.getElementById("btnVisualizzaPrenotazioniFiere");
+    const btnChiudiPrenotazioni = document.getElementById("btnChiudiPrenotazioniFiere");
+
+    if (btnVisualizzaPrenotazioni && prenotazioniFiereSection) {
+        btnVisualizzaPrenotazioni.addEventListener("click", () => toggleUtils.show(prenotazioniFiereSection));
+    }
+    if (btnChiudiPrenotazioni && prenotazioniFiereSection) {
+        btnChiudiPrenotazioni.addEventListener("click", () => toggleUtils.hide(prenotazioniFiereSection));
+    }
+
+    // listener per i bottoni elimina in tabella
+    document.querySelectorAll(".btn-delete-prenotazione-fiera").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const id = btn.dataset.id;
+            prenotazioniFiereUtils.openDeletePrenotazioneFieraModal(id);
+        });
+    });
+
+    // attach gestione eliminazione prenotazioni fiere (con update fondi lato client)
+    prenotazioniFiereUtils.attachPrenotazioneFieraDeleteHandler();
 
     // ================== PULSANTE RECENSIONE ==================
     document.querySelectorAll(".btn-pubblica-recensione").forEach(btn => {
         btn.addEventListener("click", () => {
-            const id = btn.dataset.id;      // acquistoId
+            const id = btn.dataset.id;
             const stato = btn.dataset.stato;
 
-            console.log(">>> Pubblica recensione per acquisto ID:", id, "stato:", stato);
-
-            // Salvo i dati nel body
             document.body.dataset.recensioneId = id;
             document.body.dataset.recensioneStato = stato;
 
-            // Reset campi
             const titleEl = document.getElementById("recensioneTitle");
             const textEl = document.getElementById("recensioneText");
-            if (titleEl) {
-                titleEl.value = "";
-                formUtils.clearFieldError(titleEl);
-            }
-            if (textEl) {
-                textEl.value = "";
-                formUtils.clearFieldError(textEl);
-            }
+            if (titleEl) { titleEl.value = ""; formUtils.clearFieldError(titleEl); }
+            if (textEl) { textEl.value = ""; formUtils.clearFieldError(textEl); }
 
-            // Apro la modale recensione
             modalUtils.openModal("recensionePostModal");
         });
     });
@@ -89,14 +143,10 @@ document.addEventListener("DOMContentLoaded", () => {
             formUtils.setFieldError("recensioneText", "⚠ Il testo è obbligatorio");
             ok = false;
         }
-
         if (!ok) return;
 
-        // messaggio di conferma
-        const confirmMsg = document.getElementById("recensioneConfirmMessage");
-        if (confirmMsg) {
-            confirmMsg.innerText = "Sei sicuro di voler pubblicare la recensione sull’acquisto?";
-        }
+        document.getElementById("recensioneConfirmMessage").innerText =
+            "Sei sicuro di voler pubblicare la recensione sull’acquisto?";
 
         modalUtils.closeModal("recensionePostModal");
         modalUtils.openModal("recensioneConfirmModal");
@@ -108,8 +158,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const testo = document.getElementById("recensioneText")?.value.trim();
 
         if (!acquistoId) {
-            const errMsg = document.getElementById("recensioneErrorMessage");
-            if (errMsg) errMsg.innerText = "❌ Errore: ID acquisto non trovato.";
+            document.getElementById("recensioneErrorMessage").innerText =
+                "❌ Errore: ID acquisto non trovato.";
             modalUtils.openModal("recensioneErrorModal");
             return;
         }
@@ -117,10 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const csrf = csrfUtils.getCsrf();
         const payload = { titolo, testo };
 
-        const url = `/api/social/pubblica-recensione/${acquistoId}`;
-        console.log(">>> Invio recensione al backend:", payload, "URL:", url);
-
-        fetch(url, {
+        fetch(`/api/social/pubblica-recensione/${acquistoId}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -134,26 +181,19 @@ document.addEventListener("DOMContentLoaded", () => {
             })
             .then(data => {
                 modalUtils.closeModal("recensioneConfirmModal");
-
                 if (data && data.id) {
-                    const successMsg = document.getElementById("recensioneSuccessMessage");
-                    if (successMsg) {
-                        successMsg.innerText = "✅ Recensione pubblicata con successo!";
-                    }
+                    document.getElementById("recensioneSuccessMessage").innerText =
+                        "✅ Recensione pubblicata con successo!";
                     modalUtils.openModal("recensioneSuccessModal");
                 } else {
-                    const errMsg = document.getElementById("recensioneErrorMessage");
-                    if (errMsg) {
-                        errMsg.innerText = "❌ Impossibile pubblicare la recensione.";
-                    }
+                    document.getElementById("recensioneErrorMessage").innerText =
+                        "❌ Impossibile pubblicare la recensione.";
                     modalUtils.openModal("recensioneErrorModal");
                 }
             })
             .catch(err => {
-                const errMsg = document.getElementById("recensioneErrorMessage");
-                if (errMsg) {
-                    errMsg.innerText = "❌ Errore imprevisto: " + err.message;
-                }
+                document.getElementById("recensioneErrorMessage").innerText =
+                    "❌ Errore imprevisto: " + err.message;
                 modalUtils.openModal("recensioneErrorModal");
             });
     });
@@ -186,12 +226,10 @@ document.addEventListener("DOMContentLoaded", () => {
         paymentForm.addEventListener("submit", e => {
             e.preventDefault();
             const metodo = document.getElementById("paymentMethod").value;
-
             if (!metodo) {
                 alert("⚠ Devi selezionare un metodo di pagamento");
                 return;
             }
-
             const selected = cartUtils.getSelectedCartItem();
             if (!selected) {
                 modalUtils.openModal("noItemSelectedModal");
@@ -201,21 +239,16 @@ document.addEventListener("DOMContentLoaded", () => {
             modalUtils.closeModal("paymentChoiceModal");
             document.body.dataset.selectedPayment = metodo;
 
-            const detailsEl = document.getElementById("confirmPurchaseDetails");
-            if (detailsEl) {
-                const row = document.querySelector(
-                    `#cartSection tbody tr[data-id="${selected.id}"][data-tipo="${selected.tipo}"]`
-                );
-                if (row) {
-                    const nome = row.children[1]?.innerText || "Item";
-                    const quantita = row.querySelector(".cart-quantity-input")?.value || "1";
-                    const totale = row.children[4]?.innerText || "€ 0.00";
+            const row = document.querySelector(
+                `#cartSection tbody tr[data-id="${selected.id}"][data-tipo="${selected.tipo}"]`
+            );
+            const nome = row?.children[1]?.innerText || "Item";
+            const quantita = row?.querySelector(".cart-quantity-input")?.value || "1";
+            const totale = row?.children[4]?.innerText || "€ 0.00";
 
-                    detailsEl.innerText =
-                        `Vuoi acquistare "${nome}" (x${quantita}) per un totale di ${totale} ` +
-                        `usando ${metodo.replaceAll("_", " ").toLowerCase()}?`;
-                }
-            }
+            document.getElementById("confirmPurchaseDetails").innerText =
+                `Vuoi acquistare "${nome}" (x${quantita}) per un totale di ${totale} ` +
+                `usando ${metodo.replaceAll("_", " ").toLowerCase()}?`;
 
             modalUtils.openModal("confirmPurchaseModal");
         });
@@ -227,30 +260,19 @@ document.addEventListener("DOMContentLoaded", () => {
         btnConfirmPurchase.addEventListener("click", () => {
             const selected = cartUtils.getSelectedCartItem();
             const metodo = document.body.dataset.selectedPayment;
-
             if (!selected || !metodo) {
                 modalUtils.openModal("purchaseErrorModal");
                 return;
             }
 
             const totale = selected.quantita * selected.prezzoUnitario;
-
             const payload = {
                 totaleAcquisto: totale,
                 tipoMetodoPagamento: metodo.toUpperCase(),
                 items: [
-                    {
-                        id: selected.id,
-                        tipo: selected.tipo.toUpperCase(),
-                        nome: selected.nome,
-                        quantita: selected.quantita,
-                        prezzoUnitario: selected.prezzoUnitario,
-                        totale: totale
-                    }
+                    { ...selected, totale }
                 ]
             };
-
-            console.log(">>> Payload acquisto:", JSON.stringify(payload, null, 2));
 
             const csrf = csrfUtils.getCsrf();
 
@@ -265,31 +287,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 .then(r => r.json())
                 .then(data => {
                     modalUtils.closeModal("confirmPurchaseModal");
-
                     if (data.success) {
-                        const msg = document.getElementById("purchaseSuccessMessage");
-                        if (msg) msg.innerText = data.message || "✅ Acquisto completato con successo!";
+                        document.getElementById("purchaseSuccessMessage").innerText =
+                            data.message || "✅ Acquisto completato con successo!";
                         modalUtils.openModal("purchaseSuccessModal");
-
                         cartUtils.updateCartTable([], {});
                         document.getElementById("btnAcquista")?.setAttribute("disabled", "disabled");
-
                         cartUtils.loadCart();
                     } else {
-                        const msg = document.getElementById("purchaseErrorMessage");
-                        if (msg) msg.innerText = data.message || "❌ Errore durante l’acquisto.";
+                        document.getElementById("purchaseErrorMessage").innerText =
+                            data.message || "❌ Errore durante l’acquisto.";
                         modalUtils.openModal("purchaseErrorModal");
                     }
                 })
                 .catch(() => modalUtils.openModal("purchaseErrorModal"));
-        });
-    }
-
-    // ================== GESTIONE ERRORE PAGAMENTO ==================
-    const purchaseErrorModal = document.getElementById("purchaseErrorModal");
-    if (purchaseErrorModal) {
-        purchaseErrorModal.addEventListener("hidden.bs.modal", () => {
-            modalUtils.openModal("paymentChoiceModal");
         });
     }
 

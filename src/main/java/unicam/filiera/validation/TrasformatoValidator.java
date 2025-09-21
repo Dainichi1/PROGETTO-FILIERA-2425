@@ -30,7 +30,7 @@ public class TrasformatoValidator implements Validator {
     private static void validaInterno(ProdottoTrasformatoDto dto, Errors errors, boolean throwException) {
         boolean isCreazione = (dto.getId() == null);
 
-        // 🔹 Quantità > 0 obbligatoria in creazione/aggiornamento
+        // Quantità > 0 obbligatoria in creazione/aggiornamento
         if (dto.getQuantita() <= 0) {
             if (throwException) throw new IllegalArgumentException("⚠ La quantità deve essere maggiore di zero");
             if (errors != null) {
@@ -38,7 +38,7 @@ public class TrasformatoValidator implements Validator {
             }
         }
 
-        // 🔹 Certificati e foto obbligatori solo in creazione
+        // Certificati e foto obbligatori solo in creazione
         if (isCreazione) {
             if (dto.getCertificati() == null || dto.getCertificati().isEmpty()
                     || dto.getCertificati().stream().allMatch(MultipartFile::isEmpty)) {
@@ -56,7 +56,7 @@ public class TrasformatoValidator implements Validator {
             }
         }
 
-        // 🔹 Almeno 2 fasi di produzione valide obbligatorie
+        // Almeno 2 fasi di produzione valide obbligatorie
         long fasiValide = (dto.getFasiProduzione() == null) ? 0 :
                 dto.getFasiProduzione().stream()
                         .filter(f -> f != null

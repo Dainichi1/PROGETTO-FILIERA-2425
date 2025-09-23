@@ -72,6 +72,10 @@ public class DashboardController {
                             log.info("Utente '{}' con ruolo ANIMATORE → redirect /animatore/dashboard", username);
                             return "redirect:/animatore/dashboard";
                         }
+                        case GESTORE_PIATTAFORMA -> {
+                            log.info("Utente '{}' con ruolo GESTORE → redirect /gestore/dashboard", username);
+                            return "redirect:/gestore/dashboard";
+                        }
                         default -> {
                             log.error("Ruolo '{}' non gestito per utente '{}'", e.getRuolo(), username);
                             return "error/ruolo_non_gestito";

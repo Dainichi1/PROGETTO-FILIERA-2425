@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="modals">
+    <!-- Modale 1: Nessun elemento -->
+    <div id="modalNoContent" class="modal" style="display: none;">
+        <div class="modal-content">
+            <p>ℹ Nessun elemento presente in questa categoria.</p>
+            <button class="btn-ok">OK</button>
+        </div>
+    </div>
+
+    <!-- Modale 2: Scelta -->
+    <div id="modalChoice" class="modal" style="display: none;">
+        <div class="modal-content">
+            <p>❓ Vuoi tornare al riepilogo o selezionare un’altra categoria?</p>
+            <button class="btn-riepilogo">⬅ Torna al riepilogo</button>
+            <button class="btn-categoria">📂 Seleziona altra categoria</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>

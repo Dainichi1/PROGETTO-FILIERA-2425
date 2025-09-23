@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<head>
+    <title>Dashboard Gestore</title>
+    <meta charset="UTF-8"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+<h1 th:text="'Benvenuto ' + (${utente?.nome ?: 'Utente'}) +
+              ', il tuo ruolo è ' + (${utente?.ruolo ?: 'Gestore della Piattaforma'}) + '.'">
+    Benvenuto, il tuo ruolo è Gestore della Piattaforma.
+</h1>
+
+<div class="actions-container">
+    <a th:href="@{/gestore/contenuti}" class="btn-primary">
+        📊 Visualizza contenuto della piattaforma
+    </a>
+</div>
+
+<!-- ===== MODALE SEMPLICE ===== -->
+<div id="contenutiModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <h3>Contenuti della piattaforma</h3>
+        <p>Vuoi aprire la schermata di consultazione dei contenuti?</p>
+        <div class="actions-container">
+            <button id="btnApriContenuti" class="btn-primary">Apri</button>
+            <button id="btnChiudiContenuti" class="btn-secondary">Chiudi</button>
+        </div>
+    </div>
+</div>
+
+<p><a th:href="@{/}" class="btn-secondary">⬅ Torna alla Home</a></p>
+
+<!-- JS della dashboard del gestore -->
+<script type="module" th:src="@{/js/pages/gestore.js}"></script>
+</body>
+</html>

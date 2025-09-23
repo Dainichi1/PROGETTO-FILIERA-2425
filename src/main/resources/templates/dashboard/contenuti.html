@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<head>
+    <title>Gestione Contenuti</title>
+    <meta charset="UTF-8"/>
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/css/tables.css}">
+    <link rel="stylesheet" th:href="@{/css/gestore-modals.css}">
+</head>
+<body>
+<h1>📊 Gestione Contenuti</h1>
+
+<div class="container">
+    <!-- Sidebar categorie -->
+    <aside class="sidebar">
+        <ul>
+            <li th:each="cat : ${categorie}">
+                <a th:href="@{|/gestore/contenuti/${cat.name()}|}"
+                   th:text="${cat.label}"
+                   th:classappend="${categoriaSelezionata} == ${cat} ? 'active' : ''">
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Contenuti -->
+    <main class="content">
+        <div th:if="${contenuti != null}">
+            <!-- Barra di ricerca, filtro e ordinamento -->
+            <form method="get"
+                  th:action="@{|/gestore/contenuti/${categoriaSelezionata.name()}|}"
+                  class="filters">
+
+                <!-- Ricerca libera -->
+                <input type="text" name="testo"
+                       th:value="${criteri.testo}"
+                       placeholder="🔍 Cerca contenuto..."/>
+
+                <!-- Stato -->
+                <select name="stato" th:if="${statiPossibili != null}">
+                    <option value="">-- Tutti gli stati --</option>
+                    <option th:each="s : ${statiPossibili}"
+                            th:value="${s}"
+                            th:text="${s}"
+                            th:selected="${criteri.stato} == ${s}">
+                    </option>
+                </select>
+
+                <!-- Ordinamento -->
+                <select name="ordinamento">
+                    <option value="nome" th:selected="${criteri.ordinamento == 'nome'}">🔤 Nome</option>
+                    <option value="tipo" th:selected="${criteri.ordinamento == 'tipo'}">📦 Tipo</option>
+                    <option value="stato" th:selected="${criteri.ordinamento == 'stato'}">⚙ Stato</option>
+                    <option value="data" th:selected="${criteri.ordinamento == 'data'}">📅 Data</option>
+                </select>
+
+                <!-- Direzione -->
+                <select name="crescente">
+                    <option value="true" th:selected="${criteri.crescente}">⬆ Ascendente</option>
+                    <option value="false" th:selected="${!criteri.crescente}">⬇ Discendente</option>
+                </select>
+
+                <button type="submit" class="btn-primary">✔ Applica</button>
+                <a th:href="@{|/gestore/contenuti/${categoriaSelezionata.name()}|}" class="btn-secondary">🔄 Reset</a>
+            </form>
+
+            <!-- Tabella -->
+            <table id="contenutiTable">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Tipo</th>
+                    <th>Stato</th>
+                    <th>Data</th>
+                    <th>Extra</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${contenuti.empty}">
+                    <td colspan="6" id="noContentRow">⚠ Nessun contenuto trovato per questa categoria.</td>
+                </tr>
+                <tr th:each="c : ${contenuti}">
+                    <td th:text="${c.id}"></td>
+                    <td th:text="${c.nome}"></td>
+                    <td th:text="${c.tipo}"></td>
+                    <td th:text="${c.stato}"></td>
+                    <td th:text="${c.data != null ? #temporals.format(c.data, 'dd/MM/yyyy HH:mm') : ''}"></td>
+                    <td th:text="${c.extra}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div th:if="${contenuti == null}">
+            <p>ℹ Seleziona una categoria per visualizzare i contenuti.</p>
+        </div>
+    </main>
+</div>
+
+<p><a th:href="@{/gestore/dashboard}" class="btn-secondary">⬅ Torna alla dashboard</a></p>
+
+<!-- Inclusione modali -->
+<div th:replace="~{fragments/gestore-modals :: modals}"></div>
+
+<!-- Script -->
+<script type="module" th:src="@{/js/pages/gestore.js}"></script>
+</body>
+</html>

@@ -384,3 +384,21 @@ table td {
     background: #1d4ed8;
 }
 
+.btn-danger {
+    background-color: #dc3545;  /* rosso */
+    border: none;
+    font-weight: bold;
+    color: black !important;   /* testo nero */
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-danger:hover {
+    background-color: #b02a37; /* rosso più scuro */
+    color: black !important;   /* testo resta nero */
+    transform: scale(1.05);
+}
+
+
+

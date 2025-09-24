@@ -38,7 +38,6 @@
 </h1>
 
 <!-- ================== INFORMAZIONI UTENTE ================== -->
-<!-- ================== INFORMAZIONI UTENTE ================== -->
 <div class="fondi-container">
     <p id="fondiDisponibili"
        th:text="'Fondi disponibili: ' + ${#numbers.formatDecimal(utente?.fondi ?: 0, 1, 'POINT', 2, 'COMMA')} + ' €'">
@@ -62,6 +61,9 @@
     <button id="btnVisualizzaAcquisti" type="button">📦 Visualizza Acquisti</button>
     <button id="btnVisualizzaFiere" type="button">🎪 Visualizza Fiere disponibili</button>
     <button id="btnVisualizzaPrenotazioniFiere" type="button">🎟 Visualizza ingressi prenotati</button>
+    <button id="btnDeleteProfile" class="btn btn-danger btn-lg ms-2">
+        🗑️ Elimina profilo
+    </button>
 </div>
 
 <!-- ================== SEZIONE MARKETPLACE ================== -->
@@ -126,6 +128,9 @@
 
 <!-- Pagamenti -->
 <div th:replace="~{fragments/payment-modals :: payment-modals}"></div>
+
+<!-- cancellazioni -->
+<div th:replace="fragments/profile-delete-modal :: profile-delete-modal"></div>
 
 <hr class="section-separator"/>
 

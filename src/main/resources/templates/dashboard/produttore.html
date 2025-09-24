@@ -14,11 +14,21 @@
     Benvenuto, il tuo ruolo è Produttore.
 </h1>
 
+<!-- ================== ALERT MESSAGGI ================== -->
+<div th:if="${successMessage}" class="alert alert-success" role="alert"
+     th:text="${successMessage}"></div>
+
+<div th:if="${errorMessage}" class="alert alert-danger" role="alert"
+     th:text="${errorMessage}"></div>
+
 <!-- ================== BOTTONI PRINCIPALI ================== -->
 <div class="actions-container">
     <button id="btnSocialFeed" type="button" class="btn-primary">📢 Visualizza Social Network</button>
     <button id="btnVisite" type="button" class="btn-primary">👀 Visualizza visite disponibili</button>
     <button id="btnPrenotazioni" type="button" class="btn-primary">📅 Visualizza prenotazioni</button>
+    <button id="btnDeleteProfile" class="btn btn-danger btn-lg ms-2">
+        🗑️ Richiedi eliminazione profilo
+    </button>
 </div>
 
 <h2>I tuoi Prodotti</h2>
@@ -30,7 +40,8 @@
 <div id="visiteSection" class="toggle-section">
     <div th:replace="fragments/visite-table :: visite-table(${visiteDisponibili})"></div>
     <div class="actions-container">
-        <button type="button" class="btn-secondary" onclick="toggleUtils.toggleSection('visiteSection')">Chiudi</button>
+        <button type="button" class="btn-secondary"
+                onclick="toggleUtils.toggleSection('visiteSection')">Chiudi</button>
     </div>
 </div>
 
@@ -38,8 +49,8 @@
 <div id="prenotazioniSection" class="toggle-section">
     <div th:replace="fragments/prenotazioni-table :: prenotazioni-table(${prenotazioni})"></div>
     <div class="actions-container">
-        <button type="button" class="btn-secondary" onclick="toggleUtils.toggleSection('prenotazioniSection')">Chiudi
-        </button>
+        <button type="button" class="btn-secondary"
+                onclick="toggleUtils.toggleSection('prenotazioniSection')">Chiudi</button>
     </div>
 </div>
 
@@ -53,13 +64,13 @@
 <div th:replace="fragments/modals :: prenotazioni-delete-modals('/produttore/dashboard')"></div>
 <div th:replace="fragments/modals :: social-not-available-modal"></div>
 
+<!-- Modale per eliminazione profilo -->
+<div th:replace="fragments/profile-delete-modal :: profile-delete-modal"></div>
 
 <hr class="section-separator"/>
 
 <!-- ================== FORM CREAZIONE PRODOTTO ================== -->
-<button type="button"
-        id="btnCreateProdotto"
-        class="btn-primary">
+<button type="button" id="btnCreateProdotto" class="btn-primary">
     ➕ Crea Prodotto
 </button>
 

@@ -19,6 +19,9 @@
     <button type="button" class="btn-primary" id="btnSocialFeed">
         📢 Visualizza Social Network
     </button>
+    <button id="btnDeleteProfile" class="btn btn-danger btn-lg ms-2">
+        🗑️ Elimina profilo
+    </button>
 </div>
 
 <!-- ================== SEZIONE PUBBLICATI ================== -->
@@ -36,6 +39,8 @@
 <div th:replace="fragments/modals :: prenotazione-visita-modals('/animatore/dashboard')"></div>
 <div th:replace="fragments/modals :: prenotazioni-delete-modals('/animatore/dashboard')"></div>
 <div th:replace="fragments/modals :: social-not-available-modal"></div>
+<!-- cancellazioni -->
+<div th:replace="fragments/profile-delete-modal :: profile-delete-modal"></div>
 
 <hr class="section-separator"/>
 

@@ -123,12 +123,10 @@ document.addEventListener("DOMContentLoaded", () => {
         crudUtils.openSocialFeed();
     });
 
-    // Bottone toggle visite
+    // Toggle sezioni
     document.getElementById("btnVisite")?.addEventListener("click", () => {
         toggleUtils.toggleSection("visiteSection");
     });
-
-    // Bottone toggle prenotazioni
     document.getElementById("btnPrenotazioni")?.addEventListener("click", () => {
         toggleUtils.toggleSection("prenotazioniSection");
     });
@@ -137,46 +135,26 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".btn-delete").forEach(btn => {
         btn.addEventListener("click", () => pacchettoCrud.handleDeleteClick(btn));
     });
-
     document.querySelectorAll(".btn-edit").forEach(btn => {
         btn.addEventListener("click", () => pacchettoCrud.handleEditClick(btn));
     });
-
     document.querySelectorAll(".btn-publish").forEach(btn => {
         btn.addEventListener("click", () => pacchettoCrud.handleSocialClick(btn));
     });
 
-    // Prenotazione visite
+    // Prenotazioni
     document.querySelectorAll(".btn-prenota-visita").forEach(btn => {
-        btn.addEventListener("click", () => {
-            prenotazioniUtils.openPrenotazioneVisitaModal(btn);
-        });
+        btn.addEventListener("click", () => prenotazioniUtils.openPrenotazioneVisitaModal(btn));
     });
-
-    // Bottone "Chiudi" nei form (nasconde il contenitore)
-    document.querySelectorAll(".btn-toggle-form").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const formContainer = btn.closest(".form-container");
-            if (formContainer) {
-                formContainer.style.display = "none";
-            }
-        });
-    });
-
-    // Eliminazione prenotazioni
     document.querySelectorAll(".btn-delete-prenotazione").forEach(btn => {
         btn.addEventListener("click", () => {
             const id = btn.getAttribute("data-id");
-            if (id) {
-                prenotazioniUtils.openDeletePrenotazioneModal(id);
-            }
+            if (id) prenotazioniUtils.openDeletePrenotazioneModal(id);
         });
     });
-
-    // Attacca handler al form di delete
     prenotazioniUtils.attachPrenotazioneDeleteHandler();
 
-    // Gestione chiusura modali
+    // Chiusura modali generiche
     document.querySelectorAll(".btn-close-modal").forEach(btn => {
         btn.addEventListener("click", () => {
             const target = btn.getAttribute("data-target");
@@ -184,35 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Bottone "Crea Pacchetto"
-    document.getElementById("btnCreatePacchetto")?.addEventListener("click", () => {
-        pacchettoCrud.toggleForm(true); // forza apertura
-    });
-
-    // Conferma eliminazione
-    document.getElementById("btnConfirmDelete")?.addEventListener("click", () => {
-        pacchettoCrud.confirmDelete();
-    });
-
-    // Social post modale
-    document.getElementById("btnOkSocialPost")?.addEventListener("click", () => {
-        pacchettoCrud.openSocialConfirm();
-    });
-    document.getElementById("btnConfirmSocialPost")?.addEventListener("click", () => {
-        pacchettoCrud.submitSocialPost();
-    });
-
-    // Conferma creazione (bottone "Sì" nella modale)
-    document.getElementById("btnConfirmCreate")?.addEventListener("click", () => {
-        pacchettoCrud.confirmCreate();
-    });
-
-    // Conferma aggiornamento (bottone "Sì" nella modale)
-    document.getElementById("btnConfirmUpdate")?.addEventListener("click", () => {
-        pacchettoCrud.confirmUpdate();
-    });
-
-    // Apertura modali di conferma (es. Invia/Aggiorna)
+    // Apertura modali generiche
     document.querySelectorAll(".btn-open-modal").forEach(btn => {
         btn.addEventListener("click", () => {
             const target = btn.getAttribute("data-target");
@@ -220,20 +170,74 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Bottone chiudi visite
-    document.getElementById("btnCloseVisite")?.addEventListener("click", () => {
-        toggleUtils.toggleSection("visiteSection");
+    // Crea pacchetto
+    document.getElementById("btnCreatePacchetto")?.addEventListener("click", () => {
+        pacchettoCrud.toggleForm(true);
     });
 
-    // Bottone chiudi prenotazioni
-    document.getElementById("btnClosePrenotazioni")?.addEventListener("click", () => {
-        toggleUtils.toggleSection("prenotazioniSection");
+    // Conferme CRUD
+    document.getElementById("btnConfirmDelete")?.addEventListener("click", () => {
+        pacchettoCrud.confirmDelete();
+    });
+    document.getElementById("btnOkSocialPost")?.addEventListener("click", () => {
+        pacchettoCrud.openSocialConfirm();
+    });
+    document.getElementById("btnConfirmSocialPost")?.addEventListener("click", () => {
+        pacchettoCrud.submitSocialPost();
+    });
+    document.getElementById("btnConfirmCreate")?.addEventListener("click", () => {
+        pacchettoCrud.confirmCreate();
+    });
+    document.getElementById("btnConfirmUpdate")?.addEventListener("click", () => {
+        pacchettoCrud.confirmUpdate();
     });
 
-    // Inizializza selezione social
-    socialSelectionUtils.init({
-        rowSelector: ".selectable-row",
-        btnPubblicaId: "btnPubblicaAvviso",
-        crudMap: {PACCHETTO: pacchettoCrud}
-    });
+    // ================== ELIMINA PROFILO ==================
+    const btnDeleteProfile = document.getElementById("btnDeleteProfile");
+    if (btnDeleteProfile) {
+        btnDeleteProfile.addEventListener("click", () => {
+            modalUtils.openModal("deleteProfileModal");
+        });
+    }
+
+    const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener("click", () => {
+            // Usa fetch per inviare la richiesta POST
+            const csrfHeader = document.querySelector("meta[name='_csrf_header']").content;
+            const csrfToken = document.querySelector("meta[name='_csrf']").content;
+
+            fetch("/distributore/richiesta-eliminazione", {
+                method: "POST",
+                headers: {
+                    [csrfHeader]: csrfToken
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        // ✅ Caso 1: richiesta salvata
+                        modalUtils.closeModal("deleteProfileModal");
+                        modalUtils.openModal("deleteProfileSuccessModal");
+                    } else if (response.status === 409) {
+                        // ❌ Caso 2: già esiste richiesta
+                        modalUtils.closeModal("deleteProfileModal");
+                        modalUtils.openModal("deleteProfileErrorModal");
+                    } else {
+                        throw new Error("Errore imprevisto");
+                    }
+                })
+                .catch(err => {
+                    console.error("Errore eliminazione profilo", err);
+                    alert("Errore durante l'invio della richiesta.");
+                });
+        });
+    }
+
+    // ✅ Bottone OK nella modale di successo → chiude la modale
+    const okDeleteBtn = document.getElementById("okDeleteBtn");
+    if (okDeleteBtn) {
+        okDeleteBtn.addEventListener("click", () => {
+            modalUtils.closeModal("deleteProfileSuccessModal");
+        });
+    }
 });

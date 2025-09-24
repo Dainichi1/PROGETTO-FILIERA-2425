@@ -4,6 +4,7 @@ import {modalUtils} from "../utils/modal-utils.js";
 import {crudUtilsAnimatore} from "../utils/crud-utils-animatore.js";
 import {socialSelectionUtils} from "../utils/social-selection-utils.js";
 import {crudUtils} from "../utils/crud-utils.js";
+import {csrfUtils} from "../utils/csrf-utils.js";
 
 // ================== CRUD VISITA ==================
 const visitaCrud = crudUtilsAnimatore({
@@ -114,7 +115,53 @@ document.addEventListener("DOMContentLoaded", () => {
         ?.addEventListener("click", () => visitaCrud.toggleForm(true));
     document.getElementById("btnOpenFiera")
         ?.addEventListener("click", () => fieraCrud.toggleForm(true));
-// ================== CHIUSURA MODALI GENERICHE ==================
+
+    // ================== ELIMINA PROFILO ==================
+    const btnDeleteProfile = document.getElementById("btnDeleteProfile");
+    if (btnDeleteProfile) {
+        btnDeleteProfile.addEventListener("click", () => {
+            modalUtils.openModal("deleteProfileModal");
+        });
+    }
+
+    const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener("click", () => {
+            console.log("Richiesta eliminazione profilo per Animatore");
+
+            const csrf = csrfUtils.getCsrf();
+
+            fetch("/animatore/richiesta-eliminazione", {
+                method: "POST",
+                headers: { [csrf.header]: csrf.token },
+                credentials: "same-origin"
+            })
+                .then(r => {
+                    if (r.status === 200) {
+                        modalUtils.closeModal("deleteProfileModal");
+                        modalUtils.openModal("deleteProfileSuccessModal");
+                    } else if (r.status === 409) {
+                        modalUtils.closeModal("deleteProfileModal");
+                        modalUtils.openModal("deleteProfileErrorModal");
+                    } else {
+                        throw new Error("Errore generico");
+                    }
+                })
+                .catch(err => {
+                    alert("❌ Errore durante l’eliminazione del profilo: " + err.message);
+                });
+        });
+    }
+
+    const okDeleteBtn = document.getElementById("okDeleteBtn");
+    if (okDeleteBtn) {
+        okDeleteBtn.addEventListener("click", () => {
+            modalUtils.closeModal("deleteProfileSuccessModal");
+            window.location.href = "/";
+        });
+    }
+
+    // ================== CHIUSURA MODALI GENERICHE ==================
     document.querySelectorAll(".btn-close-modal").forEach(btn => {
         btn.addEventListener("click", e => {
             e.stopPropagation();

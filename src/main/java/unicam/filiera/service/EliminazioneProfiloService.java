@@ -1,31 +1,42 @@
 package unicam.filiera.service;
 
 import unicam.filiera.dto.RichiestaEliminazioneProfiloDto;
+import unicam.filiera.entity.RichiestaEliminazioneProfiloEntity;
 import unicam.filiera.model.RichiestaEliminazioneProfilo;
 import unicam.filiera.model.StatoRichiestaEliminazioneProfilo;
 
 import java.util.List;
+import java.util.Optional;
 
-/**
- * Service per la gestione delle richieste di eliminazione profilo.
- */
 public interface EliminazioneProfiloService {
 
     /**
      * Invia una nuova richiesta di eliminazione profilo.
-     * @param dto dati della richiesta
-     * @throws IllegalStateException se esiste già una richiesta IN_ATTESA per l'utente
-     * @throws RuntimeException se si verifica un errore durante il salvataggio
      */
     void inviaRichiestaEliminazione(RichiestaEliminazioneProfiloDto dto);
 
     /**
-     * Restituisce tutte le richieste di eliminazione con un certo stato.
+     * Restituisce tutte le richieste con lo stato specificato (domain model).
      */
     List<RichiestaEliminazioneProfilo> getRichiesteByStato(StatoRichiestaEliminazioneProfilo stato);
 
     /**
-     * Restituisce tutte le richieste di eliminazione fatte da un utente.
+     * Restituisce tutte le richieste fatte da un certo utente (domain model).
      */
     List<RichiestaEliminazioneProfilo> getRichiesteByUtente(String username);
+
+    /**
+     * Recupera una richiesta per ID.
+     */
+    Optional<RichiestaEliminazioneProfiloEntity> findEntityById(Long id);
+
+    /**
+     * Aggiorna lo stato di una richiesta.
+     */
+    void aggiornaStato(Long id, StatoRichiestaEliminazioneProfilo nuovoStato);
+
+    /**
+     * Converte una entity in DTO.
+     */
+    RichiestaEliminazioneProfiloDto mapToDto(RichiestaEliminazioneProfiloEntity e);
 }

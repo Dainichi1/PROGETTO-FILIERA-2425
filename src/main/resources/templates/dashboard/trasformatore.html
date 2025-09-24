@@ -19,6 +19,9 @@
     <button type="button" class="btn-primary" id="btnSocialFeed">📢 Visualizza Social Network</button>
     <button type="button" class="btn-primary" id="btnVisite">👀 Visualizza visite disponibili</button>
     <button type="button" class="btn-primary" id="btnPrenotazioni">📅 Visualizza prenotazioni</button>
+    <button id="btnDeleteProfile" class="btn btn-danger btn-lg ms-2">
+        🗑️ Elimina profilo
+    </button>
 </div>
 
 <h2>I tuoi Prodotti Trasformati</h2>
@@ -48,14 +51,16 @@
 <div th:replace="fragments/modals :: create-update-modals('Prodotto Trasformato','/trasformatore/dashboard')"></div>
 <div th:replace="fragments/modals :: social-modals('/trasformatore/dashboard')"></div>
 <div th:replace="fragments/modals :: social-feed-modal"></div>
-<div th:replace="fragments/modals :: prenotazione-visita-modals('/trasformatore/dashboard')"></div>
 <div th:replace="fragments/modals :: prenotazioni-delete-modals('/trasformatore/dashboard')"></div>
+<div th:replace="fragments/modals :: prenotazione-visita-modals('/trasformatore/dashboard')"></div>
 <div th:replace="fragments/modals :: social-not-available-modal"></div>
 
+<!-- ================== MODALE ELIMINAZIONE PROFILO ================== -->
+<div th:replace="fragments/profile-delete-modal :: profile-delete-modal"></div>
 
 <hr class="section-separator"/>
 
-<!-- ================== FORM CREAZIONE PRODOTTO ================== -->
+<!-- ================== FORM CREAZIONE TRASFORMATO ================== -->
 <button type="button" class="btn-primary" id="btnCreateTrasformato">➕ Crea Prodotto Trasformato</button>
 
 <div id="trasformatoForm" class="form-container"

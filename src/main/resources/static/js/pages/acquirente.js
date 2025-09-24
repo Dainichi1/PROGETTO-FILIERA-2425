@@ -105,10 +105,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // attach gestione eliminazione prenotazioni fiere (con update fondi lato client)
+    // attach gestione eliminazione prenotazioni fiere
     prenotazioniFiereUtils.attachPrenotazioneFieraDeleteHandler();
 
-    // ================== PULSANTE RECENSIONE ==================
+    // ================== RECENSIONI ==================
     document.querySelectorAll(".btn-pubblica-recensione").forEach(btn => {
         btn.addEventListener("click", () => {
             const id = btn.dataset.id;
@@ -126,7 +126,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // ================== PUBBLICAZIONE RECENSIONI ==================
     document.getElementById("btnOkRecensionePost")?.addEventListener("click", () => {
         const titleEl = document.getElementById("recensioneTitle");
         const textEl = document.getElementById("recensioneText");
@@ -198,7 +197,6 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     });
 
-    // ================== LIVE VALIDATION RECENSIONI ==================
     ["recensioneTitle", "recensioneText"].forEach(id => {
         const field = document.getElementById(id);
         if (field) {
@@ -220,7 +218,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ================== SUBMIT PAGAMENTO ==================
     const paymentForm = document.getElementById("paymentForm");
     if (paymentForm) {
         paymentForm.addEventListener("submit", e => {
@@ -254,7 +251,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ================== CONFERMA ACQUISTO ==================
     const btnConfirmPurchase = document.getElementById("btnConfirmPurchase");
     if (btnConfirmPurchase) {
         btnConfirmPurchase.addEventListener("click", () => {
@@ -312,4 +308,54 @@ document.addEventListener("DOMContentLoaded", () => {
             if (target) modalUtils.closeModal(target);
         });
     });
+
+    // ================== ELIMINA PROFILO ==================
+    const btnDeleteProfile = document.getElementById("btnDeleteProfile");
+    if (btnDeleteProfile) {
+        btnDeleteProfile.addEventListener("click", () => {
+            modalUtils.openModal("deleteProfileModal");
+        });
+    }
+
+    const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener("click", () => {
+            console.log("Richiesta eliminazione profilo per Acquirente");
+
+            const csrf = csrfUtils.getCsrf();
+
+            fetch("/acquirente/richiesta-eliminazione", {
+                method: "POST",
+                headers: { [csrf.header]: csrf.token },
+                credentials: "same-origin"
+            })
+                .then(r => {
+                    if (r.status === 409) {
+                        // Richiesta già presente
+                        modalUtils.closeModal("deleteProfileModal");
+                        modalUtils.openModal("deleteProfileErrorModal");
+                        return;
+                    }
+                    if (!r.ok) throw new Error("Errore HTTP " + r.status);
+
+                    // Successo
+                    modalUtils.closeModal("deleteProfileModal");
+                    modalUtils.openModal("deleteProfileSuccessModal");
+                })
+                .catch(err => {
+                    console.error("Errore durante richiesta eliminazione:", err);
+                    modalUtils.closeModal("deleteProfileModal");
+                    modalUtils.openModal("deleteProfileErrorModal");
+                });
+        });
+    }
+
+    const okDeleteBtn = document.getElementById("okDeleteBtn");
+    if (okDeleteBtn) {
+        okDeleteBtn.addEventListener("click", () => {
+            modalUtils.closeModal("deleteProfileSuccessModal");
+            // Redirect alla home
+            window.location.href = "/";
+        });
+    }
 });

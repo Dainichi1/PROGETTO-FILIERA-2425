@@ -9,6 +9,8 @@ import unicam.filiera.dto.ItemTipo;
 import unicam.filiera.dto.PacchettoDto;
 import unicam.filiera.dto.PrenotazioneVisitaDto;
 import unicam.filiera.model.StatoProdotto;
+import unicam.filiera.repository.UtenteRepository;
+import unicam.filiera.service.EliminazioneProfiloService;
 import unicam.filiera.service.PacchettoService;
 import unicam.filiera.service.PrenotazioneVisitaService;
 import unicam.filiera.service.ProdottoService;
@@ -27,7 +29,10 @@ public class DistributoreWebController extends AbstractCreationController<Pacche
     public DistributoreWebController(PacchettoService pacchettoService,
                                      ProdottoService prodottoService,
                                      VisitaInvitoService visitaInvitoService,
-                                     PrenotazioneVisitaService prenotazioneVisitaService) {
+                                     PrenotazioneVisitaService prenotazioneVisitaService,
+                                     UtenteRepository utenteRepo,
+                                     EliminazioneProfiloService eliminazioneProfiloService) {
+        super(utenteRepo, eliminazioneProfiloService); // gestisce utente + eliminazione profilo
         this.pacchettoService = pacchettoService;
         this.prodottoService = prodottoService;
         this.visitaInvitoService = visitaInvitoService;

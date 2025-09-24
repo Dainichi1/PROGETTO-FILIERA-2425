@@ -33,7 +33,6 @@ function clientValidateTrasformato() {
     if (!certificati.files?.length) { formUtils.setFieldError("certificati-trasformatoDto","⚠ Devi caricare almeno un certificato"); ok = false; }
     if (!foto.files?.length) { formUtils.setFieldError("foto-trasformatoDto","⚠ Devi caricare almeno una foto"); ok = false; }
 
-    // Aggiornato: usa l'id fasiListErr
     const numFasi = document.querySelectorAll("#fasiList li").length;
     const fasiErr = document.getElementById("fasiListErr");
     if (numFasi < 2) {
@@ -97,43 +96,37 @@ const trasformatoCrud = crudUtils.createInstance({
     }
 });
 
-// Override: pubblicazione social solo se APPROVATO
+// ================== OVERRIDE: social solo se APPROVATO ==================
 trasformatoCrud.handleSocialClick = (button) => {
     const stato = (button.getAttribute("data-stato") || "").trim().toUpperCase();
     const type = button.getAttribute("data-type");
     const id = button.getAttribute("data-id");
 
-    console.log("DEBUG → click su publish", { stato, type, id });
-
     if (stato !== "APPROVATO") {
         const msg = `⚠ Puoi pubblicare solo ${type} con stato APPROVATO.`;
-        console.log("DEBUG → apro socialNotAvailableModal con messaggio:", msg);
         const msgEl = document.getElementById("socialNotAvailableMessage");
         if (msgEl) msgEl.innerText = msg;
         modalUtils.openModal("socialNotAvailableModal");
         return;
     }
 
-    console.log("DEBUG → apro socialPostModal standard", { id, type });
     trasformatoCrud.openSocialModal(id, type);
 };
 
-
-// ================== FASI: helpers minimi ==================
+// ================== FASI: helpers ==================
 function appendFaseLi(descrizione, produttore, prodottoId) {
     const ul = document.getElementById("fasiList");
     const li = document.createElement("li");
     li.className = "fase-item";
     li.innerHTML = `
-    <span class="fase-text">${descrizione} — ${produttore} — #${prodottoId}</span>
-    <button type="button" class="btn-small btn-remove-fase">Rimuovi</button>
-    <input type="hidden" name="" data-field="descrizioneFase" value="${descrizione}">
-    <input type="hidden" name="" data-field="produttoreUsername" value="${produttore}">
-    <input type="hidden" name="" data-field="prodottoOrigineId" value="${prodottoId}">
-  `;
+      <span class="fase-text">${descrizione} — ${produttore} — #${prodottoId}</span>
+      <button type="button" class="btn-small btn-remove-fase">Rimuovi</button>
+      <input type="hidden" data-field="descrizioneFase" value="${descrizione}">
+      <input type="hidden" data-field="produttoreUsername" value="${produttore}">
+      <input type="hidden" data-field="prodottoOrigineId" value="${prodottoId}">
+    `;
     ul.appendChild(li);
 }
-
 function reindexFasi() {
     document.querySelectorAll("#fasiList li").forEach((li, idx) => {
         li.querySelectorAll('input[type="hidden"]').forEach(h => {
@@ -145,32 +138,22 @@ function reindexFasi() {
 
 // ================== INIT ==================
 document.addEventListener("DOMContentLoaded", () => {
-    // Social feed
-    document.getElementById("btnSocialFeed")?.addEventListener("click", () => {
-        // se hai un helper globale: crudUtils.openSocialFeed();
-        // altrimenti apri la modale:
-        document.getElementById("socialFeedModal") && modalUtils.openModal("socialFeedModal");
-    });
-
-    // Toggle sezioni
+    // Sezioni toggle
     document.getElementById("btnVisite")?.addEventListener("click", () => toggleUtils.toggleSection("visiteSection"));
     document.getElementById("btnPrenotazioni")?.addEventListener("click", () => toggleUtils.toggleSection("prenotazioniSection"));
     document.getElementById("btnCloseVisite")?.addEventListener("click", () => toggleUtils.toggleSection("visiteSection"));
     document.getElementById("btnClosePrenotazioni")?.addEventListener("click", () => toggleUtils.toggleSection("prenotazioniSection"));
-// Bottone Social Feed
-    document.getElementById("btnSocialFeed")?.addEventListener("click", () => {
-        crudUtils.openSocialFeed();
-    });
 
-    // Pulsanti tabella
+    // Social feed
+    document.getElementById("btnSocialFeed")?.addEventListener("click", () => crudUtils.openSocialFeed());
+
+    // Tabella azioni
     document.querySelectorAll(".btn-delete").forEach(btn => btn.addEventListener("click", () => trasformatoCrud.handleDeleteClick(btn)));
     document.querySelectorAll(".btn-edit").forEach(btn => btn.addEventListener("click", () => trasformatoCrud.handleEditClick(btn)));
     document.querySelectorAll(".btn-publish").forEach(btn => btn.addEventListener("click", () => trasformatoCrud.handleSocialClick(btn)));
 
     // Prenotazioni visite
-    document.querySelectorAll(".btn-prenota-visita").forEach(btn => {
-        btn.addEventListener("click", () => prenotazioniUtils.openPrenotazioneVisitaModal(btn));
-    });
+    document.querySelectorAll(".btn-prenota-visita").forEach(btn => btn.addEventListener("click", () => prenotazioniUtils.openPrenotazioneVisitaModal(btn)));
     document.querySelectorAll(".btn-delete-prenotazione").forEach(btn => {
         btn.addEventListener("click", () => {
             const id = btn.getAttribute("data-id");
@@ -179,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     prenotazioniUtils.attachPrenotazioneDeleteHandler();
 
-    // Modali open/close generiche
+    // Modali open/close
     document.querySelectorAll(".btn-open-modal").forEach(btn => {
         btn.addEventListener("click", () => {
             const target = btn.getAttribute("data-target");
@@ -193,16 +176,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-// Bottone "Chiudi" nei form (nasconde il contenitore)
-    document.querySelectorAll(".btn-toggle-form").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const formContainer = btn.closest(".form-container");
-            if (formContainer) {
-                formContainer.style.display = "none";
-            }
-        });
-    });
-
     // Form Trasformato
     document.getElementById("btnCreateTrasformato")?.addEventListener("click", () => trasformatoCrud.toggleForm(true));
     document.getElementById("btnConfirmDelete")?.addEventListener("click", () => trasformatoCrud.confirmDelete());
@@ -211,9 +184,8 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btnConfirmCreate")?.addEventListener("click", () => { reindexFasi(); trasformatoCrud.confirmCreate(); });
     document.getElementById("btnConfirmUpdate")?.addEventListener("click", () => { reindexFasi(); trasformatoCrud.confirmUpdate(); });
 
-    // FASI: validazione modale + aggiunta
+    // Fasi gestione
     document.querySelector(".btn-add-fase")?.addEventListener("click", () => {
-        // pulizia errori
         document.getElementById("faseDescrizioneErr").textContent = "";
         document.getElementById("faseProduttoreErr").textContent = "";
         document.getElementById("faseProdottoBaseErr").textContent = "";
@@ -232,14 +204,12 @@ document.addEventListener("DOMContentLoaded", () => {
         appendFaseLi(desc, prod, prodottoId);
         reindexFasi();
 
-        // reset campi modale e chiudi
         document.getElementById("faseDescrizione").value = "";
         document.getElementById("faseProduttore").value = "";
         document.getElementById("faseProdottoBase").innerHTML = `<option value="">-- Seleziona prima un produttore --</option>`;
         modalUtils.closeModal("faseModal");
     });
 
-    // Rimozione fase
     document.getElementById("fasiList")?.addEventListener("click", (e) => {
         if (e.target.classList.contains("btn-remove-fase")) {
             e.target.closest("li")?.remove();
@@ -247,7 +217,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Caricamento dinamico prodotti base al cambio produttore
     document.getElementById("faseProduttore")?.addEventListener("change", async (e) => {
         const sel = document.getElementById("faseProdottoBase");
         sel.innerHTML = `<option value="">Caricamento...</option>`;
@@ -268,10 +237,54 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Selezione social (multi-riga)
     socialSelectionUtils.init({
         rowSelector: ".selectable-row",
         btnPubblicaId: "btnPubblicaAvviso",
         crudMap: { TRASFORMATO: trasformatoCrud }
     });
+
+    // ================== ELIMINA PROFILO ==================
+    const btnDeleteProfile = document.getElementById("btnDeleteProfile");
+    if (btnDeleteProfile) {
+        btnDeleteProfile.addEventListener("click", () => {
+            modalUtils.openModal("deleteProfileModal");
+        });
+    }
+
+    const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener("click", () => {
+            const csrfHeader = document.querySelector("meta[name='_csrf_header']").content;
+            const csrfToken = document.querySelector("meta[name='_csrf']").content;
+
+            fetch("/trasformatore/richiesta-eliminazione", {
+                method: "POST",
+                headers: {
+                    [csrfHeader]: csrfToken
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        modalUtils.closeModal("deleteProfileModal");
+                        modalUtils.openModal("deleteProfileSuccessModal");
+                    } else if (response.status === 409) {
+                        modalUtils.closeModal("deleteProfileModal");
+                        modalUtils.openModal("deleteProfileErrorModal");
+                    } else {
+                        throw new Error("Errore imprevisto");
+                    }
+                })
+                .catch(err => {
+                    console.error("Errore eliminazione profilo", err);
+                    alert("Errore durante l'invio della richiesta.");
+                });
+        });
+    }
+
+    const okDeleteBtn = document.getElementById("okDeleteBtn");
+    if (okDeleteBtn) {
+        okDeleteBtn.addEventListener("click", () => {
+            modalUtils.closeModal("deleteProfileSuccessModal");
+        });
+    }
 });

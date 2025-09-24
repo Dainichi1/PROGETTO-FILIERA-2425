@@ -1,80 +1,107 @@
-// src/main/java/unicam/filiera/controller/GestoreRichiesteEliminazioneController.java
 package unicam.filiera.controller;
 
-import unicam.filiera.dao.JdbcRichiestaEliminazioneProfiloDAO;
-import unicam.filiera.dao.JdbcUtenteDAO;
-import unicam.filiera.model.RichiestaEliminazioneProfilo;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import unicam.filiera.dto.RichiestaEliminazioneProfiloDto;
+import unicam.filiera.model.GestorePiattaforma;
 import unicam.filiera.model.StatoRichiestaEliminazioneProfilo;
-import unicam.filiera.model.observer.EliminazioneProfiloNotifier;
+import unicam.filiera.repository.UtenteRepository;
 import unicam.filiera.service.EliminazioneProfiloService;
-import unicam.filiera.service.EliminazioneProfiloServiceImpl;
 
 import java.util.List;
 
+@Controller
+@RequestMapping("/gestore/richieste")
 public class GestoreRichiesteEliminazioneController {
 
-    private final EliminazioneProfiloService service;
+    private final UtenteRepository utenteRepo;
+    private final EliminazioneProfiloService eliminazioneProfiloService;
 
-    public GestoreRichiesteEliminazioneController() {
-        this.service = new EliminazioneProfiloServiceImpl(JdbcRichiestaEliminazioneProfiloDAO.getInstance());
+    public GestoreRichiesteEliminazioneController(UtenteRepository utenteRepo,
+                                                  EliminazioneProfiloService eliminazioneProfiloService) {
+        this.utenteRepo = utenteRepo;
+        this.eliminazioneProfiloService = eliminazioneProfiloService;
     }
 
     /**
-     * Step 3: elenco richieste IN_ATTESA.
+     * Dashboard richieste eliminazione profilo (mostra quelle in attesa).
      */
-    public List<RichiestaEliminazioneProfilo> getRichiesteInAttesa() {
-        return service.getRichiesteByStato(StatoRichiestaEliminazioneProfilo.IN_ATTESA);
-    }
-
-    /**
-     * Step 5: dettaglio richiesta.
-     */
-    public RichiestaEliminazioneProfilo getDettaglio(int richiestaId) {
-        return JdbcRichiestaEliminazioneProfiloDAO.getInstance().findById(richiestaId);
-    }
-
-    /**
-     * Step 6.a.1: rifiuta richiesta + notifica utente.
-     */
-    public boolean rifiutaRichiesta(int richiestaId) {
-        var dao = JdbcRichiestaEliminazioneProfiloDAO.getInstance();
-        RichiestaEliminazioneProfilo r = dao.findById(richiestaId);
-        if (r == null) return false;
-
-        boolean ok = dao.updateStato(richiestaId, StatoRichiestaEliminazioneProfilo.RIFIUTATA);
-        if (ok) {
-            EliminazioneProfiloNotifier.getInstance()
-                    .notificaRifiutata(r.getUsername(), richiestaId, "La richiesta è stata rifiutata dal gestore.");
-        }
-        return ok;
-    }
-
-    /**
-     * Step 7-10: approva richiesta -> (7) messaggio di conferma lato UI,
-     * (9) elimina utente, (10) aggiorna stato APPROVATA, (11) notifica utente.
-     * Nota: qui manteniamo lo storico nella tabella richieste.
-     */
-    public boolean approvaRichiesta(int richiestaId) {
-        var dao = JdbcRichiestaEliminazioneProfiloDAO.getInstance();
-        RichiestaEliminazioneProfilo r = dao.findById(richiestaId);
-        if (r == null) return false;
-
-        // (10) stato = APPROVATA (storico mantenuto)
-        boolean statoAggiornato = dao.updateStato(richiestaId, StatoRichiestaEliminazioneProfilo.APPROVATA);
-        if (!statoAggiornato) return false;
-
-        // (9) elimina profilo utente
-        boolean deleted = JdbcUtenteDAO.getInstance().deleteByUsername(r.getUsername());
-        if (!deleted) {
-            // piccolo rollback logico: riporto in ATTESA se la delete fallisce
-            dao.updateStato(richiestaId, StatoRichiestaEliminazioneProfilo.IN_ATTESA);
-            return false;
+    @GetMapping
+    public String dashboardRichieste(Model model, Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return "redirect:/login";
         }
 
-        // (11) notifica utente dell’avvenuta eliminazione
-        EliminazioneProfiloNotifier.getInstance()
-                .notificaEliminata(r.getUsername(), richiestaId);
+        String username = auth.getName();
+        return utenteRepo.findById(username)
+                .map(e -> {
+                    GestorePiattaforma gestore = new GestorePiattaforma(
+                            e.getUsername(),
+                            e.getPassword(),
+                            e.getNome(),
+                            e.getCognome()
+                    );
+                    model.addAttribute("utente", gestore);
 
-        return true;
+                    // Recupero richieste e le mappo in DTO
+                    List<RichiestaEliminazioneProfiloDto> richiesteInAttesa =
+                            eliminazioneProfiloService.getRichiesteByStato(StatoRichiestaEliminazioneProfilo.IN_ATTESA)
+                                    .stream()
+                                    .map(r -> new RichiestaEliminazioneProfiloDto(
+                                            r.getId(),
+                                            r.getUsername(),
+                                            r.getStato().name(),
+                                            r.getDataRichiesta()
+                                    ))
+                                    .toList();
+
+                    model.addAttribute("richieste", richiesteInAttesa);
+
+                    return "dashboard/richieste_eliminazione";
+                })
+                .orElse("error/utente_non_trovato");
+    }
+
+    /**
+     * Approva la richiesta: elimina l’utente e aggiorna lo stato.
+     */
+    @PostMapping("/approva/{id}")
+    public String approvaRichiesta(@PathVariable("id") Long id, Model model) {
+        try {
+            eliminazioneProfiloService.aggiornaStato(id, StatoRichiestaEliminazioneProfilo.APPROVATA);
+        } catch (Exception e) {
+            model.addAttribute("error", "Errore approvazione richiesta: " + e.getMessage());
+        }
+        return "redirect:/gestore/richieste";
+    }
+
+    /**
+     * Rifiuta la richiesta: aggiorna solo lo stato.
+     */
+    @PostMapping("/rifiuta/{id}")
+    public String rifiutaRichiesta(@PathVariable("id") Long id, Model model) {
+        try {
+            eliminazioneProfiloService.aggiornaStato(id, StatoRichiestaEliminazioneProfilo.RIFIUTATA);
+        } catch (Exception e) {
+            model.addAttribute("error", "Errore rifiuto richiesta: " + e.getMessage());
+        }
+        return "redirect:/gestore/richieste";
+    }
+
+    @GetMapping("/api")
+    @ResponseBody
+    public List<RichiestaEliminazioneProfiloDto> richiesteApi() {
+        return eliminazioneProfiloService
+                .getRichiesteByStato(StatoRichiestaEliminazioneProfilo.IN_ATTESA)
+                .stream()
+                .map(r -> new RichiestaEliminazioneProfiloDto(
+                        r.getId(),
+                        r.getUsername(),
+                        r.getStato().name(),
+                        r.getDataRichiesta()
+                ))
+                .toList();
     }
 }

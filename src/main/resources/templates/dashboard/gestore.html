@@ -13,13 +13,21 @@
     Benvenuto, il tuo ruolo è Gestore della Piattaforma.
 </h1>
 
+<!-- ================== AZIONI PRINCIPALI ================== -->
 <div class="actions-container">
     <a th:href="@{/gestore/contenuti}" class="btn-primary">
         📊 Visualizza contenuto della piattaforma
     </a>
+    <button id="btnDeleteProfile" class="btn btn-danger btn-lg ms-2">
+        🗑️ Elimina profilo
+    </button>
+    <button id="btnViewDeletionRequests" class="btn btn-primary">
+        📋 Visualizza richieste di eliminazione in attesa
+    </button>
 </div>
 
-<!-- ===== MODALE SEMPLICE ===== -->
+<!-- ================== MODALI ================== -->
+<!-- Modale semplice per conferma apertura contenuti -->
 <div id="contenutiModal" class="modal" style="display:none;">
     <div class="modal-content">
         <h3>Contenuti della piattaforma</h3>
@@ -31,9 +39,17 @@
     </div>
 </div>
 
+<!-- Modale generica eliminazione profilo -->
+<div th:replace="fragments/profile-delete-modal :: profile-delete-modal"></div>
+
+<!-- Modali specifici per gestore -->
+<div th:replace="fragments/gestore-modals :: modals"></div>
+
+<hr class="section-separator"/>
+
 <p><a th:href="@{/}" class="btn-secondary">⬅ Torna alla Home</a></p>
 
-<!-- JS della dashboard del gestore -->
+<!-- ================== SCRIPT ================== -->
 <script type="module" th:src="@{/js/pages/gestore.js}"></script>
 </body>
 </html>

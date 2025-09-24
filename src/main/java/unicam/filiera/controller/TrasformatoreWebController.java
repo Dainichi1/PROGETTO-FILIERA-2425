@@ -3,14 +3,23 @@ package unicam.filiera.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import unicam.filiera.controller.base.AbstractCreationController;
 import unicam.filiera.dto.ItemTipo;
 import unicam.filiera.dto.PrenotazioneVisitaDto;
 import unicam.filiera.dto.ProdottoDto;
 import unicam.filiera.dto.ProdottoTrasformatoDto;
 import unicam.filiera.model.StatoProdotto;
-import unicam.filiera.service.*;
+import unicam.filiera.repository.UtenteRepository;
+import unicam.filiera.service.EliminazioneProfiloService;
+import unicam.filiera.service.PrenotazioneVisitaService;
+import unicam.filiera.service.ProdottoService;
+import unicam.filiera.service.ProdottoTrasformatoService;
+import unicam.filiera.service.UtenteService;
+import unicam.filiera.service.VisitaInvitoService;
 
 import java.util.List;
 
@@ -29,7 +38,10 @@ public class TrasformatoreWebController extends AbstractCreationController<Prodo
                                       ProdottoService prodottoService,
                                       UtenteService utenteService,
                                       VisitaInvitoService visitaInvitoService,
-                                      PrenotazioneVisitaService prenotazioneVisitaService) {
+                                      PrenotazioneVisitaService prenotazioneVisitaService,
+                                      UtenteRepository utenteRepo,
+                                      EliminazioneProfiloService eliminazioneProfiloService) {
+        super(utenteRepo, eliminazioneProfiloService); // delega a base
         this.trasformatoService = trasformatoService;
         this.prodottoService = prodottoService;
         this.utenteService = utenteService;
@@ -86,7 +98,6 @@ public class TrasformatoreWebController extends AbstractCreationController<Prodo
 
     /**
      * Endpoint JSON per ottenere i prodotti APPROVATI di un produttore specifico.
-     * Usato dalla tabella/gestione fasi (trasformatore.js).
      */
     @GetMapping("/prodotti/{username}")
     @ResponseBody

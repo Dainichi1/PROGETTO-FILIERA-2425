@@ -19,6 +19,9 @@
     <button type="button" class="btn-primary" id="btnSocialFeed">📢 Visualizza Social Network</button>
     <button type="button" class="btn-primary" id="btnVisite">👀 Visualizza visite disponibili</button>
     <button type="button" class="btn-primary" id="btnPrenotazioni">📅 Visualizza prenotazioni</button>
+    <button id="btnDeleteProfile" class="btn btn-danger btn-lg ms-2">
+        🗑️ Richiedi eliminazione profilo
+    </button>
 </div>
 
 <h2>I tuoi Pacchetti</h2>
@@ -30,7 +33,7 @@
 <div id="visiteSection" class="toggle-section">
     <div th:replace="fragments/visite-table :: visite-table(${visiteDisponibili})"></div>
     <div class="actions-container">
-        <button type="button" class="btn-secondary" id="btnCloseVisite">Chiudi</button>
+        <button type="button" class="btn-secondary" onclick="toggleUtils.toggleSection('visiteSection')">Chiudi</button>
     </div>
 </div>
 
@@ -38,7 +41,7 @@
 <div id="prenotazioniSection" class="toggle-section">
     <div th:replace="fragments/prenotazioni-table :: prenotazioni-table(${prenotazioni})"></div>
     <div class="actions-container">
-        <button type="button" class="btn-secondary" id="btnClosePrenotazioni">Chiudi</button>
+        <button type="button" class="btn-secondary" onclick="toggleUtils.toggleSection('prenotazioniSection')">Chiudi</button>
     </div>
 </div>
 
@@ -51,6 +54,9 @@
 <div th:replace="fragments/modals :: prenotazioni-delete-modals('/distributore/dashboard')"></div>
 <div th:replace="fragments/modals :: prenotazione-visita-modals('/distributore/dashboard')"></div>
 <div th:replace="fragments/modals :: social-not-available-modal"></div>
+
+<!-- ================= MODALE ELIMINAZIONE PROFILO ================= -->
+<div th:replace="fragments/profile-delete-modal :: profile-delete-modal"></div>
 
 <hr class="section-separator"/>
 

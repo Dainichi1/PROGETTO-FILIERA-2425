@@ -1,5 +1,7 @@
 package unicam.filiera.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -8,7 +10,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import unicam.filiera.dto.PacchettoViewDto;
 import unicam.filiera.dto.PrenotazioneFieraDto;
+import unicam.filiera.dto.RichiestaEliminazioneProfiloDto;
 import unicam.filiera.entity.ProdottoEntity;
+import unicam.filiera.entity.UtenteEntity;
 import unicam.filiera.model.Acquirente;
 import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.repository.AcquistoItemRepository;
@@ -25,6 +29,8 @@ import java.util.Optional;
 @RequestMapping("/acquirente")
 public class AcquirenteWebController {
 
+    private static final Logger log = LoggerFactory.getLogger(AcquirenteWebController.class);
+
     private final UtenteRepository repo;
     private final ProdottoService prodottoService;
     private final PacchettoService pacchettoService;
@@ -33,6 +39,7 @@ public class AcquirenteWebController {
     private final AcquistoRepository acquistoRepository;
     private final FieraService fieraService;
     private final PrenotazioneFieraService prenotazioneFieraService;
+    private final EliminazioneProfiloService eliminazioneProfiloService;
 
     public AcquirenteWebController(
             UtenteRepository repo,
@@ -42,7 +49,8 @@ public class AcquirenteWebController {
             AcquistoItemRepository acquistoItemRepository,
             AcquistoRepository acquistoRepository,
             FieraService fieraService,
-            PrenotazioneFieraService prenotazioneFieraService
+            PrenotazioneFieraService prenotazioneFieraService,
+            EliminazioneProfiloService eliminazioneProfiloService
     ) {
         this.repo = repo;
         this.prodottoService = prodottoService;
@@ -52,8 +60,10 @@ public class AcquirenteWebController {
         this.acquistoRepository = acquistoRepository;
         this.fieraService = fieraService;
         this.prenotazioneFieraService = prenotazioneFieraService;
+        this.eliminazioneProfiloService = eliminazioneProfiloService;
     }
 
+    // ================== DASHBOARD ==================
     @GetMapping("/dashboard")
     public String dashboard(Model model, Authentication auth) {
         if (auth == null || !auth.isAuthenticated()) {
@@ -64,7 +74,7 @@ public class AcquirenteWebController {
 
         return repo.findById(username)
                 .map(e -> {
-                    // Creazione Acquirente
+                    // Costruzione DTO utente
                     Acquirente acquirente = new Acquirente(
                             e.getUsername(),
                             e.getPassword(),
@@ -72,12 +82,10 @@ public class AcquirenteWebController {
                             e.getCognome(),
                             (e.getFondi() != null) ? e.getFondi() : 0.0
                     );
-
                     model.addAttribute("utente", acquirente);
 
                     // Prodotti
-                    model.addAttribute("prodotti",
-                            prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
+                    model.addAttribute("prodotti", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
 
                     // Pacchetti
                     List<PacchettoViewDto> pacchettiDto = pacchettoService.getPacchettiByStato(StatoProdotto.APPROVATO)
@@ -108,12 +116,10 @@ public class AcquirenteWebController {
                                 return dto;
                             })
                             .toList();
-
                     model.addAttribute("pacchetti", pacchettiDto);
 
                     // Trasformati
-                    model.addAttribute("trasformati",
-                            trasformatoService.getProdottiTrasformatiByStato(StatoProdotto.APPROVATO));
+                    model.addAttribute("trasformati", trasformatoService.getProdottiTrasformatiByStato(StatoProdotto.APPROVATO));
 
                     // Acquisti
                     model.addAttribute("acquisti",
@@ -123,12 +129,11 @@ public class AcquirenteWebController {
                                     .toList()
                     );
 
-                    // Fiere disponibili (solo quelle pubblicate)
+                    // Fiere disponibili
                     model.addAttribute("fiere", fieraService.getFierePubblicate());
 
                     // Prenotazioni fiere dell’utente
-                    List<PrenotazioneFieraDto> prenotazioni = prenotazioneFieraService.getPrenotazioniByAcquirente(username);
-                    model.addAttribute("prenotazioniFiere", prenotazioni);
+                    model.addAttribute("prenotazioniFiere", prenotazioneFieraService.getPrenotazioniByAcquirente(username));
 
                     return "dashboard/acquirente";
                 })
@@ -148,7 +153,7 @@ public class AcquirenteWebController {
         }
 
         try {
-            FondiValidator.valida(importo); // usa il validator
+            FondiValidator.valida(importo);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
@@ -181,4 +186,30 @@ public class AcquirenteWebController {
                 )));
     }
 
+    // ================== eliminazione profilo ==================
+    @PostMapping("/richiesta-eliminazione")
+    @ResponseBody
+    public ResponseEntity<String> richiestaEliminazione(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Utente non autenticato");
+        }
+
+        String loginName = auth.getName();
+        UtenteEntity utente = repo.findByUsername(loginName)
+                .orElseThrow(() -> new IllegalStateException("Utente non trovato"));
+
+        try {
+            RichiestaEliminazioneProfiloDto dto = RichiestaEliminazioneProfiloDto.builder()
+                    .username(utente.getUsername())
+                    .build();
+            eliminazioneProfiloService.inviaRichiestaEliminazione(dto);
+
+            return ResponseEntity.ok("Richiesta di eliminazione inviata con successo.");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (Exception e) {
+            log.error("Errore eliminazione profilo", e);
+            return ResponseEntity.internalServerError().body("Errore: " + e.getMessage());
+        }
+    }
 }

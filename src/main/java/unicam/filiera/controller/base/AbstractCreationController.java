@@ -10,6 +10,10 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import unicam.filiera.dto.BaseItemDto;
+import unicam.filiera.dto.RichiestaEliminazioneProfiloDto;
+import unicam.filiera.entity.UtenteEntity;
+import unicam.filiera.repository.UtenteRepository;
+import unicam.filiera.service.EliminazioneProfiloService;
 
 import java.util.function.BiConsumer;
 
@@ -17,22 +21,24 @@ public abstract class AbstractCreationController<T extends BaseItemDto> {
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
+    private final UtenteRepository utenteRepo;
+    private final EliminazioneProfiloService eliminazioneProfiloService;
+
+    protected AbstractCreationController(UtenteRepository utenteRepo,
+                                         EliminazioneProfiloService eliminazioneProfiloService) {
+        this.utenteRepo = utenteRepo;
+        this.eliminazioneProfiloService = eliminazioneProfiloService;
+    }
+
     // ========== Abstract methods da implementare nei figli ==========
 
     protected abstract T newDto();
-
     protected abstract String getDtoName();
-
     protected abstract String getViewName();
-
     protected abstract String getRedirectPath();
-
     protected abstract void loadDashboardLists(Model model, String username);
-
     protected abstract void doCreate(T dto, String username) throws Exception;
-
     protected abstract String getSuccessMessage();
-
     protected abstract void doDelete(Long id, String username) throws Exception;
 
     // ========== Utility comuni ==========
@@ -67,6 +73,13 @@ public abstract class AbstractCreationController<T extends BaseItemDto> {
     public String showDashboard(Model model, Authentication auth) {
         String username = resolveUsername(auth);
         loadDashboardLists(model, username);
+
+        // Aggiungo utente loggato al model (se presente in DB)
+        utenteRepo.findByUsername(username).ifPresentOrElse(
+                u -> model.addAttribute("utente", u),
+                () -> log.warn("[{}] Utente {} non trovato in DB!", getClass().getSimpleName(), username)
+        );
+
         model.addAttribute("showForm", false);
         model.addAttribute("redirectPath", getRedirectPath());
         return getViewName();
@@ -154,6 +167,28 @@ public abstract class AbstractCreationController<T extends BaseItemDto> {
             log.error("Errore durante eliminazione", e);
             return ResponseEntity.internalServerError()
                     .body(buildErrorMessage("eliminazione", getDtoName(), e));
+        }
+    }
+
+    // ========== Endpoint comune per eliminazione profilo ==========
+    @PostMapping("/richiesta-eliminazione")
+    @ResponseBody
+    public ResponseEntity<String> richiestaEliminazione(Authentication auth) {
+        String loginName = auth.getName();
+        UtenteEntity utente = utenteRepo.findByUsername(loginName)
+                .orElseThrow(() -> new IllegalStateException("Utente non trovato"));
+
+        try {
+            RichiestaEliminazioneProfiloDto dto = RichiestaEliminazioneProfiloDto.builder()
+                    .username(utente.getUsername())
+                    .build();
+            eliminazioneProfiloService.inviaRichiestaEliminazione(dto);
+
+            return ResponseEntity.ok("Richiesta di eliminazione inviata con successo.");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(409).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Errore: " + e.getMessage());
         }
     }
 }

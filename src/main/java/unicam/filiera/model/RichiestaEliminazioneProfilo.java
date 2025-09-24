@@ -1,35 +1,47 @@
 package unicam.filiera.model;
 
+import lombok.Getter;
+import lombok.ToString;
+
 import java.time.LocalDateTime;
 
+/**
+ * Modello di dominio per la richiesta di eliminazione profilo.
+ * Rappresenta la richiesta fatta da un utente, gestita dal Gestore della piattaforma.
+ */
+@Getter
+@ToString
 public class RichiestaEliminazioneProfilo {
-    private int id; // ID richiesta
-    private String username; // Username dell'utente che ha richiesto l'eliminazione
-    private StatoRichiestaEliminazioneProfilo stato;
-    private LocalDateTime dataRichiesta;
 
-    public RichiestaEliminazioneProfilo(int id, String username, StatoRichiestaEliminazioneProfilo stato, LocalDateTime dataRichiesta) {
-        this.id = id;
-        this.username = username;
-        this.stato = stato;
-        this.dataRichiesta = dataRichiesta;
+    private final Long id;                          // ID univoco della richiesta
+    private final String username;                  // Utente che ha richiesto l’eliminazione
+    private final StatoRichiestaEliminazioneProfilo stato; // Stato della richiesta
+    private final LocalDateTime dataRichiesta;      // Data e ora della richiesta
+
+    private RichiestaEliminazioneProfilo(Builder b) {
+        this.id = b.id;
+        this.username = b.username;
+        this.stato = b.stato;
+        this.dataRichiesta = b.dataRichiesta;
     }
 
-    // Costruttore senza ID (per inserimento)
-    public RichiestaEliminazioneProfilo(String username, StatoRichiestaEliminazioneProfilo stato, LocalDateTime dataRichiesta) {
-        this(-1, username, stato, dataRichiesta);
+    /* ================== BUILDER ================== */
+    public static class Builder {
+        private Long id;
+        private String username;
+        private StatoRichiestaEliminazioneProfilo stato;
+        private LocalDateTime dataRichiesta;
+
+        public Builder id(Long id) { this.id = id; return this; }
+        public Builder username(String u) { this.username = u; return this; }
+        public Builder stato(StatoRichiestaEliminazioneProfilo s) { this.stato = s; return this; }
+        public Builder dataRichiesta(LocalDateTime d) { this.dataRichiesta = d; return this; }
+
+        public RichiestaEliminazioneProfilo build() {
+            if (username == null || stato == null || dataRichiesta == null) {
+                throw new IllegalStateException("⚠ Campi obbligatori mancanti per RichiestaEliminazioneProfilo");
+            }
+            return new RichiestaEliminazioneProfilo(this);
+        }
     }
-
-    // Getter e Setter
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
-
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-
-    public StatoRichiestaEliminazioneProfilo getStato() { return stato; }
-    public void setStato(StatoRichiestaEliminazioneProfilo stato) { this.stato = stato; }
-
-    public LocalDateTime getDataRichiesta() { return dataRichiesta; }
-    public void setDataRichiesta(LocalDateTime dataRichiesta) { this.dataRichiesta = dataRichiesta; }
 }

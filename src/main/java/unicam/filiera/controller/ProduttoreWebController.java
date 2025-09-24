@@ -9,6 +9,8 @@ import unicam.filiera.dto.ItemTipo;
 import unicam.filiera.dto.PrenotazioneVisitaDto;
 import unicam.filiera.dto.ProdottoDto;
 import unicam.filiera.model.Prodotto;
+import unicam.filiera.repository.UtenteRepository;
+import unicam.filiera.service.EliminazioneProfiloService;
 import unicam.filiera.service.PrenotazioneVisitaService;
 import unicam.filiera.service.ProdottoService;
 import unicam.filiera.service.VisitaInvitoService;
@@ -26,7 +28,10 @@ public class ProduttoreWebController extends AbstractCreationController<Prodotto
     @Autowired
     public ProduttoreWebController(ProdottoService prodottoService,
                                    VisitaInvitoService visitaInvitoService,
-                                   PrenotazioneVisitaService prenotazioneVisitaService) {
+                                   PrenotazioneVisitaService prenotazioneVisitaService,
+                                   UtenteRepository utenteRepo,
+                                   EliminazioneProfiloService eliminazioneProfiloService) {
+        super(utenteRepo, eliminazioneProfiloService); // delega a base: utente + eliminazione profilo
         this.prodottoService = prodottoService;
         this.visitaInvitoService = visitaInvitoService;
         this.prenotazioneVisitaService = prenotazioneVisitaService;

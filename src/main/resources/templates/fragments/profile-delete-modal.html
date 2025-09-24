@@ -1,0 +1,55 @@
+<div th:fragment="profile-delete-modal">
+    <!-- Modale: conferma -->
+    <div id="deleteProfileModal" class="modal">
+        <div class="modal-content">
+            <h5>Conferma eliminazione profilo</h5>
+            <p>
+                ⚠️ <strong>Sei sicuro di voler eliminare il tuo profilo?</strong><br>
+                <span>La richiesta sarà inviata al Gestore.</span>
+            </p>
+            <div class="modal-buttons">
+                <!-- Bottone NO -->
+                <button type="button"
+                        class="btn btn-secondary btn-close-modal"
+                        data-target="deleteProfileModal">
+                    No
+                </button>
+
+                <!-- Bottone SI che richiama JS -->
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    Sì
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale successo -->
+    <div id="deleteProfileSuccessModal" class="modal">
+        <div class="modal-content">
+            <h5>Richiesta inviata</h5>
+            <p><strong>Richiesta di eliminazione inviata! Attendi l'approvazione del Gestore.</strong></p>
+            <div class="modal-buttons">
+                <button type="button" class="btn btn-primary" id="okDeleteBtn">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale errore richiesta duplicata -->
+    <div id="deleteProfileErrorModal" class="modal">
+        <div class="modal-content">
+            <h5>Errore</h5>
+            <p>
+                ⚠️ Esiste già una richiesta di eliminazione <strong>IN_ATTESA</strong> per il tuo profilo.<br>
+                Attendi l'approvazione del Gestore.
+            </p>
+            <div class="modal-buttons">
+                <button type="button" class="btn btn-primary btn-close-modal"
+                        data-target="deleteProfileErrorModal">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

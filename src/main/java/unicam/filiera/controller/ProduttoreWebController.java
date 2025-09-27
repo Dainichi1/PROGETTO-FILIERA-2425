@@ -9,6 +9,7 @@ import unicam.filiera.dto.ItemTipo;
 import unicam.filiera.dto.PrenotazioneVisitaDto;
 import unicam.filiera.dto.ProdottoDto;
 import unicam.filiera.model.Prodotto;
+import unicam.filiera.repository.RichiestaEliminazioneProfiloRepository;
 import unicam.filiera.repository.UtenteRepository;
 import unicam.filiera.service.EliminazioneProfiloService;
 import unicam.filiera.service.PrenotazioneVisitaService;
@@ -30,8 +31,9 @@ public class ProduttoreWebController extends AbstractCreationController<Prodotto
                                    VisitaInvitoService visitaInvitoService,
                                    PrenotazioneVisitaService prenotazioneVisitaService,
                                    UtenteRepository utenteRepo,
-                                   EliminazioneProfiloService eliminazioneProfiloService) {
-        super(utenteRepo, eliminazioneProfiloService); // delega a base: utente + eliminazione profilo
+                                   EliminazioneProfiloService eliminazioneProfiloService,
+                                   RichiestaEliminazioneProfiloRepository richiestaRepo) {
+        super(utenteRepo, eliminazioneProfiloService, richiestaRepo); // gestito in Abstract
         this.prodottoService = prodottoService;
         this.visitaInvitoService = visitaInvitoService;
         this.prenotazioneVisitaService = prenotazioneVisitaService;

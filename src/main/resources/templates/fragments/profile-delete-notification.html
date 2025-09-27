@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="profile-delete-notification">
+  <!-- Modale notifica approvazione -->
+  <div id="profileDeletedNotificationModal" class="modal">
+    <div class="modal-content">
+      <h5>Profilo eliminato</h5>
+      <p>
+        ℹ️ <strong id="deletedProfileMessage">
+        Il tuo profilo è stato eliminato (richiesta ID --).
+        Verrai riportato alla schermata iniziale...
+      </strong>
+      </p>
+      <div class="modal-buttons">
+        <button type="button" class="btn btn-primary" id="okProfileDeletedBtn">
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

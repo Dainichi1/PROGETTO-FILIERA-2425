@@ -11,7 +11,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import unicam.filiera.dto.BaseItemDto;
 import unicam.filiera.dto.RichiestaEliminazioneProfiloDto;
+import unicam.filiera.entity.RichiestaEliminazioneProfiloEntity;
 import unicam.filiera.entity.UtenteEntity;
+import unicam.filiera.model.StatoRichiestaEliminazioneProfilo;
+import unicam.filiera.repository.RichiestaEliminazioneProfiloRepository;
 import unicam.filiera.repository.UtenteRepository;
 import unicam.filiera.service.EliminazioneProfiloService;
 
@@ -23,11 +26,14 @@ public abstract class AbstractCreationController<T extends BaseItemDto> {
 
     private final UtenteRepository utenteRepo;
     private final EliminazioneProfiloService eliminazioneProfiloService;
+    private final RichiestaEliminazioneProfiloRepository richiestaRepo;
 
     protected AbstractCreationController(UtenteRepository utenteRepo,
-                                         EliminazioneProfiloService eliminazioneProfiloService) {
+                                         EliminazioneProfiloService eliminazioneProfiloService,
+                                         RichiestaEliminazioneProfiloRepository richiestaRepo) {
         this.utenteRepo = utenteRepo;
         this.eliminazioneProfiloService = eliminazioneProfiloService;
+        this.richiestaRepo = richiestaRepo;
     }
 
     // ========== Abstract methods da implementare nei figli ==========
@@ -191,4 +197,20 @@ public abstract class AbstractCreationController<T extends BaseItemDto> {
             return ResponseEntity.internalServerError().body("Errore: " + e.getMessage());
         }
     }
+
+    @GetMapping("/richiesta-eliminazione/stato")
+    @ResponseBody
+    public ResponseEntity<String> statoRichiesta(Authentication auth,
+                                                 @RequestParam(defaultValue = "") String ruolo) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(401).body("NON_AUTENTICATO");
+        }
+        String username = auth.getName();
+        return richiestaRepo.findFirstByUsernameAndStatoOrderByDataRichiestaDesc(
+                        username, StatoRichiestaEliminazioneProfilo.APPROVATA)
+                .map(RichiestaEliminazioneProfiloEntity::getId)
+                .map(id -> ResponseEntity.ok("APPROVATA:" + id))
+                .orElse(ResponseEntity.ok("NESSUNA"));
+    }
+
 }

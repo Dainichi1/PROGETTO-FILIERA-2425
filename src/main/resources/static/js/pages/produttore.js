@@ -190,7 +190,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
     if (confirmDeleteBtn) {
         confirmDeleteBtn.addEventListener("click", () => {
-            // Usa fetch per inviare la richiesta POST
             const csrfHeader = document.querySelector("meta[name='_csrf_header']").content;
             const csrfToken = document.querySelector("meta[name='_csrf']").content;
 
@@ -202,11 +201,9 @@ document.addEventListener("DOMContentLoaded", () => {
             })
                 .then(response => {
                     if (response.ok) {
-                        // ✅ Caso 1: richiesta salvata
                         modalUtils.closeModal("deleteProfileModal");
                         modalUtils.openModal("deleteProfileSuccessModal");
                     } else if (response.status === 409) {
-                        // ❌ Caso 2: già esiste richiesta
                         modalUtils.closeModal("deleteProfileModal");
                         modalUtils.openModal("deleteProfileErrorModal");
                     } else {
@@ -219,11 +216,71 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
         });
     }
-    // GESTIONE BOTTONE OK DELLA MODALE "Richiesta inviata"
+
     const okDeleteBtn = document.getElementById("okDeleteBtn");
     if (okDeleteBtn) {
         okDeleteBtn.addEventListener("click", () => {
             modalUtils.closeModal("deleteProfileSuccessModal");
         });
     }
+
+    // ================== NOTIFICA ELIMINAZIONE PROFILO ==================
+    const deletedProfileMessage = document.getElementById("deletedProfileMessage");
+    const okProfileDeletedBtn = document.getElementById("okProfileDeletedBtn");
+
+    function showProfileDeletedNotification(requestId) {
+        let seconds = 30;
+
+        function updateMessage() {
+            if (deletedProfileMessage) {
+                deletedProfileMessage.innerText =
+                    `⚠️ Il tuo profilo è stato eliminato (richiesta ID ${requestId}). ` +
+                    `Verrai disconnesso tra ${seconds} secondi...`;
+            }
+        }
+
+        updateMessage(); // messaggio iniziale
+        modalUtils.openModal("profileDeletedNotificationModal");
+
+        // countdown
+        const interval = setInterval(() => {
+            seconds--;
+            updateMessage();
+
+            if (seconds <= 0) {
+                clearInterval(interval);
+                window.location.href = "/logout";
+            }
+        }, 1000);
+
+        // bottone OK → logout immediato
+        if (okProfileDeletedBtn) {
+            okProfileDeletedBtn.onclick = () => {
+                clearInterval(interval);
+                modalUtils.closeModal("profileDeletedNotificationModal");
+                window.location.href = "/logout";
+            };
+        }
+    }
+
+    // ================== POLLING STATO RICHIESTA ==================
+    function pollEliminazione() {
+        fetch("/produttore/richiesta-eliminazione/stato", {
+            credentials: "same-origin"
+        })
+            .then(r => {
+                if (!r.ok) throw new Error("Errore HTTP " + r.status);
+                return r.text();
+            })
+            .then(resp => {
+                if (resp.startsWith("APPROVATA:")) {
+                    const id = resp.split(":")[1];
+                    showProfileDeletedNotification(id);
+                    clearInterval(pollingInterval); // stop polling
+                }
+            })
+            .catch(err => console.error("Errore polling eliminazione:", err));
+    }
+
+    const pollingInterval = setInterval(pollEliminazione, 5000); // ogni 5s
 });

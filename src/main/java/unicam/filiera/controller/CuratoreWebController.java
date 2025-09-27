@@ -9,10 +9,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import unicam.filiera.dto.PacchettoViewDto;
 import unicam.filiera.dto.RichiestaEliminazioneProfiloDto;
+import unicam.filiera.entity.RichiestaEliminazioneProfiloEntity;
 import unicam.filiera.entity.UtenteEntity;
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.ProdottoTrasformato;
 import unicam.filiera.model.StatoProdotto;
+import unicam.filiera.model.StatoRichiestaEliminazioneProfilo;
+import unicam.filiera.repository.RichiestaEliminazioneProfiloRepository;
 import unicam.filiera.repository.UtenteRepository;
 import unicam.filiera.service.*;
 
@@ -29,17 +32,20 @@ public class CuratoreWebController {
     private final ProdottoTrasformatoService prodottoTrasformatoService;
     private final EliminazioneProfiloService eliminazioneProfiloService;
     private final UtenteRepository utenteRepo;
+    private final RichiestaEliminazioneProfiloRepository richiestaRepo;
 
     public CuratoreWebController(ProdottoService prodottoService,
                                  PacchettoService pacchettoService,
                                  ProdottoTrasformatoService prodottoTrasformatoService,
                                  EliminazioneProfiloService eliminazioneProfiloService,
-                                 UtenteRepository utenteRepo) {
+                                 UtenteRepository utenteRepo,
+                                 RichiestaEliminazioneProfiloRepository richiestaRepo) {
         this.prodottoService = prodottoService;
         this.pacchettoService = pacchettoService;
         this.prodottoTrasformatoService = prodottoTrasformatoService;
         this.eliminazioneProfiloService = eliminazioneProfiloService;
         this.utenteRepo = utenteRepo;
+        this.richiestaRepo = richiestaRepo;
     }
 
     /**
@@ -157,10 +163,7 @@ public class CuratoreWebController {
         return "redirect:/curatore/dashboard";
     }
 
-    /* ===============================
-       ELIMINA PROFILO
-       =============================== */
-
+    /* ================== ELIMINAZIONE PROFILO ================== */
     @PostMapping("/richiesta-eliminazione")
     @ResponseBody
     public ResponseEntity<String> richiestaEliminazione(Authentication auth) {
@@ -178,14 +181,29 @@ public class CuratoreWebController {
                     .build();
             eliminazioneProfiloService.inviaRichiestaEliminazione(dto);
 
-            log.info("[Curatore] Richiesta eliminazione profilo inviata per '{}'", loginName);
+            log.info("[Curatore] ✅ Richiesta eliminazione profilo inviata per '{}'", loginName);
             return ResponseEntity.ok("Richiesta di eliminazione inviata con successo.");
         } catch (IllegalStateException e) {
-            log.warn("[Curatore] Richiesta duplicata per '{}': {}", loginName, e.getMessage());
+            log.warn("[Curatore] ⚠️ Richiesta duplicata per '{}': {}", loginName, e.getMessage());
             return ResponseEntity.status(409).body(e.getMessage());
         } catch (Exception e) {
-            log.error("[Curatore] Errore eliminazione profilo '{}': {}", loginName, e.getMessage(), e);
+            log.error("[Curatore] ❌ Errore eliminazione profilo '{}': {}", loginName, e.getMessage(), e);
             return ResponseEntity.internalServerError().body("Errore: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/richiesta-eliminazione/stato")
+    @ResponseBody
+    public ResponseEntity<String> statoRichiesta(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(401).body("NON_AUTENTICATO");
+        }
+        String username = auth.getName();
+
+        return richiestaRepo.findFirstByUsernameAndStatoOrderByDataRichiestaDesc(
+                        username, StatoRichiestaEliminazioneProfilo.APPROVATA)
+                .map(RichiestaEliminazioneProfiloEntity::getId)
+                .map(id -> ResponseEntity.ok("APPROVATA:" + id))
+                .orElse(ResponseEntity.ok("NESSUNA"));
     }
 }

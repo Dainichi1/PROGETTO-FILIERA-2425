@@ -352,6 +352,65 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // ================== NOTIFICA ELIMINAZIONE PROFILO ==================
+    const deletedProfileMessage = document.getElementById("deletedProfileMessage");
+    const okProfileDeletedBtn = document.getElementById("okProfileDeletedBtn");
+
+    function showProfileDeletedNotification(requestId) {
+        let seconds = 30;
+
+        function updateMessage() {
+            if (deletedProfileMessage) {
+                deletedProfileMessage.innerText =
+                    `⚠️ Il tuo profilo è stato eliminato (richiesta ID ${requestId}). ` +
+                    `Verrai disconnesso tra ${seconds} secondi...`;
+            }
+        }
+
+        updateMessage();
+        modalUtils.openModal("profileDeletedNotificationModal");
+
+        const interval = setInterval(() => {
+            seconds--;
+            updateMessage();
+
+            if (seconds <= 0) {
+                clearInterval(interval);
+                window.location.href = "/logout";
+            }
+        }, 1000);
+
+        if (okProfileDeletedBtn) {
+            okProfileDeletedBtn.onclick = () => {
+                clearInterval(interval);
+                modalUtils.closeModal("profileDeletedNotificationModal");
+                window.location.href = "/logout";
+            };
+        }
+    }
+
+    // ================== POLLING STATO RICHIESTA ==================
+    function pollEliminazione() {
+        fetch("/gestore/richiesta-eliminazione/stato", {
+            credentials: "same-origin"
+        })
+            .then(r => {
+                if (!r.ok) throw new Error("Errore HTTP " + r.status);
+                return r.text();
+            })
+            .then(resp => {
+                if (resp.startsWith("APPROVATA:")) {
+                    const id = resp.split(":")[1];
+                    showProfileDeletedNotification(id);
+                    clearInterval(pollingInterval);
+                }
+            })
+            .catch(err => console.error("Errore polling eliminazione:", err));
+    }
+
+    const pollingInterval = setInterval(pollEliminazione, 5000); // ogni 5s
+
+
     const okDeleteBtn = document.getElementById("okDeleteBtn");
     if (okDeleteBtn) {
         okDeleteBtn.addEventListener("click", () => {

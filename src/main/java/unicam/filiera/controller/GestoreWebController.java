@@ -28,17 +28,20 @@ public class GestoreWebController {
     private final EliminazioneProfiloService eliminazioneProfiloService;
     private final RichiestaEliminazioneProfiloRepository richiestaRepo;
     private final EliminazioneProfiloNotifier notifier;
+    private final NotificationController notificationController; // <-- per SSE
 
     public GestoreWebController(UtenteRepository repo,
                                 GestoreContenutiService contenutiService,
                                 EliminazioneProfiloService eliminazioneProfiloService,
                                 RichiestaEliminazioneProfiloRepository richiestaRepo,
-                                EliminazioneProfiloNotifier notifier) {
+                                EliminazioneProfiloNotifier notifier,
+                                NotificationController notificationController) {
         this.repo = repo;
         this.contenutiService = contenutiService;
         this.eliminazioneProfiloService = eliminazioneProfiloService;
         this.richiestaRepo = richiestaRepo;
         this.notifier = notifier;
+        this.notificationController = notificationController;
     }
 
     /* ================== DASHBOARD ================== */
@@ -139,7 +142,12 @@ public class GestoreWebController {
                     entity.setStato(StatoRichiestaEliminazioneProfilo.RIFIUTATA);
                     richiestaRepo.save(entity);
 
-                    notifier.notificaRifiutata(toModel(entity));
+                    var model = toModel(entity);
+                    notifier.notificaRifiutata(model);
+                    notificationController.notifyUser(model.getUsername(),
+                            "RIFIUTATA",
+                            "La tua richiesta di eliminazione è stata rifiutata.");
+
                     log.info("Richiesta {} rifiutata", id);
 
                     return ResponseEntity.ok("Richiesta rifiutata");
@@ -151,12 +159,33 @@ public class GestoreWebController {
     @ResponseBody
     public ResponseEntity<String> accettaRichiesta(@PathVariable Long id) {
         return richiestaRepo.findById(id)
-                .map(richiesta -> {
-                    richiesta.setStato(StatoRichiestaEliminazioneProfilo.APPROVATA);
-                    richiestaRepo.save(richiesta);
+                .map(entity -> {
+                    // 1. Aggiorna stato richiesta
+                    entity.setStato(StatoRichiestaEliminazioneProfilo.APPROVATA);
+                    richiestaRepo.save(entity);
+
+                    log.info("Richiesta {} approvata per utente {}", id, entity.getUsername());
                     return ResponseEntity.ok("Richiesta approvata");
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+
+
+    /* ================== POLLING STATO RICHIESTA ================== */
+    @GetMapping("/richiesta-eliminazione/stato")
+    @ResponseBody
+    public ResponseEntity<String> statoRichiesta(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(401).body("NON_AUTENTICATO");
+        }
+        String username = auth.getName();
+
+        return richiestaRepo.findFirstByUsernameAndStatoOrderByDataRichiestaDesc(
+                        username, StatoRichiestaEliminazioneProfilo.APPROVATA)
+                .map(RichiestaEliminazioneProfiloEntity::getId)
+                .map(id -> ResponseEntity.ok("APPROVATA:" + id))
+                .orElse(ResponseEntity.ok("NESSUNA"));
     }
 
     /* ================== MAPPER ================== */

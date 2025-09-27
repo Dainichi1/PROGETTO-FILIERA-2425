@@ -12,7 +12,6 @@ window.toggleUtils = toggleUtils;
 
 // ================== INIT ==================
 document.addEventListener("DOMContentLoaded", () => {
-
     // ================== CARRELLO + MARKETPLACE ==================
     cartUtils.initMarketplaceToggle();
     cartUtils.initCartToggle();
@@ -48,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btnVisualizzaFiere.addEventListener("click", () => {
             toggleUtils.show(fiereSection);
 
-            // attiva/disattiva bottoni prenota
+            // Attiva/disattiva bottoni prenota
             const radios = document.querySelectorAll(".radio-fiera");
             const buttons = document.querySelectorAll(".btn-prenota");
 
@@ -61,14 +60,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             });
 
-            // apertura modale
+            // Apertura modale
             buttons.forEach(btn => {
                 btn.addEventListener("click", () => {
                     window.prenotazioniFiereUtils.openPrenotazioneFieraModal(btn);
                 });
             });
 
-            // attach validation al form
+            // Attach validation al form
             window.prenotazioniFiereUtils.attachPrenotazioneFieraValidation();
         });
     }
@@ -97,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btnChiudiPrenotazioni.addEventListener("click", () => toggleUtils.hide(prenotazioniFiereSection));
     }
 
-    // listener per i bottoni elimina in tabella
+    // Listener per bottoni elimina in tabella
     document.querySelectorAll(".btn-delete-prenotazione-fiera").forEach(btn => {
         btn.addEventListener("click", () => {
             const id = btn.dataset.id;
@@ -105,7 +104,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // attach gestione eliminazione prenotazioni fiere
     prenotazioniFiereUtils.attachPrenotazioneFieraDeleteHandler();
 
     // ================== RECENSIONI ==================
@@ -320,8 +318,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
     if (confirmDeleteBtn) {
         confirmDeleteBtn.addEventListener("click", () => {
-            console.log("Richiesta eliminazione profilo per Acquirente");
-
             const csrf = csrfUtils.getCsrf();
 
             fetch("/acquirente/richiesta-eliminazione", {
@@ -329,23 +325,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: { [csrf.header]: csrf.token },
                 credentials: "same-origin"
             })
-                .then(r => {
-                    if (r.status === 409) {
-                        // Richiesta già presente
+                .then(response => {
+                    if (response.ok) {
+                        modalUtils.closeModal("deleteProfileModal");
+                        modalUtils.openModal("deleteProfileSuccessModal");
+                    } else if (response.status === 409) {
                         modalUtils.closeModal("deleteProfileModal");
                         modalUtils.openModal("deleteProfileErrorModal");
-                        return;
+                    } else {
+                        throw new Error("Errore imprevisto");
                     }
-                    if (!r.ok) throw new Error("Errore HTTP " + r.status);
-
-                    // Successo
-                    modalUtils.closeModal("deleteProfileModal");
-                    modalUtils.openModal("deleteProfileSuccessModal");
                 })
                 .catch(err => {
-                    console.error("Errore durante richiesta eliminazione:", err);
-                    modalUtils.closeModal("deleteProfileModal");
-                    modalUtils.openModal("deleteProfileErrorModal");
+                    console.error("Errore eliminazione profilo", err);
+                    alert("Errore durante l'invio della richiesta.");
                 });
         });
     }
@@ -354,8 +347,67 @@ document.addEventListener("DOMContentLoaded", () => {
     if (okDeleteBtn) {
         okDeleteBtn.addEventListener("click", () => {
             modalUtils.closeModal("deleteProfileSuccessModal");
-            // Redirect alla home
-            window.location.href = "/";
         });
     }
+
+// ================== NOTIFICA ELIMINAZIONE PROFILO ==================
+    const deletedProfileMessage = document.getElementById("deletedProfileMessage");
+    const okProfileDeletedBtn = document.getElementById("okProfileDeletedBtn");
+
+    function showProfileDeletedNotification(requestId) {
+        let seconds = 30;
+
+        function updateMessage() {
+            if (deletedProfileMessage) {
+                deletedProfileMessage.innerText =
+                    `⚠️ Il tuo profilo è stato eliminato (richiesta ID ${requestId}). ` +
+                    `Verrai disconnesso tra ${seconds} secondi...`;
+            }
+        }
+
+        updateMessage(); // messaggio iniziale
+        modalUtils.openModal("profileDeletedNotificationModal");
+
+        // countdown
+        const interval = setInterval(() => {
+            seconds--;
+            updateMessage();
+
+            if (seconds <= 0) {
+                clearInterval(interval);
+                window.location.href = "/logout";
+            }
+        }, 1000);
+
+        // bottone OK → logout immediato
+        if (okProfileDeletedBtn) {
+            okProfileDeletedBtn.onclick = () => {
+                clearInterval(interval);
+                modalUtils.closeModal("profileDeletedNotificationModal");
+                window.location.href = "/logout";
+            };
+        }
+    }
+
+// ================== POLLING STATO RICHIESTA ==================
+    function pollEliminazione() {
+        fetch("/acquirente/richiesta-eliminazione/stato", {
+            credentials: "same-origin"
+        })
+            .then(r => {
+                if (!r.ok) throw new Error("Errore HTTP " + r.status);
+                return r.text();
+            })
+            .then(resp => {
+                if (resp.startsWith("APPROVATA:")) {
+                    const id = resp.split(":")[1];
+                    showProfileDeletedNotification(id);
+                    clearInterval(pollingInterval); // stop polling
+                }
+            })
+            .catch(err => console.error("Errore polling eliminazione:", err));
+    }
+
+    const pollingInterval = setInterval(pollEliminazione, 5000); // ogni 5s
+
 });

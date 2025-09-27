@@ -15,7 +15,11 @@ import unicam.filiera.dto.EventoTipo;
 import unicam.filiera.dto.VisitaInvitoDto;
 import unicam.filiera.dto.FieraDto;
 import unicam.filiera.dto.RichiestaEliminazioneProfiloDto;
+import unicam.filiera.entity.RichiestaEliminazioneProfiloEntity;
 import unicam.filiera.entity.UtenteEntity;
+import unicam.filiera.model.StatoRichiestaEliminazioneProfilo;
+import unicam.filiera.repository.RichiestaEliminazioneProfiloRepository;
+import unicam.filiera.repository.UtenteRepository;
 import unicam.filiera.service.*;
 
 @Controller
@@ -28,46 +32,39 @@ public class AnimatoreWebController {
     private final FieraService fieraService;
     private final UtenteService utenteService;
     private final EliminazioneProfiloService eliminazioneProfiloService;
-    private final unicam.filiera.repository.UtenteRepository utenteRepo;
+    private final UtenteRepository utenteRepo;
+    private final RichiestaEliminazioneProfiloRepository richiestaRepo;
 
     @Autowired
     public AnimatoreWebController(VisitaInvitoService visitaService,
                                   FieraService fieraService,
                                   UtenteService utenteService,
                                   EliminazioneProfiloService eliminazioneProfiloService,
-                                  unicam.filiera.repository.UtenteRepository utenteRepo) {
+                                  UtenteRepository utenteRepo,
+                                  RichiestaEliminazioneProfiloRepository richiestaRepo) {
         this.visitaService = visitaService;
         this.fieraService = fieraService;
         this.utenteService = utenteService;
         this.eliminazioneProfiloService = eliminazioneProfiloService;
         this.utenteRepo = utenteRepo;
+        this.richiestaRepo = richiestaRepo;
     }
 
     private String resolveUsername(Authentication auth) {
         return (auth != null) ? auth.getName() : "demo_user";
     }
 
-    // =======================
-    // Dashboard
-    // =======================
-
+    /* ======================= DASHBOARD ======================= */
     @GetMapping("/dashboard")
     public String dashboard(Model model, Authentication auth) {
         String username = resolveUsername(auth);
         log.info("[Dashboard Animatore] Utente autenticato={}", username);
 
-        // Preparo DTO se non presenti
         ensureDtos(model);
-
-        // Carico le liste
         prepareDashboardLists(model, username);
 
-        // Aggiungo l'utente loggato al model
         utenteRepo.findByUsername(username).ifPresentOrElse(
-                u -> {
-                    log.info("[Dashboard Animatore] Caricato utente da DB: username={}, ruolo={}", u.getUsername(), u.getRuolo());
-                    model.addAttribute("utente", u);
-                },
+                u -> model.addAttribute("utente", u),
                 () -> log.warn("[Dashboard Animatore] Utente {} non trovato in DB!", username)
         );
 
@@ -75,10 +72,7 @@ public class AnimatoreWebController {
         return "dashboard/animatore";
     }
 
-    // =======================
-    // VISITE
-    // =======================
-
+    /* ======================= VISITE ======================= */
     @PostMapping("/crea-visita")
     public String creaVisita(@Valid @ModelAttribute("visitaDto") VisitaInvitoDto dto,
                              BindingResult br,
@@ -86,7 +80,6 @@ public class AnimatoreWebController {
                              RedirectAttributes ra,
                              Model model) {
         String username = resolveUsername(auth);
-        log.info("Richiesta creazione visita da '{}': {}", username, dto);
 
         if (br.hasErrors()) {
             prepareDashboardLists(model, username);
@@ -101,10 +94,10 @@ public class AnimatoreWebController {
             ra.addFlashAttribute("createSuccessMessage", "Visita pubblicata con successo");
             return "redirect:/animatore/dashboard";
         } catch (Exception ex) {
-            log.error("Errore durante creazione visita: {}", ex.getMessage(), ex);
+            log.error("Errore durante creazione visita", ex);
             prepareDashboardLists(model, username);
             ensureDtos(model);
-            model.addAttribute("errorMessage", "Errore durante creazione visita: " + ex.getMessage());
+            model.addAttribute("errorMessage", "Errore: " + ex.getMessage());
             return "dashboard/animatore";
         }
     }
@@ -117,10 +110,7 @@ public class AnimatoreWebController {
         return "Visita eliminata con successo";
     }
 
-    // =======================
-    // FIERE
-    // =======================
-
+    /* ======================= FIERE ======================= */
     @PostMapping("/crea-fiera")
     public String creaFiera(@Valid @ModelAttribute("fieraDto") FieraDto dto,
                             BindingResult br,
@@ -128,7 +118,6 @@ public class AnimatoreWebController {
                             RedirectAttributes ra,
                             Model model) {
         String username = resolveUsername(auth);
-        log.info("Richiesta creazione fiera da '{}': {}", username, dto);
 
         if (br.hasErrors()) {
             prepareDashboardLists(model, username);
@@ -143,10 +132,10 @@ public class AnimatoreWebController {
             ra.addFlashAttribute("createSuccessMessage", "Fiera pubblicata con successo");
             return "redirect:/animatore/dashboard";
         } catch (Exception ex) {
-            log.error("Errore durante creazione fiera: {}", ex.getMessage(), ex);
+            log.error("Errore durante creazione fiera", ex);
             prepareDashboardLists(model, username);
             ensureDtos(model);
-            model.addAttribute("errorMessage", "Errore durante creazione fiera: " + ex.getMessage());
+            model.addAttribute("errorMessage", "Errore: " + ex.getMessage());
             return "dashboard/animatore";
         }
     }
@@ -159,13 +148,14 @@ public class AnimatoreWebController {
         return "Fiera eliminata con successo";
     }
 
-    // =======================
-    // ELIMINAZIONE PROFILO
-    // =======================
-
+    /* ======================= ELIMINAZIONE PROFILO ======================= */
     @PostMapping("/richiesta-eliminazione")
     @ResponseBody
     public ResponseEntity<String> richiestaEliminazione(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(401).body("Utente non autenticato");
+        }
+
         String loginName = auth.getName();
         UtenteEntity utente = utenteRepo.findByUsername(loginName)
                 .orElseThrow(() -> new IllegalStateException("Utente non trovato"));
@@ -184,9 +174,22 @@ public class AnimatoreWebController {
         }
     }
 
-    // =======================
-    // Utility interna
-    // =======================
+    @GetMapping("/richiesta-eliminazione/stato")
+    @ResponseBody
+    public ResponseEntity<String> statoRichiesta(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(401).body("NON_AUTENTICATO");
+        }
+
+        String username = auth.getName();
+        return richiestaRepo.findFirstByUsernameAndStatoOrderByDataRichiestaDesc(
+                        username, StatoRichiestaEliminazioneProfilo.APPROVATA)
+                .map(RichiestaEliminazioneProfiloEntity::getId)
+                .map(id -> ResponseEntity.ok("APPROVATA:" + id))
+                .orElse(ResponseEntity.ok("NESSUNA"));
+    }
+
+    /* ======================= Utility interna ======================= */
     private void prepareDashboardLists(Model model, String username) {
         model.addAttribute("visite", visitaService.getVisiteByCreatore(username));
         model.addAttribute("fiere", fieraService.getFiereByCreatore(username));

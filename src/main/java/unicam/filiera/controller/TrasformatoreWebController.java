@@ -12,7 +12,7 @@ import unicam.filiera.dto.ItemTipo;
 import unicam.filiera.dto.PrenotazioneVisitaDto;
 import unicam.filiera.dto.ProdottoDto;
 import unicam.filiera.dto.ProdottoTrasformatoDto;
-import unicam.filiera.model.StatoProdotto;
+import unicam.filiera.repository.RichiestaEliminazioneProfiloRepository;
 import unicam.filiera.repository.UtenteRepository;
 import unicam.filiera.service.EliminazioneProfiloService;
 import unicam.filiera.service.PrenotazioneVisitaService;
@@ -40,8 +40,9 @@ public class TrasformatoreWebController extends AbstractCreationController<Prodo
                                       VisitaInvitoService visitaInvitoService,
                                       PrenotazioneVisitaService prenotazioneVisitaService,
                                       UtenteRepository utenteRepo,
-                                      EliminazioneProfiloService eliminazioneProfiloService) {
-        super(utenteRepo, eliminazioneProfiloService); // delega a base
+                                      EliminazioneProfiloService eliminazioneProfiloService,
+                                      RichiestaEliminazioneProfiloRepository richiestaRepo) {
+        super(utenteRepo, eliminazioneProfiloService, richiestaRepo); // delega a base
         this.trasformatoService = trasformatoService;
         this.prodottoService = prodottoService;
         this.utenteService = utenteService;
@@ -74,7 +75,7 @@ public class TrasformatoreWebController extends AbstractCreationController<Prodo
     @Override
     protected void loadDashboardLists(Model model, String username) {
         model.addAttribute("trasformati", trasformatoService.getProdottiTrasformatiCreatiDa(username));
-        model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
+        model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(unicam.filiera.model.StatoProdotto.APPROVATO));
         model.addAttribute("visiteDisponibili", visitaInvitoService.getVisiteByRuoloDestinatario("trasformatore"));
         model.addAttribute("produttori", utenteService.getProduttori());
         model.addAttribute("prenotazioni", prenotazioneVisitaService.getPrenotazioniByVenditore(username));

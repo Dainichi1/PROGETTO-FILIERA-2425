@@ -1,7 +1,5 @@
 package unicam.filiera.controller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -9,15 +7,14 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import unicam.filiera.dto.PacchettoViewDto;
-import unicam.filiera.dto.PrenotazioneFieraDto;
 import unicam.filiera.dto.RichiestaEliminazioneProfiloDto;
 import unicam.filiera.entity.ProdottoEntity;
+import unicam.filiera.entity.RichiestaEliminazioneProfiloEntity;
 import unicam.filiera.entity.UtenteEntity;
 import unicam.filiera.model.Acquirente;
 import unicam.filiera.model.StatoProdotto;
-import unicam.filiera.repository.AcquistoItemRepository;
-import unicam.filiera.repository.AcquistoRepository;
-import unicam.filiera.repository.UtenteRepository;
+import unicam.filiera.model.StatoRichiestaEliminazioneProfilo;
+import unicam.filiera.repository.*;
 import unicam.filiera.service.*;
 import unicam.filiera.validation.FondiValidator;
 
@@ -29,52 +26,48 @@ import java.util.Optional;
 @RequestMapping("/acquirente")
 public class AcquirenteWebController {
 
-    private static final Logger log = LoggerFactory.getLogger(AcquirenteWebController.class);
-
     private final UtenteRepository repo;
     private final ProdottoService prodottoService;
     private final PacchettoService pacchettoService;
     private final ProdottoTrasformatoService trasformatoService;
-    private final AcquistoItemRepository acquistoItemRepository;
     private final AcquistoRepository acquistoRepository;
     private final FieraService fieraService;
     private final PrenotazioneFieraService prenotazioneFieraService;
     private final EliminazioneProfiloService eliminazioneProfiloService;
+    private final RichiestaEliminazioneProfiloRepository richiestaRepo;
 
     public AcquirenteWebController(
             UtenteRepository repo,
             ProdottoService prodottoService,
             PacchettoService pacchettoService,
             ProdottoTrasformatoService trasformatoService,
-            AcquistoItemRepository acquistoItemRepository,
             AcquistoRepository acquistoRepository,
             FieraService fieraService,
             PrenotazioneFieraService prenotazioneFieraService,
-            EliminazioneProfiloService eliminazioneProfiloService
+            EliminazioneProfiloService eliminazioneProfiloService,
+            RichiestaEliminazioneProfiloRepository richiestaRepo
     ) {
         this.repo = repo;
         this.prodottoService = prodottoService;
         this.pacchettoService = pacchettoService;
         this.trasformatoService = trasformatoService;
-        this.acquistoItemRepository = acquistoItemRepository;
         this.acquistoRepository = acquistoRepository;
         this.fieraService = fieraService;
         this.prenotazioneFieraService = prenotazioneFieraService;
         this.eliminazioneProfiloService = eliminazioneProfiloService;
+        this.richiestaRepo = richiestaRepo;
     }
 
-    // ================== DASHBOARD ==================
+    /* ================== DASHBOARD ================== */
     @GetMapping("/dashboard")
     public String dashboard(Model model, Authentication auth) {
         if (auth == null || !auth.isAuthenticated()) {
             return "redirect:/login";
         }
-
         String username = auth.getName();
 
         return repo.findById(username)
                 .map(e -> {
-                    // Costruzione DTO utente
                     Acquirente acquirente = new Acquirente(
                             e.getUsername(),
                             e.getPassword(),
@@ -84,10 +77,10 @@ public class AcquirenteWebController {
                     );
                     model.addAttribute("utente", acquirente);
 
-                    // Prodotti
+                    // Prodotti approvati
                     model.addAttribute("prodotti", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
 
-                    // Pacchetti
+                    // Pacchetti approvati
                     List<PacchettoViewDto> pacchettiDto = pacchettoService.getPacchettiByStato(StatoProdotto.APPROVATO)
                             .stream()
                             .map(p -> {
@@ -101,10 +94,8 @@ public class AcquirenteWebController {
                                 dto.setCreatoDa(p.getCreatoDa());
                                 dto.setStato(p.getStato().name());
                                 dto.setCommento(p.getCommento());
-
                                 dto.setCertificati(p.getCertificati() != null ? p.getCertificati() : List.of());
                                 dto.setFoto(p.getFoto() != null ? p.getFoto() : List.of());
-
                                 dto.setProdottiNomi(
                                         p.getProdottiIds().stream()
                                                 .map(id -> prodottoService.getProdottoById(id))
@@ -112,16 +103,15 @@ public class AcquirenteWebController {
                                                 .map(ProdottoEntity::getNome)
                                                 .toList()
                                 );
-
                                 return dto;
                             })
                             .toList();
                     model.addAttribute("pacchetti", pacchettiDto);
 
-                    // Trasformati
+                    // Trasformati approvati
                     model.addAttribute("trasformati", trasformatoService.getProdottiTrasformatiByStato(StatoProdotto.APPROVATO));
 
-                    // Acquisti
+                    // Acquisti utente
                     model.addAttribute("acquisti",
                             acquistoRepository.findAll()
                                     .stream()
@@ -129,10 +119,8 @@ public class AcquirenteWebController {
                                     .toList()
                     );
 
-                    // Fiere disponibili
+                    // Fiere e prenotazioni
                     model.addAttribute("fiere", fieraService.getFierePubblicate());
-
-                    // Prenotazioni fiere dell’utente
                     model.addAttribute("prenotazioniFiere", prenotazioneFieraService.getPrenotazioniByAcquirente(username));
 
                     return "dashboard/acquirente";
@@ -140,32 +128,23 @@ public class AcquirenteWebController {
                 .orElse("error/utente_non_trovato");
     }
 
-    // ================== aggiorna fondi ==================
+    /* ================== aggiorna fondi ================== */
     @PostMapping("/update-fondi")
     @ResponseBody
     public ResponseEntity<?> updateFondi(@RequestBody Map<String, Double> body, Authentication auth) {
         Double importo = body.get("importo");
         if (importo == null) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "message", "⚠ Importo mancante"
-            ));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "⚠ Importo mancante"));
         }
 
         try {
             FondiValidator.valida(importo);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "message", e.getMessage()
-            ));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         }
 
         if (auth == null || !auth.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "success", false,
-                    "message", "Utente non autenticato"
-            ));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("success", false, "message", "Utente non autenticato"));
         }
 
         String username = auth.getName();
@@ -174,19 +153,12 @@ public class AcquirenteWebController {
                     double nuoviFondi = (utente.getFondi() != null ? utente.getFondi() : 0.0) + importo;
                     utente.setFondi(nuoviFondi);
                     repo.save(utente);
-
-                    return ResponseEntity.ok(Map.of(
-                            "success", true,
-                            "nuoviFondi", nuoviFondi
-                    ));
+                    return ResponseEntity.ok(Map.of("success", true, "nuoviFondi", nuoviFondi));
                 })
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
-                        "success", false,
-                        "message", "Utente non trovato"
-                )));
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("success", false, "message", "Utente non trovato")));
     }
 
-    // ================== eliminazione profilo ==================
+    /* ================== eliminazione profilo ================== */
     @PostMapping("/richiesta-eliminazione")
     @ResponseBody
     public ResponseEntity<String> richiestaEliminazione(Authentication auth) {
@@ -203,13 +175,26 @@ public class AcquirenteWebController {
                     .username(utente.getUsername())
                     .build();
             eliminazioneProfiloService.inviaRichiestaEliminazione(dto);
-
             return ResponseEntity.ok("Richiesta di eliminazione inviata con successo.");
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (Exception e) {
-            log.error("Errore eliminazione profilo", e);
             return ResponseEntity.internalServerError().body("Errore: " + e.getMessage());
         }
+    }
+
+    /* ================== polling stato richiesta ================== */
+    @GetMapping("/richiesta-eliminazione/stato")
+    @ResponseBody
+    public ResponseEntity<String> statoRichiesta(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(401).body("NON_AUTENTICATO");
+        }
+        String username = auth.getName();
+        return richiestaRepo.findFirstByUsernameAndStatoOrderByDataRichiestaDesc(
+                        username, StatoRichiestaEliminazioneProfilo.APPROVATA)
+                .map(RichiestaEliminazioneProfiloEntity::getId)
+                .map(id -> ResponseEntity.ok("APPROVATA:" + id))
+                .orElse(ResponseEntity.ok("NESSUNA"));
     }
 }

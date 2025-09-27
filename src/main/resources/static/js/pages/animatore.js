@@ -31,7 +31,6 @@ const visitaCrud = crudUtilsAnimatore({
         document.getElementById("indirizzo-visitaDto").value = v.indirizzo ?? "";
         document.getElementById("dataInizio-visitaDto").value = v.dataInizio?.split("T")[0] ?? "";
         document.getElementById("dataFine-visitaDto").value = v.dataFine?.split("T")[0] ?? "";
-        // TODO: check destinatari con v.destinatari
     }
 });
 
@@ -72,7 +71,7 @@ const animatoreCrud = {
 
 // ================== INIZIALIZZAZIONE ==================
 document.addEventListener("DOMContentLoaded", () => {
-    // Bottone Social Feed
+    // Social Feed
     document.getElementById("btnSocialFeed")
         ?.addEventListener("click", () => crudUtils.openSocialFeed());
 
@@ -90,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // === PUBBLICAZIONE VISITA ===
+    // === VISITA ===
     document.getElementById("btnPubblicaVisita")
         ?.addEventListener("click", () => modalUtils.openModal("createConfirmModalVisita"));
     document.getElementById("btnConfirmCreateVisita")
@@ -100,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btnCancelVisita")
         ?.addEventListener("click", () => visitaCrud.toggleForm(false));
 
-    // === PUBBLICAZIONE FIERA ===
+    // === FIERA ===
     document.getElementById("btnPubblicaFiera")
         ?.addEventListener("click", () => modalUtils.openModal("createConfirmModalFiera"));
     document.getElementById("btnConfirmCreateFiera")
@@ -127,8 +126,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
     if (confirmDeleteBtn) {
         confirmDeleteBtn.addEventListener("click", () => {
-            console.log("Richiesta eliminazione profilo per Animatore");
-
             const csrf = csrfUtils.getCsrf();
 
             fetch("/animatore/richiesta-eliminazione", {
@@ -157,18 +154,66 @@ document.addEventListener("DOMContentLoaded", () => {
     if (okDeleteBtn) {
         okDeleteBtn.addEventListener("click", () => {
             modalUtils.closeModal("deleteProfileSuccessModal");
-            window.location.href = "/";
         });
     }
 
-    // ================== CHIUSURA MODALI GENERICHE ==================
-    document.querySelectorAll(".btn-close-modal").forEach(btn => {
-        btn.addEventListener("click", e => {
-            e.stopPropagation();
-            const target = btn.getAttribute("data-target");
-            if (target) modalUtils.closeModal(target);
-        });
-    });
+    // ================== NOTIFICA ELIMINAZIONE PROFILO ==================
+    const deletedProfileMessage = document.getElementById("deletedProfileMessage");
+    const okProfileDeletedBtn = document.getElementById("okProfileDeletedBtn");
+
+    function showProfileDeletedNotification(requestId) {
+        let seconds = 30;
+
+        function updateMessage() {
+            if (deletedProfileMessage) {
+                deletedProfileMessage.innerText =
+                    `⚠️ Il tuo profilo è stato eliminato (richiesta ID ${requestId}). ` +
+                    `Verrai disconnesso tra ${seconds} secondi...`;
+            }
+        }
+
+        updateMessage();
+        modalUtils.openModal("profileDeletedNotificationModal");
+
+        const interval = setInterval(() => {
+            seconds--;
+            updateMessage();
+
+            if (seconds <= 0) {
+                clearInterval(interval);
+                window.location.href = "/logout";
+            }
+        }, 1000);
+
+        if (okProfileDeletedBtn) {
+            okProfileDeletedBtn.onclick = () => {
+                clearInterval(interval);
+                modalUtils.closeModal("profileDeletedNotificationModal");
+                window.location.href = "/logout";
+            };
+        }
+    }
+
+    // ================== POLLING STATO RICHIESTA ==================
+    function pollEliminazione() {
+        fetch("/animatore/richiesta-eliminazione/stato", {
+            credentials: "same-origin"
+        })
+            .then(r => {
+                if (!r.ok) throw new Error("Errore HTTP " + r.status);
+                return r.text();
+            })
+            .then(resp => {
+                if (resp.startsWith("APPROVATA:")) {
+                    const id = resp.split(":")[1];
+                    showProfileDeletedNotification(id);
+                    clearInterval(pollingInterval);
+                }
+            })
+            .catch(err => console.error("Errore polling eliminazione:", err));
+    }
+
+    const pollingInterval = setInterval(pollEliminazione, 5000);
 });
 
 // ================== ESPORTO GLOBALMENTE ==================

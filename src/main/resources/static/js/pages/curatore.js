@@ -1,3 +1,4 @@
+import { crudUtils } from "../utils/crud-utils.js";
 import { modalUtils } from "../utils/modal-utils.js";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -120,6 +121,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             })
             .catch(err => console.error("Errore polling eliminazione:", err));
+    }
+
+    // === VISUALIZZA SOCIAL FEED ===
+    const btnSocialFeed = document.getElementById("btnSocialFeed");
+    if (btnSocialFeed) {
+        btnSocialFeed.addEventListener("click", () => {
+            console.log("Caricamento Social Feed per Curatore");
+            crudUtils.openSocialFeed();
+        });
     }
 
     const pollingInterval = setInterval(pollEliminazione, 5000);

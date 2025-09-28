@@ -20,6 +20,9 @@
     <a th:href="@{/gestore/contenuti}" class="btn-primary">
         📊 Visualizza contenuto della piattaforma
     </a>
+    <button id="btnSocialFeed" type="button" class="btn-primary">
+        📢 Visualizza Social Network
+    </button>
     <button id="btnDeleteProfile" class="btn btn-danger btn-lg ms-2">
         🗑️ Elimina profilo
     </button>
@@ -53,6 +56,11 @@
 <!-- Modali specifici per gestore -->
 <div th:replace="fragments/gestore-modals :: modals"></div>
 <div th:replace="fragments/profile-delete-notification :: profile-delete-notification"></div>
+
+<!-- ================== MODALI SOCIAL ================== -->
+<div th:replace="fragments/modals :: social-modals('/gestore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-feed-modal"></div>
+<div th:replace="fragments/modals :: social-not-available-modal"></div>
 
 <hr class="section-separator"/>
 

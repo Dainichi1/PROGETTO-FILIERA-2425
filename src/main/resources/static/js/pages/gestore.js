@@ -2,6 +2,7 @@
 import {toggleUtils} from "../utils/toggle-utils.js";
 import {modalUtils} from "../utils/modal-utils.js";
 import {csrfUtils} from "../utils/csrf-utils.js";
+import { crudUtils } from "../utils/crud-utils.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     const table = document.getElementById("contenutiTable");
@@ -814,4 +815,14 @@ document.addEventListener("DOMContentLoaded", () => {
             if (target) modalUtils.closeModal(target);
         });
     });
+
+    // === VISUALIZZA SOCIAL FEED ===
+    const btnSocialFeed = document.getElementById("btnSocialFeed");
+    if (btnSocialFeed) {
+        btnSocialFeed.addEventListener("click", () => {
+            console.log("Caricamento Social Feed per Gestore");
+            crudUtils.openSocialFeed();
+        });
+    }
+
 });

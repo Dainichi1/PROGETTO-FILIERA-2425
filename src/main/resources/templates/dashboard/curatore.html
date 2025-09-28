@@ -63,6 +63,13 @@
 <button id="btnDeleteProfile" class="btn btn-danger btn-lg">
     🗑️ Elimina profilo
 </button>
+<!-- Bottone Visualizza Social -->
+<div class="actions-container">
+    <button id="btnSocialFeed" type="button" class="btn-primary">
+        📢 Visualizza Social Network
+    </button>
+</div>
+
 
 <!-- ====== PRODOTTI ====== -->
 <h3>Prodotti in attesa di approvazione</h3>
@@ -217,6 +224,12 @@
 <!-- Modale eliminazione profilo (fragment comune) -->
 <div th:replace="fragments/profile-delete-modal :: profile-delete-modal"></div>
 <div th:replace="fragments/profile-delete-notification :: profile-delete-notification"></div>
+
+<!-- ================== MODALI SOCIAL ================== -->
+<div th:replace="fragments/modals :: social-modals('/curatore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-feed-modal"></div>
+<div th:replace="fragments/modals :: social-not-available-modal"></div>
+
 
 <p><a th:href="@{/}">⬅ Torna alla Home</a></p>
 

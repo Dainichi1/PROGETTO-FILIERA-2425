@@ -121,11 +121,84 @@
 
 <!-- ====== PACCHETTI ====== -->
 <h3>Pacchetti in attesa di approvazione</h3>
-<!-- (codice identico, mantenuto invariato) -->
+<table>
+    <thead>
+    <tr>
+        <th>Nome</th><th>Creatore</th><th>Descrizione</th><th>Prezzo</th><th>Indirizzo</th>
+        <th>Accetta</th><th>Rifiuta</th><th>Commento</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="pacchetto : ${pacchetti}">
+        <td th:text="${pacchetto.nome}">Nome</td>
+        <td th:text="${pacchetto.creatoDa}">Creatore</td>
+        <td th:text="${pacchetto.descrizione}">Descrizione</td>
+        <td th:text="${pacchetto.prezzo}">0.00</td>
+        <td th:text="${pacchetto.indirizzo}">Indirizzo</td>
+        <td>
+            <form th:action="@{/curatore/approvaPacchetto}" method="post">
+                <input type="hidden" name="nome" th:value="${pacchetto.nome}"/>
+                <input type="hidden" name="creatore" th:value="${pacchetto.creatoDa}"/>
+                <button type="button" class="approve-btn" th:attr="data-nome=${pacchetto.nome}">Accetta</button>
+            </form>
+        </td>
+        <td>
+            <form th:action="@{/curatore/rifiutaPacchetto}" method="post"
+                  th:id="'form-rifiuta-pac-' + ${pacchetto.nome} + '-' + ${pacchetto.creatoDa}">
+                <input type="hidden" name="nome" th:value="${pacchetto.nome}"/>
+                <input type="hidden" name="creatore" th:value="${pacchetto.creatoDa}"/>
+                <button type="button" class="reject-btn" th:attr="data-nome=${pacchetto.nome}">Rifiuta</button>
+            </form>
+        </td>
+        <td>
+            <input type="text" name="commento" class="commento-input"
+                   placeholder="Inserisci commento"
+                   th:form="'form-rifiuta-pac-' + ${pacchetto.nome} + '-' + ${pacchetto.creatoDa}"/>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
 
 <!-- ====== TRASFORMATI ====== -->
 <h3>Prodotti Trasformati in attesa di approvazione</h3>
-<!-- (codice identico, mantenuto invariato) -->
+<table>
+    <thead>
+    <tr>
+        <th>Nome</th><th>Creatore</th><th>Descrizione</th><th>Indirizzo</th>
+        <th>Accetta</th><th>Rifiuta</th><th>Commento</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="trasf : ${trasformati}">
+        <td th:text="${trasf.nome}">Nome</td>
+        <td th:text="${trasf.creatoDa}">Creatore</td>
+        <td th:text="${trasf.descrizione}">Descrizione</td>
+        <td th:text="${trasf.indirizzo}">Indirizzo</td>
+        <td>
+            <form th:action="@{/curatore/approvaTrasformato}" method="post">
+                <input type="hidden" name="nome" th:value="${trasf.nome}"/>
+                <input type="hidden" name="creatore" th:value="${trasf.creatoDa}"/>
+                <button type="button" class="approve-btn" th:attr="data-nome=${trasf.nome}">Accetta</button>
+            </form>
+        </td>
+        <td>
+            <form th:action="@{/curatore/rifiutaTrasformato}" method="post"
+                  th:id="'form-rifiuta-trasf-' + ${trasf.nome} + '-' + ${trasf.creatoDa}">
+                <input type="hidden" name="nome" th:value="${trasf.nome}"/>
+                <input type="hidden" name="creatore" th:value="${trasf.creatoDa}"/>
+                <button type="button" class="reject-btn" th:attr="data-nome=${trasf.nome}">Rifiuta</button>
+            </form>
+        </td>
+        <td>
+            <input type="text" name="commento" class="commento-input"
+                   placeholder="Inserisci commento"
+                   th:form="'form-rifiuta-trasf-' + ${trasf.nome} + '-' + ${trasf.creatoDa}"/>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
 
 <!-- Modali conferma approvazione/rifiuto -->
 <div id="approveModal" class="modal">

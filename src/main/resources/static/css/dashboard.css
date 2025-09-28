@@ -400,5 +400,9 @@ table td {
     transform: scale(1.05);
 }
 
-
+#map {
+    height: 400px;
+    width: 100%;
+    border-radius: 8px;
+}
 

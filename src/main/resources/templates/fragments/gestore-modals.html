@@ -109,6 +109,54 @@
         </div>
     </div>
 
+    <!-- Modale: Gestione indirizzi mappa -->
+    <div id="mapAddressesModal" class="modal">
+        <div class="modal-content large">
+            <h2>🗺️ Seleziona indirizzi per la mappa</h2>
+            <p>Seleziona gli indirizzi da visualizzare come marker:</p>
+            <div id="addressListContainer" class="form-container checkbox-list">
+                <!-- Qui via JS inseriamo checkboxes degli indirizzi -->
+                <p><i>Nessun indirizzo disponibile.</i></p>
+            </div>
+            <div class="modal-actions">
+                <button id="btnConfirmAddresses" class="btn-primary">OK</button>
+                <button class="btn-close-modal btn-secondary" data-target="mapAddressesModal">Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale: Visualizza mappa -->
+    <div id="mapModal" class="modal">
+        <div class="modal-content large">
+            <h2>🗺️ Mappa Indirizzi</h2>
+            <div id="map" style="height: 400px; width: 100%; border-radius: 8px;"></div>
+            <div class="modal-actions">
+                <button class="btn-close-modal btn-secondary" data-target="mapModal">Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE: Indirizzo errato/non valido -->
+    <div id="invalidAddressModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>❌ Indirizzo non valido</h2>
+            <p id="invalidAddressMessage">
+                L’indirizzo selezionato non è stato riconosciuto o non è valido.
+            </p>
+            <div class="modal-actions">
+                <button id="btnInvalidAddressOk" class="btn btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="duplicateAddressModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Indirizzo duplicato</h2>
+            <p id="duplicateAddressMessage"></p>
+            <button id="duplicateAddressOk" class="btn">OK</button>
+        </div>
+    </div>
+
 
 </div>
 </body>

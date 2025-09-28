@@ -4,112 +4,501 @@ import {modalUtils} from "../utils/modal-utils.js";
 import {csrfUtils} from "../utils/csrf-utils.js";
 
 document.addEventListener("DOMContentLoaded", () => {
-    const searchInput = document.getElementById("searchInput");
-    const statoSelect = document.getElementById("statoSelect");
-    const sortSelect = document.getElementById("sortSelect");
     const table = document.getElementById("contenutiTable");
     const tbody = table?.querySelector("tbody");
+    const trasformatiCaricati = new Set();
 
-    // ================== FILTRO COMBINATO ==================
-    function filterRows() {
+    // cache indirizzi
+    let indirizziCache = [];
+    let mapInstance = null;
+    let markersLayer = null;
+
+    // ================== FUNZIONE POPOLA TABELLA INDIRIZZI ==================
+    function popolaTabellaIndirizzi(data) {
         if (!tbody) return;
-        const rows = tbody.querySelectorAll("tr");
-        const searchTerm = searchInput?.value.toLowerCase() || "";
-        const stato = statoSelect?.value.toLowerCase() || "";
-
-        rows.forEach(row => {
-            if (row.querySelector("td[colspan]")) return; // ignora messaggi
-
-            const text = row.innerText.toLowerCase();
-            const statoCell = row.cells[3]?.innerText.toLowerCase() || "";
-
-            const matchesSearch = text.includes(searchTerm);
-            const matchesStato = stato === "" || statoCell.includes(stato);
-
-            row.style.display = (matchesSearch && matchesStato) ? "" : "none";
-        });
+        tbody.innerHTML = "";
+        if (Array.isArray(data) && data.length > 0) {
+            data.forEach(item => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${item.id}</td>
+                    <td>${item.nome}</td>
+                    <td>${item.tipo}</td>
+                    <td>APPROVATO</td>
+                    <td>${item.indirizzo}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } else {
+            tbody.innerHTML = `<tr><td colspan="5">Nessun indirizzo disponibile</td></tr>`;
+        }
     }
 
-    searchInput?.addEventListener("input", filterRows);
-    statoSelect?.addEventListener("change", filterRows);
+    function mostraMappa(indirizziSelezionati) {
+        modalUtils.openModal("mapModal");
 
-    // ================== ORDINAMENTO ==================
-    let sortDirection = 1; // 1 = asc, -1 = desc
-
-    function sortRows() {
-        if (!tbody) return;
-        const rows = Array.from(tbody.querySelectorAll("tr"))
-            .filter(r => !r.querySelector("td[colspan]")); // esclude riga "vuota"
-
-        const criterion = sortSelect?.value;
-        if (!criterion) return;
-
-        let colIndex = 0;
-        switch (criterion) {
-            case "nome":
-                colIndex = 1;
-                break;
-            case "tipo":
-                colIndex = 2;
-                break;
-            case "stato":
-                colIndex = 3;
-                break;
-            case "data":
-                colIndex = 4;
-                break;
+        if (!mapInstance) {
+            mapInstance = L.map("map").setView([41.8719, 12.5674], 6); // Italia
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                attribution: "&copy; <a href='https://www.openstreetmap.org/'>OpenStreetMap</a> contributors"
+            }).addTo(mapInstance);
+            markersLayer = L.layerGroup().addTo(mapInstance);
         }
 
-        rows.sort((a, b) => {
-            const aText = a.cells[colIndex]?.innerText.trim().toLowerCase() || "";
-            const bText = b.cells[colIndex]?.innerText.trim().toLowerCase() || "";
+        // reset marker visivi
+        markersLayer.clearLayers();
 
-            if (criterion === "data") {
-                const aTime = Date.parse(aText) || 0;
-                const bTime = Date.parse(bText) || 0;
-                return (aTime - bTime) * sortDirection;
+        // icone per tipologia
+        const icons = {
+            "Prodotto": new L.Icon({
+                iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
+                shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            }),
+            "Pacchetto": new L.Icon({
+                iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
+                shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            }),
+            "Fiera": new L.Icon({
+                iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
+                shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            }),
+            "Visita": new L.Icon({
+                iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png",
+                shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            }),
+            "Prodotto Trasformato": new L.Icon({
+                iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png",
+                shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            })
+        };
+
+        // carico SEMPRE i marker persistenti dal backend
+        fetch("/gestore/markers/api")
+            .then(r => r.json())
+            .then(savedMarkers => {
+                // disegno marker già salvati
+                savedMarkers.forEach(m => {
+                    let tipo = "Prodotto";
+                    const match = m.label.match(/\((.*?)\)$/);
+                    if (match) tipo = match[1];
+
+                    const icon = icons[tipo] || icons["Prodotto"];
+
+                    L.marker([m.lat, m.lng], { icon })
+                        .addTo(markersLayer)
+                        .bindPopup(`<strong>${m.label}</strong>`)
+                        .bindTooltip(tipo, {
+                            permanent: true,
+                            direction: "bottom",
+                            offset: [0, 6],
+                            className: "marker-label"
+                        });
+                });
+
+                if (!indirizziSelezionati || indirizziSelezionati.length === 0) {
+                    mapInstance.setView([41.8719, 12.5674], 6);
+                    return;
+                }
+
+                const normaliDaSalvare = [];
+                let bounds = [];
+
+                // === Marker normali ===
+                indirizziSelezionati.forEach(item => {
+                    if (item.lat && item.lng) {
+                        const duplicato = savedMarkers.find(m =>
+                            m.label.includes(item.nome) && m.label.includes(item.tipo)
+                        );
+                        if (duplicato) return;
+
+                        const icon = icons[item.tipo] || icons["Prodotto"];
+                        L.marker([item.lat, item.lng], { icon })
+                            .addTo(markersLayer)
+                            .bindPopup(`<strong>${item.nome}</strong><br>${item.indirizzo}<br>(${item.tipo})`)
+                            .bindTooltip(item.tipo, {
+                                permanent: true,
+                                direction: "bottom",
+                                offset: [0, 6],
+                                className: "marker-label"
+                            });
+
+                        if (item.tipo !== "Prodotto Trasformato") {
+                            normaliDaSalvare.push(item);
+                            bounds.push([item.lat, item.lng]);
+                        }
+                    }
+                });
+
+                // === Prodotti trasformati ===
+                const trasformati = indirizziSelezionati.filter(i => i.tipo === "Prodotto Trasformato");
+
+// preparo tutte le fetch in parallelo
+                const trasformatiFetch = trasformati.map(t =>
+                    fetch(`/gestore/prodotti-trasformati/api/${t.id}/path`)
+                        .then(r => {
+                            if (r.status === 400) {
+                                const invalidMsg = document.getElementById("invalidAddressMessage");
+                                if (invalidMsg) invalidMsg.innerText = `❌ Indirizzo non valido per prodotto trasformato: ${t.nome}`;
+                                modalUtils.openModal("invalidAddressModal");
+                                throw new Error("Indirizzo trasformato non valido");
+                            }
+                            return r.json();
+                        })
+                );
+
+// aspetto tutte le risposte insieme
+                Promise.all(trasformatiFetch)
+                    .then(results => {
+                        results.forEach(data => {
+                            if (!data || !data.latTrasformato || !data.lngTrasformato) return;
+
+                            const pathCoords = [];
+                            const markersDaSalvare = [];
+
+                            // marker trasformato
+                            L.marker([data.latTrasformato, data.lngTrasformato], { icon: icons["Prodotto Trasformato"] })
+                                .addTo(markersLayer)
+                                .bindPopup(`<strong>${data.nomeTrasformato}</strong><br>Prodotto Trasformato`);
+                            pathCoords.push([data.latTrasformato, data.lngTrasformato]);
+                            bounds.push([data.latTrasformato, data.lngTrasformato]);
+
+                            markersDaSalvare.push({
+                                lat: data.latTrasformato,
+                                lng: data.lngTrasformato,
+                                label: `${data.nomeTrasformato} (Prodotto Trasformato)`,
+                                color: "#800080"
+                            });
+
+                            // marker fasi
+                            data.fasi.forEach(f => {
+                                const nomeProdotto = f.nomeProdotto || f.nome || "Senza nome";
+                                L.marker([f.lat, f.lng], { icon: icons["Prodotto"] })
+                                    .addTo(markersLayer)
+                                    .bindPopup(`<strong>${nomeProdotto}</strong><br>${f.descrizioneFase}`);
+                                pathCoords.push([f.lat, f.lng]);
+                                bounds.push([f.lat, f.lng]);
+
+                                markersDaSalvare.push({
+                                    lat: f.lat,
+                                    lng: f.lng,
+                                    label: `${nomeProdotto} (Fase Produzione)`,
+                                    color: "#FF0000"
+                                });
+                            });
+
+                            // linea tratteggiata viola
+                            if (pathCoords.length > 1) {
+                                L.polyline(pathCoords, { color: "purple", weight: 3, dashArray: "5,5" })
+                                    .addTo(markersLayer);
+                            }
+
+                            // salvo marker
+                            const csrf = csrfUtils.getCsrf();
+                            fetch("/gestore/markers/api/batch", {
+                                method: "POST",
+                                credentials: "same-origin",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    [csrf.header]: csrf.token
+                                },
+                                body: JSON.stringify(markersDaSalvare)
+                            }).catch(err => console.error("❌ Errore salvataggio prodotti trasformati:", err));
+
+                            // salvo anche il path
+                            fetch("/gestore/paths/api", {
+                                method: "POST",
+                                credentials: "same-origin",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    [csrf.header]: csrf.token
+                                },
+                                body: JSON.stringify({
+                                    prodottoTrasformatoId: data.id,
+                                    coords: pathCoords
+                                })
+                            }).catch(err => console.error("❌ Errore salvataggio path:", err));
+                        });
+
+                        if (bounds.length > 0) {
+                            mapInstance.fitBounds(bounds, { padding: [50, 50] });
+                        }
+                    })
+                    .catch(err => console.error("❌ Errore caricamento prodotti trasformati:", err));
+
+                // salvo marker normali
+                if (normaliDaSalvare.length > 0) {
+                    const csrf = csrfUtils.getCsrf();
+                    fetch("/gestore/markers/api/batch", {
+                        method: "POST",
+                        credentials: "same-origin",
+                        headers: {
+                            "Content-Type": "application/json",
+                            [csrf.header]: csrf.token
+                        },
+                        body: JSON.stringify(normaliDaSalvare.map(i => ({
+                            lat: i.lat,
+                            lng: i.lng,
+                            label: `${i.nome} (${i.tipo})`,
+                            color: "#FF0000"
+                        })))
+                    }).catch(err => console.error("❌ Errore salvataggio marker normali:", err));
+                }
+
+                if (bounds.length > 0) {
+                    mapInstance.fitBounds(bounds, { padding: [50, 50] });
+                }
+            })
+            .catch(err => console.error("❌ Errore caricamento marker persistenti:", err));
+
+        // === carico anche i path già salvati per i prodotti trasformati ===
+        fetch("/gestore/paths/api")
+            .then(r => r.json())
+            .then(savedPaths => {
+                savedPaths.forEach(path => {
+                    if (path.coords && path.coords.length > 1) {
+                        L.polyline(path.coords, { color: "purple", weight: 3, dashArray: "5,5" })
+                            .addTo(markersLayer);
+                    }
+                });
+            })
+            .catch(err => console.error("❌ Errore caricamento paths persistenti:", err));
+    }
+
+
+
+
+
+    function showDuplicateAddressModal(indirizzo) {
+        const modal = document.getElementById("duplicateAddressModal");
+        const msg = document.getElementById("duplicateAddressMessage");
+        const okBtn = document.getElementById("duplicateAddressOk");
+
+        if (msg) {
+            msg.innerText = `⚠️ L’indirizzo "${indirizzo}" è già presente sulla mappa.`;
+        }
+
+        modalUtils.openModal("duplicateAddressModal");
+
+        if (okBtn) {
+            okBtn.onclick = () => {
+                modalUtils.closeModal("duplicateAddressModal");
+                window.location.href = "/gestore/dashboard"; // oppure solo chiudere la modale
+            };
+        }
+    }
+
+
+
+    // ================== FETCH INDIRIZZI (con cache) ==================
+    function fetchIndirizzi(forceRefresh = false) {
+        if (indirizziCache.length > 0 && !forceRefresh) {
+            return Promise.resolve(indirizziCache);
+        }
+
+        const csrf = csrfUtils.getCsrf();
+        return fetch("/gestore/indirizzi/api", {
+            credentials: "same-origin",
+            headers: { [csrf.header]: csrf.token }
+        })
+            .then(r => {
+                if (!r.ok) throw new Error("Errore HTTP " + r.status);
+                return r.json();
+            })
+            .then(data => {
+                indirizziCache = Array.isArray(data) ? data : [];
+                return indirizziCache;
+            })
+            .catch(err => {
+                console.error("Errore fetch indirizzi:", err);
+                return [];
+            });
+    }
+
+    // ================== NUOVO BOTTONE "VISUALIZZA MAPPA" ==================
+    const btnApriMappa = document.getElementById("btnApriMappa");
+    if (btnApriMappa) {
+        btnApriMappa.addEventListener("click", () => {
+            // mappa vuota
+            mostraMappa([]);
+        });
+    }
+
+    // ================== GESTIONE INDIRIZZI MAPPA ==================
+    const btnGestioneIndirizzi = document.getElementById("btnGestioneIndirizziMappa");
+    if (btnGestioneIndirizzi) {
+        btnGestioneIndirizzi.addEventListener("click", () => {
+            modalUtils.openModal("mapAddressesModal");
+
+            const container = document.getElementById("addressListContainer");
+            if (container) container.innerHTML = "<p><i>Caricamento indirizzi...</i></p>";
+
+            fetchIndirizzi().then(data => {
+                if (container) {
+                    container.innerHTML = "";
+                    if (data.length > 0) {
+                        data.forEach(item => {
+                            const div = document.createElement("div");
+                            div.innerHTML = `
+                                <label>
+                                    <input type="checkbox" value="${item.id}" 
+                                           data-nome="${item.nome}" 
+                                           data-indirizzo="${item.indirizzo}" 
+                                           data-tipo="${item.tipo}" 
+                                           data-lat="${item.lat}" 
+                                           data-lng="${item.lng}">
+                                    ${item.nome} – ${item.indirizzo} (${item.tipo})
+                                </label>
+                            `;
+                            container.appendChild(div);
+                        });
+                    } else {
+                        container.innerHTML = "<p><i>Nessun indirizzo disponibile.</i></p>";
+                    }
+                }
+            });
+        });
+    }
+
+    // ================== CONFERMA SELEZIONE INDIRIZZI ==================
+    const btnConfirmAddresses = document.getElementById("btnConfirmAddresses");
+    if (btnConfirmAddresses) {
+        btnConfirmAddresses.addEventListener("click", () => {
+            const selectedCheckboxes = document.querySelectorAll("#addressListContainer input[type=checkbox]:checked");
+            let indirizziSelezionati = Array.from(selectedCheckboxes).map(cb => ({
+                id: cb.value,
+                nome: cb.dataset.nome,
+                indirizzo: cb.dataset.indirizzo,
+                tipo: cb.dataset.tipo
+            }));
+
+            modalUtils.closeModal("mapAddressesModal");
+
+            if (indirizziSelezionati.length > 0) {
+                const csrf = csrfUtils.getCsrf();
+
+                // 🔎 controllo duplicati direttamente dal backend
+                fetch("/gestore/markers/api", {
+                    credentials: "same-origin",
+                    headers: { [csrf.header]: csrf.token }
+                })
+                    .then(r => {
+                        if (!r.ok) throw new Error("Errore HTTP " + r.status);
+                        return r.json();
+                    })
+                    .then(savedMarkers => {
+                        // confronto indirizzi selezionati con quelli già salvati
+                        let duplicati = indirizziSelezionati.filter(sel =>
+                            savedMarkers.some(m =>
+                                m.label.includes(sel.nome) && m.label.includes(sel.tipo)
+                            )
+                        );
+
+                        if (duplicati.length > 0) {
+                            duplicati.forEach(d => {
+                                showDuplicateAddressModal(d.indirizzo);
+
+                                // deseleziono la checkbox duplicata
+                                const cb = document.querySelector(`#addressListContainer input[value="${d.id}"]`);
+                                if (cb) cb.checked = false;
+                            });
+
+                            // rimuovo i duplicati prima di inviare al backend
+                            indirizziSelezionati = indirizziSelezionati.filter(sel =>
+                                !duplicati.some(d => d.id === sel.id)
+                            );
+
+                            if (indirizziSelezionati.length === 0) return; // tutti duplicati → stop
+                        }
+
+                        // 🔹 proseguo con il geocoding
+                        return fetch("/gestore/indirizzi/api/geocode", {
+                            method: "POST",
+                            credentials: "same-origin",
+                            headers: {
+                                "Content-Type": "application/json",
+                                [csrf.header]: csrf.token
+                            },
+                            body: JSON.stringify(indirizziSelezionati)
+                        });
+                    })
+                    .then(r => {
+                        if (!r) return; // se fermato per duplicati
+                        if (!r.ok) throw new Error("Errore HTTP " + r.status);
+                        return r.json();
+                    })
+                    .then(data => {
+                        if (!data) return;
+
+                        if (!Array.isArray(data) || data.length === 0) {
+                            showInvalidAddressModal("Indirizzo sconosciuto");
+                            return;
+                        }
+
+                        const invalid = data.find(d => !d.lat || !d.lng);
+                        if (invalid) {
+                            showInvalidAddressModal(invalid.indirizzo);
+                            return;
+                        }
+
+                        mostraMappa(data);
+                    })
+                    .catch(err => {
+                        console.error("Errore nel controllo duplicati/geocoding:", err);
+                        showInvalidAddressModal("Errore durante il geocoding");
+                    });
+
+            } else {
+                mostraMappa([]); // niente selezione → mappa vuota
             }
-
-            return aText.localeCompare(bText) * sortDirection;
-        });
-
-        rows.forEach(row => tbody.appendChild(row));
-        sortDirection *= -1;
-    }
-
-    sortSelect?.addEventListener("change", sortRows);
-
-    // ================== EVIDENZIAZIONE SIDEBAR ==================
-    document.querySelectorAll(".sidebar a").forEach(link => {
-        link.addEventListener("click", () => {
-            document.querySelectorAll(".sidebar a").forEach(a => a.classList.remove("active"));
-            link.classList.add("active");
-        });
-    });
-
-    // ================== MODALI: Nessun contenuto ==================
-    const noContentRow = document.getElementById("noContentRow");
-    const modalNoContent = document.getElementById("modalNoContent");
-    const modalChoice = document.getElementById("modalChoice");
-
-    if (noContentRow && modalNoContent && modalChoice) {
-        toggleUtils.show(modalNoContent);
-
-        modalNoContent.querySelector(".btn-ok")?.addEventListener("click", () => {
-            toggleUtils.hide(modalNoContent);
-            toggleUtils.show(modalChoice);
-        });
-
-        modalChoice.querySelector(".btn-riepilogo")?.addEventListener("click", () => {
-            toggleUtils.hide(modalChoice);
-        });
-
-        modalChoice.querySelector(".btn-categoria")?.addEventListener("click", () => {
-            toggleUtils.hide(modalChoice);
         });
     }
 
-    // ================== VISUALIZZA RICHIESTE ELIMINAZIONE PROFILO ==================
+
+    // ================== PRELOAD INDIRIZZI ==================
+    fetchIndirizzi(true); // carico subito in background all'avvio
+
+    // === MODALE INDIRIZZO NON VALIDO ===
+    const invalidAddressModal = document.getElementById("invalidAddressModal");
+    const invalidAddressMessage = document.getElementById("invalidAddressMessage");
+    const btnInvalidAddressOk = document.getElementById("btnInvalidAddressOk");
+
+    function showInvalidAddressModal(indirizzo) {
+        if (invalidAddressMessage) {
+            invalidAddressMessage.innerText =
+                `❌ L’indirizzo "${indirizzo}" non è valido o non è stato trovato.`;
+        }
+        modalUtils.openModal("invalidAddressModal");
+    }
+
+    if (btnInvalidAddressOk) {
+        btnInvalidAddressOk.addEventListener("click", () => {
+            modalUtils.closeModal("invalidAddressModal");
+            window.location.href = "/gestore/dashboard"; // torna alla home del gestore
+        });
+    }
+
+
+// ================== VISUALIZZA RICHIESTE ELIMINAZIONE PROFILO ==================
     const btnViewDeletionRequests = document.getElementById("btnViewDeletionRequests");
     if (btnViewDeletionRequests) {
         btnViewDeletionRequests.addEventListener("click", () => {
@@ -244,7 +633,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnRejectedOk) {
         btnRejectedOk.addEventListener("click", () => {
             modalUtils.closeModal("rejectedModal");
-            window.location.href = "/gestore";
+            window.location.href = "/gestore/dashboard";
         });
     }
 
@@ -302,8 +691,6 @@ document.addEventListener("DOMContentLoaded", () => {
             window.location.href = "/gestore/dashboard";
         });
     }
-
-
 
 
     // ================== ELIMINA PROFILO (GESTORE) ==================

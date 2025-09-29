@@ -15,3 +15,5 @@ ALTER TABLE prodotti_trasformati
     ADD CONSTRAINT chk_quantita_prodotti_trasformati CHECK (
         CASE WHEN id IS NULL THEN quantita > 0 ELSE quantita >= 0 END
         );
+
+

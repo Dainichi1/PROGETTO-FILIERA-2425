@@ -106,45 +106,52 @@ export const socialUtilsCrud = (() => {
 
     // ===== SOCIAL FEED =====
     async function openSocialFeed() {
+        const container = document.getElementById("socialPostsContainer");
+        container.innerHTML = ""; // sempre svuotato
+
         try {
             const res = await fetch("/api/social", { credentials: "same-origin" });
-            if (!res.ok) throw new Error("Errore nel recupero dei post social");
+
+            if (!res.ok) {
+                throw new Error("Errore nel recupero dei post social");
+            }
 
             const posts = await res.json();
-            const container = document.getElementById("socialPostsContainer");
-            container.innerHTML = "";
 
-            if (posts.length === 0) {
-                container.innerHTML = "<p>Nessun post pubblicato.</p>";
+            if (!posts || posts.length === 0) {
+                container.innerHTML = "<p>⚠️ Nessun post pubblicato.</p>";
             } else {
                 posts.forEach(post => {
                     const div = document.createElement("div");
                     div.classList.add("social-post");
                     div.style.cssText = `
-                        border:1px solid #ccc;
-                        padding:10px;
-                        margin-bottom:10px;
-                        border-radius:8px;
-                        background:#fff;
-                    `;
+                    border:1px solid #ccc;
+                    padding:10px;
+                    margin-bottom:10px;
+                    border-radius:8px;
+                    background:#fff;
+                `;
                     div.innerHTML = `
-                        <h4>${post.titolo}</h4>
-                        <p>${post.testo}</p>
-                        <small>
-                            👤 ${post.autoreUsername} |
-                            📦 ${post.tipoItem}: ${post.nomeItem} |
-                            🕒 ${new Date(post.createdAt).toLocaleString()}
-                        </small>
-                    `;
+                    <h4>${post.titolo}</h4>
+                    <p>${post.testo}</p>
+                    <small>
+                        👤 ${post.autoreUsername || "Utente"} |
+                        📦 ${post.tipoItem || "Item"}: ${post.nomeItem || "-"} |
+                        🕒 ${post.createdAt ? new Date(post.createdAt).toLocaleString() : ""}
+                    </small>
+                `;
                     container.appendChild(div);
                 });
             }
-
-            modalUtils.openModal("socialFeedModal");
         } catch (e) {
-            alert("Errore durante il caricamento dei post: " + e.message);
+            console.error("Errore durante il caricamento dei post:", e);
+            container.innerHTML = "<p>❌ Errore durante il caricamento dei post.</p>";
         }
+
+        // Apri sempre la modale, anche in caso di errore o lista vuota
+        modalUtils.openModal("socialFeedModal");
     }
+
 
     // ===== APRI MODALE SOCIAL DIRETTO =====
     function openSocialModal(id, type) {

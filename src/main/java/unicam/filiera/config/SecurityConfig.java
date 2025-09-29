@@ -31,9 +31,21 @@ public class SecurityConfig {
                 )
                 .headers(h -> h.frameOptions(f -> f.sameOrigin()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/register", "/login", "/h2-console/**", "/css/**", "/static/js/**").permitAll()
+                        .requestMatchers(
+                                "/",
+                                "/register",
+                                "/login",
+                                "/h2-console/**",
+                                "/css/**",
+                                "/js/**",
+                                "/marketplace/**",       //  Marketplace visibile a tutti
+                                "/api/social/**",        //  Social Feed visibile a tutti
+                                "/gestore/markers/api",  //  Marker mappa
+                                "/gestore/paths/api"     //  Path trasformati
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
+
                 .formLogin(f -> f
                         .loginPage("/login")
                         .loginProcessingUrl("/doLogin")

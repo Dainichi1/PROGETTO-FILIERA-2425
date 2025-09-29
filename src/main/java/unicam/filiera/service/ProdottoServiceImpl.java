@@ -3,6 +3,8 @@ package unicam.filiera.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import unicam.filiera.dto.ItemTipo;
+import unicam.filiera.dto.PacchettoDto;
 import unicam.filiera.dto.ProdottoDto;
 import unicam.filiera.entity.ProdottoEntity;
 import unicam.filiera.factory.ItemFactory;
@@ -20,7 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
-import java.util.Optional; // <-- import
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -76,8 +78,10 @@ public class ProdottoServiceImpl implements ProdottoService {
 
         ProdottoEntity entity = mapToEntity(updated, dto, existing.getId());
 
-        boolean nessunCertNuovo = dto.getCertificati()==null || dto.getCertificati().stream().allMatch(MultipartFile::isEmpty);
-        boolean nessunaFotoNuova = dto.getFoto()==null || dto.getFoto().stream().allMatch(MultipartFile::isEmpty);
+        boolean nessunCertNuovo = dto.getCertificati() == null ||
+                dto.getCertificati().stream().allMatch(MultipartFile::isEmpty);
+        boolean nessunaFotoNuova = dto.getFoto() == null ||
+                dto.getFoto().stream().allMatch(MultipartFile::isEmpty);
 
         if (nessunCertNuovo) {
             entity.setCertificati(existing.getCertificati());
@@ -91,21 +95,20 @@ public class ProdottoServiceImpl implements ProdottoService {
         notifier.notificaTutti(updated, "NUOVO_PRODOTTO");
     }
 
-
     @Override
-    public List<Prodotto> getProdottiCreatiDa(String creatore) {
+    public List<ProdottoDto> getProdottiCreatiDa(String creatore) {
         return repository.findByCreatoDa(creatore)
                 .stream()
-                .map(this::mapToDomain)
-                .collect(Collectors.toList());
+                .map(this::mapToDto)
+                .toList();
     }
 
     @Override
-    public List<Prodotto> getProdottiByStato(StatoProdotto stato) {
+    public List<ProdottoDto> getProdottiByStato(StatoProdotto stato) {
         return repository.findByStato(stato)
                 .stream()
-                .map(this::mapToDomain)
-                .collect(Collectors.toList());
+                .map(this::mapToDto)
+                .toList();
     }
 
     @Override
@@ -114,11 +117,11 @@ public class ProdottoServiceImpl implements ProdottoService {
     }
 
     @Override
-    public List<Prodotto> getProdottiApprovatiByProduttore(String usernameProduttore) {
+    public List<ProdottoDto> getProdottiApprovatiByProduttore(String usernameProduttore) {
         return repository.findByStatoAndCreatoDa(StatoProdotto.APPROVATO, usernameProduttore)
                 .stream()
-                .map(this::mapToDomain)
-                .collect(Collectors.toList());
+                .map(this::mapToDto)
+                .toList();
     }
 
     @Override
@@ -134,10 +137,15 @@ public class ProdottoServiceImpl implements ProdottoService {
                 nuovoStato == StatoProdotto.APPROVATO ? "APPROVATO" : "RIFIUTATO");
     }
 
-    // === finder per l'entity (serve per prefill JSON) ===
     @Override
     public Optional<ProdottoEntity> findEntityById(Long id) {
         return repository.findById(id);
+    }
+
+    @Override
+    public Optional<ProdottoDto> findDtoById(Long id) {
+        return repository.findById(id)
+                .map(this::mapToDto); // usa già il mapper interno
     }
 
     @Override
@@ -170,9 +178,21 @@ public class ProdottoServiceImpl implements ProdottoService {
 
     private String salvaMultipartFile(MultipartFile multipartFile, String destDir) {
         try {
-            String filename = UUID.randomUUID() + "_" + multipartFile.getOriginalFilename();
+            // 1. Nome originale
+            String original = multipartFile.getOriginalFilename();
+
+            // 2. Rimpiazzo spazi e caratteri strani
+            String safeName = original == null ? "file"
+                    : original.replaceAll("\\s+", "_")
+                    .replaceAll("[^a-zA-Z0-9._-]", "");
+
+            // 3. UUID per evitare conflitti
+            String filename = UUID.randomUUID() + "_" + safeName;
+
+            // 4. Salvataggio fisico
             Path path = Paths.get(destDir, filename);
             Files.copy(multipartFile.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
+
             return filename;
         } catch (IOException e) {
             throw new RuntimeException("Errore nel salvataggio del file " + multipartFile.getOriginalFilename(), e);
@@ -191,17 +211,46 @@ public class ProdottoServiceImpl implements ProdottoService {
     private ProdottoEntity mapToEntity(Prodotto prodotto, ProdottoDto dto, Long id) {
         ProdottoEntity e = new ProdottoEntity();
         e.setId(id);
-        e.setNome(prodotto.getNome());
-        e.setDescrizione(prodotto.getDescrizione());
-        e.setIndirizzo(prodotto.getIndirizzo());
-        e.setQuantita(prodotto.getQuantita());
-        e.setPrezzo(prodotto.getPrezzo());
+
+        // Campi base (dal DTO)
+        e.setNome(dto.getNome());
+        e.setDescrizione(dto.getDescrizione());
+        e.setIndirizzo(dto.getIndirizzo());
+        e.setQuantita(dto.getQuantita());
+        e.setPrezzo(dto.getPrezzo());
+
+        // Campi business (dal domain Prodotto, che può avere logica di validazione/strategy già applicata)
         e.setCreatoDa(prodotto.getCreatoDa());
         e.setStato(prodotto.getStato());
         e.setCommento(prodotto.getCommento());
+
+        // File gestiti dal DTO
         e.setCertificati(toCsv(dto.getCertificati(), CERT_DIR));
         e.setFoto(toCsv(dto.getFoto(), FOTO_DIR));
+
         return e;
+    }
+
+    private ProdottoDto mapToDto(ProdottoEntity e) {
+        ProdottoDto dto = new ProdottoDto();
+        dto.setId(e.getId());
+        dto.setNome(e.getNome());
+        dto.setDescrizione(e.getDescrizione());
+        dto.setIndirizzo(e.getIndirizzo());
+        dto.setQuantita(e.getQuantita());
+        dto.setPrezzo(e.getPrezzo());
+        dto.setTipo(ItemTipo.PRODOTTO);
+
+        // Campi specifici di ProdottoDto
+        dto.setCreatoDa(e.getCreatoDa());
+        dto.setStato(e.getStato());
+        dto.setCommento(e.getCommento());
+
+        // Campi di BaseItemDto (già presenti nella superclasse)
+        dto.setCertificatiCsv(e.getCertificati());
+        dto.setFotoCsv(e.getFoto());
+
+        return dto;
     }
 
     private Prodotto mapToDomain(ProdottoEntity e) {
@@ -215,7 +264,7 @@ public class ProdottoServiceImpl implements ProdottoService {
                 .nome(e.getNome())
                 .descrizione(e.getDescrizione())
                 .indirizzo(e.getIndirizzo())
-                .quantita(quantita) // 0 ammesso (esaurito), negativo no
+                .quantita(quantita)
                 .prezzo(e.getPrezzo())
                 .creatoDa(e.getCreatoDa())
                 .stato(e.getStato())

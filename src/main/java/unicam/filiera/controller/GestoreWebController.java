@@ -7,15 +7,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import unicam.filiera.dto.RichiestaEliminazioneProfiloDto;
-import unicam.filiera.entity.RichiestaEliminazioneProfiloEntity;
-import unicam.filiera.entity.UtenteEntity;
-import unicam.filiera.model.*;
-import unicam.filiera.observer.EliminazioneProfiloNotifier;
-import unicam.filiera.repository.RichiestaEliminazioneProfiloRepository;
-import unicam.filiera.repository.UtenteRepository;
+import unicam.filiera.dto.UtenteDto;
+import unicam.filiera.model.CategoriaContenuto;
+import unicam.filiera.model.CriteriRicerca;
+import unicam.filiera.model.StatoRichiestaEliminazioneProfilo;
 import unicam.filiera.service.EliminazioneProfiloService;
 import unicam.filiera.service.GestoreContenutiService;
+import unicam.filiera.service.UtenteService;
 
 @Controller
 @RequestMapping("/gestore")
@@ -23,25 +21,16 @@ public class GestoreWebController {
 
     private static final Logger log = LoggerFactory.getLogger(GestoreWebController.class);
 
-    private final UtenteRepository repo;
+    private final UtenteService utenteService;
     private final GestoreContenutiService contenutiService;
     private final EliminazioneProfiloService eliminazioneProfiloService;
-    private final RichiestaEliminazioneProfiloRepository richiestaRepo;
-    private final EliminazioneProfiloNotifier notifier;
-    private final NotificationController notificationController; // <-- per SSE
 
-    public GestoreWebController(UtenteRepository repo,
+    public GestoreWebController(UtenteService utenteService,
                                 GestoreContenutiService contenutiService,
-                                EliminazioneProfiloService eliminazioneProfiloService,
-                                RichiestaEliminazioneProfiloRepository richiestaRepo,
-                                EliminazioneProfiloNotifier notifier,
-                                NotificationController notificationController) {
-        this.repo = repo;
+                                EliminazioneProfiloService eliminazioneProfiloService) {
+        this.utenteService = utenteService;
         this.contenutiService = contenutiService;
         this.eliminazioneProfiloService = eliminazioneProfiloService;
-        this.richiestaRepo = richiestaRepo;
-        this.notifier = notifier;
-        this.notificationController = notificationController;
     }
 
     /* ================== DASHBOARD ================== */
@@ -52,19 +41,11 @@ public class GestoreWebController {
         }
 
         String username = auth.getName();
+        UtenteDto gestore = utenteService.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("Utente non trovato"));
 
-        return repo.findById(username)
-                .map(e -> {
-                    GestorePiattaforma gestore = new GestorePiattaforma(
-                            e.getUsername(),
-                            e.getPassword(),
-                            e.getNome(),
-                            e.getCognome()
-                    );
-                    model.addAttribute("utente", gestore);
-                    return "dashboard/gestore";
-                })
-                .orElse("error/utente_non_trovato");
+        model.addAttribute("utente", gestore);
+        return "dashboard/gestore";
     }
 
     /* ================== CONTENUTI ================== */
@@ -112,23 +93,20 @@ public class GestoreWebController {
             return ResponseEntity.status(401).body("Utente non autenticato");
         }
 
-        String loginName = auth.getName();
-        UtenteEntity utente = repo.findByUsername(loginName)
-                .orElseThrow(() -> new IllegalStateException("Utente non trovato"));
+        String username = auth.getName();
 
         try {
-            RichiestaEliminazioneProfiloDto dto = RichiestaEliminazioneProfiloDto.builder()
-                    .username(utente.getUsername())
-                    .build();
-
-            eliminazioneProfiloService.inviaRichiestaEliminazione(dto);
-
-            log.info("Richiesta eliminazione profilo inviata per utente={}", utente.getUsername());
+            eliminazioneProfiloService.inviaRichiestaEliminazione(
+                    unicam.filiera.dto.RichiestaEliminazioneProfiloDto.builder()
+                            .username(username)
+                            .build()
+            );
+            log.info("Richiesta eliminazione profilo inviata per utente={}", username);
             return ResponseEntity.ok("Richiesta di eliminazione inviata con successo.");
         } catch (IllegalStateException e) {
             return ResponseEntity.status(409).body(e.getMessage());
         } catch (Exception e) {
-            log.error("Errore nella richiesta eliminazione per utente {}", utente.getUsername(), e);
+            log.error("Errore nella richiesta eliminazione per utente {}", username, e);
             return ResponseEntity.internalServerError().body("Errore: " + e.getMessage());
         }
     }
@@ -137,64 +115,31 @@ public class GestoreWebController {
     @PostMapping("/richieste/{id}/rifiuta")
     @ResponseBody
     public ResponseEntity<String> rifiutaRichiesta(@PathVariable Long id) {
-        return richiestaRepo.findById(id)
-                .map(entity -> {
-                    entity.setStato(StatoRichiestaEliminazioneProfilo.RIFIUTATA);
-                    richiestaRepo.save(entity);
-
-                    var model = toModel(entity);
-                    notifier.notificaRifiutata(model);
-                    notificationController.notifyUser(model.getUsername(),
-                            "RIFIUTATA",
-                            "La tua richiesta di eliminazione è stata rifiutata.");
-
-                    log.info("Richiesta {} rifiutata", id);
-
-                    return ResponseEntity.ok("Richiesta rifiutata");
-                })
-                .orElse(ResponseEntity.notFound().build());
+        eliminazioneProfiloService.aggiornaStato(id, StatoRichiestaEliminazioneProfilo.RIFIUTATA);
+        return ResponseEntity.ok("Richiesta rifiutata");
     }
 
     @PostMapping("/richieste/{id}/accetta")
     @ResponseBody
     public ResponseEntity<String> accettaRichiesta(@PathVariable Long id) {
-        return richiestaRepo.findById(id)
-                .map(entity -> {
-                    // 1. Aggiorna stato richiesta
-                    entity.setStato(StatoRichiestaEliminazioneProfilo.APPROVATA);
-                    richiestaRepo.save(entity);
-
-                    log.info("Richiesta {} approvata per utente {}", id, entity.getUsername());
-                    return ResponseEntity.ok("Richiesta approvata");
-                })
-                .orElse(ResponseEntity.notFound().build());
+        eliminazioneProfiloService.aggiornaStato(id, StatoRichiestaEliminazioneProfilo.APPROVATA);
+        return ResponseEntity.ok("Richiesta approvata");
     }
 
-
-
-    /* ================== POLLING STATO RICHIESTA ================== */
     @GetMapping("/richiesta-eliminazione/stato")
     @ResponseBody
     public ResponseEntity<String> statoRichiesta(Authentication auth) {
         if (auth == null || !auth.isAuthenticated()) {
             return ResponseEntity.status(401).body("NON_AUTENTICATO");
         }
+
         String username = auth.getName();
 
-        return richiestaRepo.findFirstByUsernameAndStatoOrderByDataRichiestaDesc(
-                        username, StatoRichiestaEliminazioneProfilo.APPROVATA)
-                .map(RichiestaEliminazioneProfiloEntity::getId)
-                .map(id -> ResponseEntity.ok("APPROVATA:" + id))
+        return eliminazioneProfiloService.getRichiesteByUtente(username).stream()
+                .filter(r -> StatoRichiestaEliminazioneProfilo.valueOf(r.getStato())
+                        == StatoRichiestaEliminazioneProfilo.APPROVATA)
+                .max((a, b) -> a.getDataRichiesta().compareTo(b.getDataRichiesta())) // prendo la più recente
+                .map(r -> ResponseEntity.ok("APPROVATA:" + r.getId()))
                 .orElse(ResponseEntity.ok("NESSUNA"));
-    }
-
-    /* ================== MAPPER ================== */
-    private RichiestaEliminazioneProfilo toModel(RichiestaEliminazioneProfiloEntity entity) {
-        return new RichiestaEliminazioneProfilo.Builder()
-                .id(entity.getId())
-                .username(entity.getUsername())
-                .stato(entity.getStato())
-                .dataRichiesta(entity.getDataRichiesta())
-                .build();
     }
 }

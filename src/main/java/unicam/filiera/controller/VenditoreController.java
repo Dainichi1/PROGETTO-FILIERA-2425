@@ -8,24 +8,20 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import unicam.filiera.dto.*;
-import unicam.filiera.entity.ProdottoEntity;
 import unicam.filiera.service.PacchettoService;
 import unicam.filiera.service.ProdottoService;
 import unicam.filiera.service.ProdottoTrasformatoService;
-
 
 /**
  * Controller di supporto per le operazioni centralizzate sugli {@link unicam.filiera.dto.BaseItemDto},
  * usato principalmente dal frontend (fetch JSON e update).
  *
  * Responsabilità principali:
- *
- * Espone endpoint di fetch centralizzato per recuperare i dati di un item
- * in base a ID e {@link unicam.filiera.dto.ItemTipo}.
- * Gestisce la <b>modifica centralizzata di item, delegando alle service layer
- * corrispondenti ({@code ProdottoService}, {@code PacchettoService}, {@code ProdottoTrasformatoService}).
- * Gestisce l’eliminazione centralizzata con risposta JSON (successo/errore).
- *
+ * - Espone endpoint di fetch centralizzato per recuperare i dati di un item
+ *   in base a ID e {@link unicam.filiera.dto.ItemTipo}.
+ * - Gestisce la modifica centralizzata di item, delegando alle service layer
+ *   corrispondenti ({@code ProdottoService}, {@code PacchettoService}, {@code ProdottoTrasformatoService}).
+ * - Gestisce l’eliminazione centralizzata con risposta JSON (successo/errore).
  *
  * Nota: questo controller ha finalità frontend/API,
  * mentre {@link ItemController} si occupa delle validazioni di business lato server
@@ -68,62 +64,20 @@ public class VenditoreController {
     public ResponseEntity<?> fetchItem(@PathVariable Long id,
                                        @RequestParam("tipo") ItemTipo tipo) {
         return switch (tipo) {
-            case PRODOTTO -> prodottoService.findEntityById(id)
-                    .map(entity -> {
-                        ProdottoDto dto = new ProdottoDto();
-                        dto.setId(entity.getId());
-                        dto.setNome(entity.getNome());
-                        dto.setDescrizione(entity.getDescrizione());
-                        dto.setQuantita(entity.getQuantita());
-                        dto.setPrezzo(entity.getPrezzo());
-                        dto.setIndirizzo(entity.getIndirizzo());
-                        return ResponseEntity.ok(dto);
-                    })
-                    .orElse(ResponseEntity.notFound().build());
+            case PRODOTTO ->
+                    prodottoService.findDtoById(id)
+                            .map(ResponseEntity::ok)
+                            .orElse(ResponseEntity.notFound().build());
 
-            case PACCHETTO -> pacchettoService.findEntityById(id)
-                    .map(entity -> {
-                        PacchettoDto dto = new PacchettoDto();
-                        dto.setId(entity.getId());
-                        dto.setNome(entity.getNome());
-                        dto.setDescrizione(entity.getDescrizione());
-                        dto.setQuantita(entity.getQuantita());
-                        dto.setPrezzo(entity.getPrezzo());
-                        dto.setIndirizzo(entity.getIndirizzo());
-                        if (entity.getProdotti() != null) {
-                            dto.setProdottiSelezionati(
-                                    entity.getProdotti().stream()
-                                            .map(ProdottoEntity::getId)
-                                            .toList()
-                            );
-                        }
-                        return ResponseEntity.ok(dto);
-                    })
-                    .orElse(ResponseEntity.notFound().build());
+            case PACCHETTO ->
+                    pacchettoService.findDtoById(id)
+                            .map(ResponseEntity::ok)
+                            .orElse(ResponseEntity.notFound().build());
 
-            case TRASFORMATO -> trasformatoService.findEntityById(id)
-                    .map(entity -> {
-                        ProdottoTrasformatoDto dto = new ProdottoTrasformatoDto();
-                        dto.setId(entity.getId());
-                        dto.setNome(entity.getNome());
-                        dto.setDescrizione(entity.getDescrizione());
-                        dto.setQuantita(entity.getQuantita());
-                        dto.setPrezzo(entity.getPrezzo());
-                        dto.setIndirizzo(entity.getIndirizzo());
-                        if (entity.getFasiProduzione() != null) {
-                            dto.setFasiProduzione(
-                                    entity.getFasiProduzione().stream().map(f -> {
-                                        var faseDto = new ProdottoTrasformatoDto.FaseProduzioneDto();
-                                        faseDto.setDescrizioneFase(f.getDescrizioneFase());
-                                        faseDto.setProduttoreUsername(f.getProduttoreUsername());
-                                        faseDto.setProdottoOrigineId(f.getProdottoOrigineId());
-                                        return faseDto;
-                                    }).toList()
-                            );
-                        }
-                        return ResponseEntity.ok(dto);
-                    })
-                    .orElse(ResponseEntity.notFound().build());
+            case TRASFORMATO ->
+                    trasformatoService.findDtoById(id)
+                            .map(ResponseEntity::ok)
+                            .orElse(ResponseEntity.notFound().build());
         };
     }
 

@@ -4,12 +4,12 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import unicam.filiera.dto.EsitoPrenotazioneVisitaDto;
 import unicam.filiera.dto.PrenotazioneVisitaDto;
 import unicam.filiera.service.PrenotazioneVisitaService;
 
-@Controller
+@RestController
 @RequestMapping("/prenotazioni-visite")
 public class PrenotazioneVisitaWebController {
 
@@ -22,42 +22,52 @@ public class PrenotazioneVisitaWebController {
 
     // ===================== CREA =====================
     @PostMapping("/prenota")
-    @ResponseBody
-    public ResponseEntity<String> prenota(@Valid @ModelAttribute PrenotazioneVisitaDto dto,
-                                          Authentication auth) {
+    public ResponseEntity<EsitoPrenotazioneVisitaDto> prenota(@Valid @ModelAttribute PrenotazioneVisitaDto dto,
+                                                              Authentication auth) {
         String username = (auth != null) ? auth.getName() : "demo_user";
 
         try {
             prenotazioneVisitaService.creaPrenotazione(dto, username);
-            return ResponseEntity.ok("✅ Prenotazione effettuata con successo!");
+            return ResponseEntity.status(201).body(
+                    new EsitoPrenotazioneVisitaDto(true, "✅ Prenotazione effettuata con successo!")
+            );
         } catch (IllegalStateException e) {
-            // Caso: già prenotato
-            return ResponseEntity.status(409).body("⚠ Hai già prenotato questa visita.");
+            return ResponseEntity.status(409).body(
+                    new EsitoPrenotazioneVisitaDto(false, "⚠ Hai già prenotato questa visita.")
+            );
         } catch (IllegalArgumentException e) {
-            // Caso: errore validazione lato server
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(
+                    new EsitoPrenotazioneVisitaDto(false, e.getMessage())
+            );
         } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body("❌ Errore imprevisto: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(
+                    new EsitoPrenotazioneVisitaDto(false, "❌ Errore imprevisto: " + e.getMessage())
+            );
         }
     }
 
     // ===================== ELIMINA =====================
     @DeleteMapping("/{id}")
-    @ResponseBody
-    public ResponseEntity<String> elimina(@PathVariable Long id, Authentication auth) {
+    public ResponseEntity<EsitoPrenotazioneVisitaDto> elimina(@PathVariable Long id, Authentication auth) {
         String username = (auth != null) ? auth.getName() : "demo_user";
 
         try {
             prenotazioneVisitaService.eliminaById(id, username);
-            return ResponseEntity.ok("✅ Prenotazione eliminata con successo!");
+            return ResponseEntity.ok(
+                    new EsitoPrenotazioneVisitaDto(true, "✅ Prenotazione eliminata con successo!")
+            );
         } catch (SecurityException se) {
-            return ResponseEntity.status(403).body("⚠ Non sei autorizzato a eliminare questa prenotazione.");
+            return ResponseEntity.status(403).body(
+                    new EsitoPrenotazioneVisitaDto(false, "⚠ Non sei autorizzato a eliminare questa prenotazione.")
+            );
         } catch (IllegalArgumentException iae) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(404).body(
+                    new EsitoPrenotazioneVisitaDto(false, "⚠ Prenotazione non trovata.")
+            );
         } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body("❌ Errore durante l'eliminazione: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(
+                    new EsitoPrenotazioneVisitaDto(false, "❌ Errore durante l'eliminazione: " + e.getMessage())
+            );
         }
     }
 }

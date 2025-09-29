@@ -14,12 +14,13 @@
             border-collapse: collapse;
             margin-top: 20px;
             width: 100%;
-            max-width: 1000px;
+            max-width: 1200px;
         }
         th, td {
             border: 1px solid #ccc;
             padding: 8px;
             text-align: left;
+            vertical-align: top;
         }
         th { background: #f2f2f2; }
         button {
@@ -33,24 +34,8 @@
         }
         button:hover { background-color: #0056b3; }
         .commento-input { width: 100%; min-width: 150px; }
-
-        /* Modali */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 2000;
-            left: 0; top: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            justify-content: center; align-items: center;
-        }
-        .modal-content {
-            background: #fff;
-            padding: 20px;
-            border-radius: 6px;
-            min-width: 300px;
-            text-align: center;
-        }
+        img.thumb { max-height: 40px; border-radius: 4px; }
+        ul { margin: 0; padding-left: 18px; }
     </style>
 </head>
 <body>
@@ -70,8 +55,7 @@
         📢 Visualizza Social Network
     </button>
 </div>
-<div><button id="btnApriMappa" class="btn-primary">🌍 Visualizza mappa</button>
-</div>
+<div><button id="btnApriMappa" class="btn-primary">🌍 Visualizza mappa</button></div>
 
 
 <!-- ====== PRODOTTI ====== -->
@@ -85,26 +69,32 @@
     </thead>
     <tbody>
     <tr th:each="prodotto : ${prodotti}">
-        <td th:text="${prodotto.nome}">Nome</td>
-        <td th:text="${prodotto.creatoDa}">Creatore</td>
-        <td th:text="${prodotto.descrizione}">Descrizione</td>
-        <td th:text="${prodotto.quantita}">0</td>
-        <td th:text="${prodotto.prezzo}">0.00</td>
-        <td th:text="${prodotto.indirizzo}">Indirizzo</td>
+        <td th:text="${prodotto.nome}"></td>
+        <td th:text="${prodotto.creatoDa}"></td>
+        <td th:text="${prodotto.descrizione}"></td>
+        <td th:text="${prodotto.quantita}"></td>
+        <td th:text="${prodotto.prezzo}"></td>
+        <td th:text="${prodotto.indirizzo}"></td>
+
+        <!-- Certificati -->
         <td>
-            <ul>
-                <li th:each="cert : ${prodotto.certificati}">
-                    <a th:href="@{'/file/certificati/' + ${cert}}" target="_blank" th:text="${cert}"></a>
-                </li>
-            </ul>
+            <span th:if="${#strings.isEmpty(prodotto.certificatiCsv)}">-</span>
+            <span th:each="cert : ${#strings.arraySplit(prodotto.certificatiCsv, ',')}" th:if="${!#strings.isEmpty(prodotto.certificatiCsv)}">
+                <a th:href="@{'/file/certificati/' + ${cert}}" target="_blank" th:text="${cert}"></a><br/>
+            </span>
         </td>
+
+        <!-- Foto -->
         <td>
-            <ul>
-                <li th:each="foto : ${prodotto.foto}">
-                    <a th:href="@{'/file/foto/' + ${foto}}" target="_blank" th:text="${foto}"></a>
-                </li>
-            </ul>
+            <span th:if="${#strings.isEmpty(prodotto.fotoCsv)}">-</span>
+            <span th:each="foto : ${#strings.arraySplit(prodotto.fotoCsv, ',')}" th:if="${!#strings.isEmpty(prodotto.fotoCsv)}">
+                <a th:href="@{'/file/foto/' + ${foto}}" target="_blank">
+                    <img th:src="@{'/file/foto/' + ${foto}}" alt="Foto" class="thumb"/>
+                </a>
+            </span>
         </td>
+
+        <!-- Azioni -->
         <td>
             <form th:action="@{/curatore/approvaProdotto}" method="post">
                 <input type="hidden" name="nome" th:value="${prodotto.nome}"/>
@@ -129,22 +119,51 @@
     </tbody>
 </table>
 
+
 <!-- ====== PACCHETTI ====== -->
 <h3>Pacchetti in attesa di approvazione</h3>
 <table>
     <thead>
     <tr>
         <th>Nome</th><th>Creatore</th><th>Descrizione</th><th>Prezzo</th><th>Indirizzo</th>
+        <th>Certificati</th><th>Foto</th><th>Prodotti Inclusi</th>
         <th>Accetta</th><th>Rifiuta</th><th>Commento</th>
     </tr>
     </thead>
     <tbody>
     <tr th:each="pacchetto : ${pacchetti}">
-        <td th:text="${pacchetto.nome}">Nome</td>
-        <td th:text="${pacchetto.creatoDa}">Creatore</td>
-        <td th:text="${pacchetto.descrizione}">Descrizione</td>
-        <td th:text="${pacchetto.prezzo}">0.00</td>
-        <td th:text="${pacchetto.indirizzo}">Indirizzo</td>
+        <td th:text="${pacchetto.nome}"></td>
+        <td th:text="${pacchetto.creatoDa}"></td>
+        <td th:text="${pacchetto.descrizione}"></td>
+        <td th:text="${pacchetto.prezzo}"></td>
+        <td th:text="${pacchetto.indirizzo}"></td>
+
+        <!-- Certificati -->
+        <td>
+            <span th:if="${#strings.isEmpty(pacchetto.certificatiCsv)}">-</span>
+            <span th:each="cert : ${#strings.arraySplit(pacchetto.certificatiCsv, ',')}" th:if="${!#strings.isEmpty(pacchetto.certificatiCsv)}">
+                <a th:href="@{'/file/certificati/' + ${cert}}" target="_blank" th:text="${cert}"></a><br/>
+            </span>
+        </td>
+
+        <!-- Foto -->
+        <td>
+            <span th:if="${#strings.isEmpty(pacchetto.fotoCsv)}">-</span>
+            <span th:each="foto : ${#strings.arraySplit(pacchetto.fotoCsv, ',')}" th:if="${!#strings.isEmpty(pacchetto.fotoCsv)}">
+                <a th:href="@{'/file/foto/' + ${foto}}" target="_blank">
+                    <img th:src="@{'/file/foto/' + ${foto}}" alt="Foto" class="thumb"/>
+                </a>
+            </span>
+        </td>
+
+        <!-- Prodotti inclusi -->
+        <td>
+            <ul>
+                <li th:each="nomeProd : ${pacchetto.prodottiNomi}" th:text="${nomeProd}"></li>
+            </ul>
+        </td>
+
+        <!-- Azioni -->
         <td>
             <form th:action="@{/curatore/approvaPacchetto}" method="post">
                 <input type="hidden" name="nome" th:value="${pacchetto.nome}"/>
@@ -176,15 +195,47 @@
     <thead>
     <tr>
         <th>Nome</th><th>Creatore</th><th>Descrizione</th><th>Indirizzo</th>
+        <th>Certificati</th><th>Foto</th><th>Fasi Produzione</th>
         <th>Accetta</th><th>Rifiuta</th><th>Commento</th>
     </tr>
     </thead>
     <tbody>
     <tr th:each="trasf : ${trasformati}">
-        <td th:text="${trasf.nome}">Nome</td>
-        <td th:text="${trasf.creatoDa}">Creatore</td>
-        <td th:text="${trasf.descrizione}">Descrizione</td>
-        <td th:text="${trasf.indirizzo}">Indirizzo</td>
+        <td th:text="${trasf.nome}"></td>
+        <td th:text="${trasf.creatoDa}"></td>
+        <td th:text="${trasf.descrizione}"></td>
+        <td th:text="${trasf.indirizzo}"></td>
+
+        <!-- Certificati -->
+        <td>
+            <span th:if="${#strings.isEmpty(trasf.certificatiCsv)}">-</span>
+            <span th:each="cert : ${#strings.arraySplit(trasf.certificatiCsv, ',')}" th:if="${!#strings.isEmpty(trasf.certificatiCsv)}">
+                <a th:href="@{'/file/certificati/' + ${cert}}" target="_blank" th:text="${cert}"></a><br/>
+            </span>
+        </td>
+
+        <!-- Foto -->
+        <td>
+            <span th:if="${#strings.isEmpty(trasf.fotoCsv)}">-</span>
+            <span th:each="foto : ${#strings.arraySplit(trasf.fotoCsv, ',')}" th:if="${!#strings.isEmpty(trasf.fotoCsv)}">
+                <a th:href="@{'/file/foto/' + ${foto}}" target="_blank">
+                    <img th:src="@{'/file/foto/' + ${foto}}" alt="Foto" class="thumb"/>
+                </a>
+            </span>
+        </td>
+
+        <!-- Fasi Produzione -->
+        <td>
+            <ul>
+                <li th:each="fase : ${trasf.fasiProduzione}">
+                    <span th:text="${fase.descrizioneFase}"></span> -
+                    <span th:text="${fase.produttoreUsername}"></span> -
+                    <span th:text="${fase.prodottoOrigineId}"></span>
+                </li>
+            </ul>
+        </td>
+
+        <!-- Azioni -->
         <td>
             <form th:action="@{/curatore/approvaTrasformato}" method="post">
                 <input type="hidden" name="nome" th:value="${trasf.nome}"/>
@@ -224,16 +275,14 @@
     </div>
 </div>
 
-<!-- Modale eliminazione profilo (fragment comune) -->
+<!-- Modali comuni -->
 <div th:replace="fragments/profile-delete-modal :: profile-delete-modal"></div>
 <div th:replace="fragments/profile-delete-notification :: profile-delete-notification"></div>
-
-<!-- ================== MODALI SOCIAL ================== -->
 <div th:replace="fragments/modals :: social-modals('/curatore/dashboard')"></div>
 <div th:replace="fragments/modals :: social-feed-modal"></div>
 <div th:replace="fragments/modals :: social-not-available-modal"></div>
 
-<!-- ================== MODALE MAPPA ================== -->
+<!-- Modale mappa -->
 <div id="mapModal" class="modal">
     <div class="modal-content large">
         <h2>🗺️ Mappa Indirizzi</h2>
@@ -276,7 +325,6 @@
     }
 </script>
 
-<!-- Script curatore (gestione eliminazione profilo ecc.) -->
 <script type="module" src="/js/pages/curatore.js"></script>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 

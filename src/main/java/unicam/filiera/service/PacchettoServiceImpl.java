@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import unicam.filiera.dto.PacchettoDto;
-import unicam.filiera.dto.PacchettoViewDto;
 import unicam.filiera.entity.PacchettoEntity;
 import unicam.filiera.entity.ProdottoEntity;
 import unicam.filiera.factory.ItemFactory;
@@ -52,7 +51,6 @@ public class PacchettoServiceImpl implements PacchettoService {
 
     @Override
     public void creaPacchetto(PacchettoDto dto, String creatore) {
-        // Validazione centralizzata
         PacchettoValidator.valida(dto);
 
         Pacchetto pacchetto = ItemFactory.creaPacchetto(dto, creatore);
@@ -74,7 +72,6 @@ public class PacchettoServiceImpl implements PacchettoService {
             throw new IllegalStateException("Puoi modificare solo pacchetti con stato RIFIUTATO");
         }
 
-        // Validazione centralizzata anche in aggiornamento
         PacchettoValidator.valida(dto);
 
         Pacchetto updated = PacchettoFactory.creaPacchetto(dto, creatore);
@@ -99,15 +96,25 @@ public class PacchettoServiceImpl implements PacchettoService {
     }
 
     @Override
-    public List<Pacchetto> getPacchettiCreatiDa(String creatore) {
+    public List<PacchettoDto> getPacchettiCreatiDa(String creatore) {
         return pacchettoRepository.findByCreatoDa(creatore)
-                .stream().map(this::mapToDomain).toList();
+                .stream()
+                .map(this::mapToDto)
+                .toList();
     }
 
     @Override
-    public List<Pacchetto> getPacchettiByStato(StatoProdotto stato) {
+    public List<PacchettoDto> getPacchettiByStato(StatoProdotto stato) {
         return pacchettoRepository.findByStato(stato)
-                .stream().map(this::mapToDomain).toList();
+                .stream()
+                .map(this::mapToDto)
+                .toList();
+    }
+
+    @Override
+    public Optional<PacchettoDto> findDtoById(Long id) {
+        return pacchettoRepository.findById(id)
+                .map(this::mapToDto); // usa già il mapper interno
     }
 
     @Override
@@ -128,44 +135,6 @@ public class PacchettoServiceImpl implements PacchettoService {
     }
 
     @Override
-    public List<PacchettoViewDto> getPacchettiViewByStato(StatoProdotto stato) {
-        return pacchettoRepository.findByStato(stato).stream()
-                .map(e -> {
-                    List<String> prodottiNomi = (e.getProdotti() == null) ? List.of()
-                            : e.getProdotti().stream().map(ProdottoEntity::getNome).toList();
-                    return new PacchettoViewDto(
-                            e.getId(), e.getNome(), e.getDescrizione(), e.getQuantita(), e.getPrezzo(),
-                            e.getIndirizzo(), e.getCreatoDa(), e.getStato().name(), e.getCommento(),
-                            e.getCertificati() == null || e.getCertificati().isBlank() ? List.of()
-                                    : List.of(e.getCertificati().split(",")),
-                            e.getFoto() == null || e.getFoto().isBlank() ? List.of()
-                                    : List.of(e.getFoto().split(",")),
-                            prodottiNomi
-                    );
-                })
-                .toList();
-    }
-
-    @Override
-    public List<PacchettoViewDto> getPacchettiViewByCreatore(String creatore) {
-        return pacchettoRepository.findByCreatoDa(creatore).stream()
-                .map(e -> {
-                    List<String> prodottiNomi = (e.getProdotti() == null) ? List.of()
-                            : e.getProdotti().stream().map(ProdottoEntity::getNome).toList();
-                    return new PacchettoViewDto(
-                            e.getId(), e.getNome(), e.getDescrizione(), e.getQuantita(), e.getPrezzo(),
-                            e.getIndirizzo(), e.getCreatoDa(), e.getStato().name(), e.getCommento(),
-                            e.getCertificati() == null || e.getCertificati().isBlank() ? List.of()
-                                    : List.of(e.getCertificati().split(",")),
-                            e.getFoto() == null || e.getFoto().isBlank() ? List.of()
-                                    : List.of(e.getFoto().split(",")),
-                            prodottiNomi
-                    );
-                })
-                .toList();
-    }
-
-    @Override
     public void eliminaById(Long id, String username) {
         PacchettoEntity entity = pacchettoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pacchetto non trovato"));
@@ -177,7 +146,7 @@ public class PacchettoServiceImpl implements PacchettoService {
             throw new IllegalStateException("Si possono eliminare solo pacchetti IN_ATTESA o RIFIUTATO");
         }
 
-        Pacchetto pacchetto = mapToDomain(entity); // per la notifica
+        Pacchetto pacchetto = mapToDomain(entity);
         pacchettoRepository.delete(entity);
         notifier.notificaTutti(pacchetto, "ELIMINATO_PACCHETTO");
     }
@@ -187,18 +156,28 @@ public class PacchettoServiceImpl implements PacchettoService {
     // =======================
     private void aggiornaStatoECommento(PacchettoEntity entity, StatoProdotto nuovoStato, String commento) {
         entity.setStato(nuovoStato);
-        if (nuovoStato == StatoProdotto.RIFIUTATO) {
-            entity.setCommento((commento != null && !commento.isBlank()) ? commento : null);
-        } else {
-            entity.setCommento(null);
-        }
+        entity.setCommento(nuovoStato == StatoProdotto.RIFIUTATO
+                ? (commento != null && !commento.isBlank() ? commento : null)
+                : null);
     }
 
     private String salvaMultipartFile(MultipartFile multipartFile, String destDir) {
         try {
-            String filename = UUID.randomUUID() + "_" + multipartFile.getOriginalFilename();
+            // 1. Nome originale
+            String original = multipartFile.getOriginalFilename();
+
+            // 2. Rimpiazzo spazi e caratteri strani
+            String safeName = original == null ? "file"
+                    : original.replaceAll("\\s+", "_")
+                    .replaceAll("[^a-zA-Z0-9._-]", "");
+
+            // 3. UUID per evitare conflitti
+            String filename = UUID.randomUUID() + "_" + safeName;
+
+            // 4. Salvataggio fisico
             Path path = Paths.get(destDir, filename);
             Files.copy(multipartFile.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
+
             return filename;
         } catch (IOException e) {
             throw new RuntimeException("Errore nel salvataggio del file " + multipartFile.getOriginalFilename(), e);
@@ -226,6 +205,7 @@ public class PacchettoServiceImpl implements PacchettoService {
         e.setStato(pacchetto.getStato());
         e.setCommento(pacchetto.getCommento());
 
+        // Prodotti collegati
         Set<ProdottoEntity> prodotti = dto.getProdottiSelezionati() == null ? Set.of()
                 : dto.getProdottiSelezionati().stream()
                 .map(prodottoRepository::findById)
@@ -234,6 +214,7 @@ public class PacchettoServiceImpl implements PacchettoService {
                 .collect(Collectors.toSet());
         e.setProdotti(prodotti);
 
+        // Certificati e foto
         String certs = toCsv(dto.getCertificati(), CERT_DIR);
         String fotos = toCsv(dto.getFoto(), FOTO_DIR);
 
@@ -241,6 +222,42 @@ public class PacchettoServiceImpl implements PacchettoService {
         e.setFoto((fotos == null || fotos.isBlank()) ? null : fotos);
 
         return e;
+    }
+
+    private PacchettoDto mapToDto(PacchettoEntity e) {
+        PacchettoDto dto = new PacchettoDto();
+        dto.setId(e.getId());
+        dto.setNome(e.getNome());
+        dto.setDescrizione(e.getDescrizione());
+        dto.setIndirizzo(e.getIndirizzo());
+        dto.setQuantita(e.getQuantita());
+        dto.setPrezzo(e.getPrezzo());
+        dto.setTipo(unicam.filiera.dto.ItemTipo.PACCHETTO);
+
+        dto.setCreatoDa(e.getCreatoDa());
+        dto.setStato(e.getStato());
+        dto.setCommento(e.getCommento());
+
+        dto.setCertificatiCsv(e.getCertificati());
+        dto.setFotoCsv(e.getFoto());
+
+        // Solo ID dei prodotti
+        dto.setProdottiIds(
+                e.getProdotti() == null ? List.of()
+                        : e.getProdotti().stream()
+                        .map(ProdottoEntity::getId)
+                        .toList()
+        );
+
+        // Solo nomi dei prodotti (per il marketplace)
+        dto.setProdottiNomi(
+                e.getProdotti() == null ? List.of()
+                        : e.getProdotti().stream()
+                        .map(ProdottoEntity::getNome)
+                        .toList()
+        );
+
+        return dto;
     }
 
     private Pacchetto mapToDomain(PacchettoEntity e) {
@@ -254,7 +271,7 @@ public class PacchettoServiceImpl implements PacchettoService {
                 .nome(e.getNome())
                 .descrizione(e.getDescrizione())
                 .indirizzo(e.getIndirizzo())
-                .quantita(quantita) // 0 consentito (esaurito), negativo no
+                .quantita(quantita)
                 .prezzo(e.getPrezzo())
                 .creatoDa(e.getCreatoDa())
                 .stato(e.getStato())

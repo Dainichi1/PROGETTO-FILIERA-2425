@@ -2,11 +2,13 @@ package unicam.filiera.service;
 
 import org.springframework.stereotype.Service;
 import unicam.filiera.controller.RegistrazioneEsito;
+import unicam.filiera.dto.UtenteDto;
 import unicam.filiera.entity.UtenteEntity;
 import unicam.filiera.model.Ruolo;
 import unicam.filiera.repository.UtenteRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UtenteService {
@@ -29,20 +31,44 @@ public class UtenteService {
     }
 
     /**
-     * Restituisce tutti gli utenti con ruolo PRODUTTORE.
+     * Restituisce tutti gli utenti con ruolo PRODUTTORE (DTO).
      */
-    public List<UtenteEntity> getProduttori() {
-        return repo.findByRuolo(Ruolo.PRODUTTORE);
+    public List<UtenteDto> getProduttori() {
+        return repo.findByRuolo(Ruolo.PRODUTTORE)
+                .stream()
+                .map(this::mapToDto)
+                .toList();
     }
 
     /**
      * Restituisce tutti i destinatari possibili per una visita (produttori, trasformatori, distributori tipicità).
      */
-    public List<UtenteEntity> getDestinatariPossibili() {
+    public List<UtenteDto> getDestinatariPossibili() {
         return repo.findByRuoloIn(List.of(
-                Ruolo.PRODUTTORE,
-                Ruolo.TRASFORMATORE,
-                Ruolo.DISTRIBUTORE_TIPICITA
-        ));
+                        Ruolo.PRODUTTORE,
+                        Ruolo.TRASFORMATORE,
+                        Ruolo.DISTRIBUTORE_TIPICITA
+                ))
+                .stream()
+                .map(this::mapToDto)
+                .toList();
+    }
+
+    /**
+     * Recupera un utente per username (DTO).
+     */
+    public Optional<UtenteDto> findByUsername(String username) {
+        return repo.findByUsername(username)
+                .map(this::mapToDto);
+    }
+
+    // ================= MAPPER =================
+    private UtenteDto mapToDto(UtenteEntity e) {
+        return UtenteDto.builder()
+                .username(e.getUsername())
+                .nome(e.getNome())
+                .cognome(e.getCognome())
+                .ruolo(e.getRuolo().name())
+                .build();
     }
 }

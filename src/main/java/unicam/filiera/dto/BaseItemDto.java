@@ -3,6 +3,7 @@ package unicam.filiera.dto;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import org.springframework.web.multipart.MultipartFile;
+import unicam.filiera.model.StatoProdotto;
 
 import java.util.List;
 
@@ -16,12 +17,12 @@ public abstract class BaseItemDto {
 
     @EqualsAndHashCode.Include
     @NotNull(message = "⚠ Tipo item obbligatorio")
-    private ItemTipo tipo;            // PRODOTTO | PACCHETTO | TRASFORMATO
+    private ItemTipo tipo;
 
     @EqualsAndHashCode.Include
-    private Long id;                  // per modifica
+    private Long id;
 
-    private String originalName;      // opzionale, per audit/uso UI
+    private String originalName;
 
     @EqualsAndHashCode.Include
     @NotBlank(message = "⚠ Nome obbligatorio")
@@ -45,7 +46,15 @@ public abstract class BaseItemDto {
     @Min(value = 1, message = "⚠ La quantità deve essere almeno 1")
     private Integer quantita;
 
-    // File caricati (regola: obbligatori SOLO in creazione; logica nei controller/service)
+    private StatoProdotto stato;
+
+    private String commento;  // opzionale, note/moderazione
+
+    private String creatoDa;
+
     private List<MultipartFile> certificati;
     private List<MultipartFile> foto;
+
+    private String certificatiCsv;
+    private String fotoCsv;
 }

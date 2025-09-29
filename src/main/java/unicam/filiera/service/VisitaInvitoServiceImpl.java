@@ -14,7 +14,6 @@ import unicam.filiera.repository.VisitaInvitoRepository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class VisitaInvitoServiceImpl implements VisitaInvitoService {
@@ -32,90 +31,80 @@ public class VisitaInvitoServiceImpl implements VisitaInvitoService {
 
     @Override
     public void creaVisita(VisitaInvitoDto dto, String creatore) {
-        log.info(">>> Richiesta di creazione nuova visita da parte di [{}]", creatore);
-        log.debug("Dati DTO ricevuti: {}", dto);
+        log.info(">>> Creazione nuova visita da parte di [{}]", creatore);
 
-        VisitaInvito visita = VisitaInvitoFactory.creaVisita(dto, creatore);
-        visita.setStato(StatoEvento.PUBBLICATA); // sempre PUBBLICATA
-        log.debug("Oggetto dominio creato: {}", visita);
+        var visita = VisitaInvitoFactory.creaVisita(dto, creatore);
+        visita.setStato(StatoEvento.PUBBLICATA); // default
 
         VisitaInvitoEntity entity = mapToEntity(visita, dto, null);
-        log.info("Salvataggio entity in DB: {}", entity);
-
         repository.save(entity);
 
-        log.info("Visita [{}] salvata correttamente con ID={}", entity.getNome(), entity.getId());
         notifier.notificaTutti(visita, "NUOVA_VISITA_PUBBLICATA");
     }
 
     @Override
     public void aggiornaVisita(Long id, VisitaInvitoDto dto, String creatore) {
-        log.info(">>> Richiesta di aggiornamento visita id={} da parte di [{}]", id, creatore);
-
-        VisitaInvitoEntity existing = repository.findById(id)
+        var existing = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Visita non trovata per la modifica"));
 
         if (!existing.getCreatoDa().equals(creatore)) {
-            log.warn("Tentativo non autorizzato di aggiornamento da [{}]", creatore);
             throw new SecurityException("Non autorizzato a modificare questa visita");
         }
 
-        log.debug("Entity esistente trovata: {}", existing);
-
-        VisitaInvito updated = VisitaInvitoFactory.creaVisita(dto, creatore);
+        var updated = VisitaInvitoFactory.creaVisita(dto, creatore);
         updated.setStato(StatoEvento.PUBBLICATA);
 
         VisitaInvitoEntity entity = mapToEntity(updated, dto, existing.getId());
-        log.info("Aggiornamento entity in DB: {}", entity);
-
         repository.save(entity);
 
-        log.info("Visita [{}] aggiornata correttamente (ID={})", entity.getNome(), entity.getId());
         notifier.notificaTutti(updated, "VISITA_AGGIORNATA");
     }
 
     @Override
-    public List<VisitaInvito> getVisiteByCreatore(String creatore) {
-        log.debug("Recupero visite per creatore [{}]", creatore);
+    public List<VisitaInvitoDto> getVisiteByCreatore(String creatore) {
         return repository.findByCreatoDa(creatore)
                 .stream()
-                .map(this::mapToDomain)
-                .collect(Collectors.toList());
+                .map(this::mapToDto)
+                .toList();
+    }
+
+    @Override
+    public List<VisitaInvitoDto> getVisiteByStato(StatoEvento stato) {
+        return repository.findByStato(stato)
+                .stream()
+                .map(this::mapToDto)
+                .toList();
+    }
+
+    @Override
+    public List<VisitaInvitoDto> getVisiteByRuoloDestinatario(String ruolo) {
+        return repository.findByRuoloAndStato(ruolo, StatoEvento.PUBBLICATA)
+                .stream()
+                .map(this::mapToDto)
+                .toList();
     }
 
     @Override
     public Optional<VisitaInvitoEntity> findEntityById(Long id) {
-        log.debug("Ricerca visita per ID={}", id);
         return repository.findById(id);
     }
 
     @Override
-    public void eliminaById(Long id, String username) {
-        log.info(">>> Richiesta di eliminazione visita id={} da parte di [{}]", id, username);
-
-        VisitaInvitoEntity entity = repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Visita non trovata"));
-
-        if (!username.equals(entity.getCreatoDa())) {
-            log.warn("Tentativo non autorizzato di eliminazione da [{}]", username);
-            throw new SecurityException("Non autorizzato a eliminare questa visita");
-        }
-
-        VisitaInvito dominio = mapToDomain(entity);
-        repository.delete(entity);
-
-        log.info("Visita eliminata con successo: ID={}, Nome={}", entity.getId(), entity.getNome());
-        notifier.notificaTutti(dominio, "VISITA_ELIMINATA");
+    public Optional<VisitaInvitoDto> findDtoById(Long id) {
+        return repository.findById(id).map(this::mapToDto);
     }
 
     @Override
-    public List<VisitaInvito> getVisiteByRuoloDestinatario(String ruolo) {
-        log.debug("Recupero visite disponibili per ruolo [{}]", ruolo);
+    public void eliminaById(Long id, String username) {
+        var entity = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Visita non trovata"));
 
-        return repository.findByRuoloAndStato(ruolo, StatoEvento.PUBBLICATA)
-                .stream()
-                .map(this::mapToDomain)
-                .collect(Collectors.toList());
+        if (!username.equals(entity.getCreatoDa())) {
+            throw new SecurityException("Non autorizzato a eliminare questa visita");
+        }
+
+        repository.delete(entity);
+        notifier.notificaTutti(mapToDomain(entity), "VISITA_ELIMINATA");
     }
 
     // =======================
@@ -131,7 +120,7 @@ public class VisitaInvitoServiceImpl implements VisitaInvitoService {
         e.setDataInizio(visita.getDataInizio());
         e.setDataFine(visita.getDataFine());
         e.setCreatoDa(visita.getCreatoDa());
-        e.setStato(StatoEvento.PUBBLICATA); // sempre PUBBLICATA
+        e.setStato(visita.getStato() != null ? visita.getStato() : StatoEvento.PUBBLICATA);
         e.setDestinatari(String.join(",", visita.getDestinatari()));
         return e;
     }
@@ -145,10 +134,26 @@ public class VisitaInvitoServiceImpl implements VisitaInvitoService {
                 .dataInizio(e.getDataInizio())
                 .dataFine(e.getDataFine())
                 .creatoDa(e.getCreatoDa())
-                .stato(StatoEvento.PUBBLICATA) // sempre PUBBLICATA
+                .stato(e.getStato())
                 .destinatari(e.getDestinatari() == null || e.getDestinatari().isBlank()
                         ? List.of()
                         : List.of(e.getDestinatari().split(",")))
                 .build();
+    }
+
+    private VisitaInvitoDto mapToDto(VisitaInvitoEntity e) {
+        VisitaInvitoDto dto = new VisitaInvitoDto();
+        dto.setId(e.getId());
+        dto.setNome(e.getNome());
+        dto.setDescrizione(e.getDescrizione());
+        dto.setIndirizzo(e.getIndirizzo());
+        dto.setDataInizio(e.getDataInizio());
+        dto.setDataFine(e.getDataFine());
+        dto.setCreatoDa(e.getCreatoDa());
+        dto.setStato(e.getStato());
+        dto.setDestinatari(e.getDestinatari() == null || e.getDestinatari().isBlank()
+                ? List.of()
+                : List.of(e.getDestinatari().split(",")));
+        return dto;
     }
 }

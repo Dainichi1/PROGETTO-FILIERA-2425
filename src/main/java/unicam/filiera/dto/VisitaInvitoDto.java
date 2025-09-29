@@ -2,6 +2,7 @@ package unicam.filiera.dto;
 
 import jakarta.validation.constraints.NotEmpty;
 import lombok.*;
+import unicam.filiera.model.StatoEvento;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,4 +22,7 @@ public class VisitaInvitoDto extends BaseEventoDto {
 
     @NotEmpty(message = "⚠ Devi selezionare almeno un destinatario")
     private List<String> destinatari = new ArrayList<>(); // lista di username
+
+    private String creatoDa;
+    private StatoEvento stato;
 }

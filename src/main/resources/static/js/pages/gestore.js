@@ -234,7 +234,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     [csrf.header]: csrf.token
                                 },
                                 body: JSON.stringify({
-                                    prodottoTrasformatoId: data.id,
+                                    prodottoTrasformatoId: data.trasformatoId,
                                     coords: pathCoords
                                 })
                             }).catch(err => console.error("❌ Errore salvataggio path:", err));

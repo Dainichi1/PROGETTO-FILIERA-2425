@@ -3,11 +3,14 @@ package unicam.filiera.controller;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import unicam.filiera.dto.PacchettoViewDto;
-import unicam.filiera.entity.*;
-import unicam.filiera.repository.*;
+import unicam.filiera.dto.PacchettoDto;
+import unicam.filiera.dto.ProdottoDto;
+import unicam.filiera.dto.ProdottoTrasformatoDto;
+import unicam.filiera.dto.VisitaInvitoDto;
+import unicam.filiera.dto.FieraDto;
 import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.model.StatoEvento;
+import unicam.filiera.service.*;
 
 import java.util.List;
 
@@ -15,30 +18,31 @@ import java.util.List;
 @RequestMapping("/marketplace")
 public class MarketplaceWebController {
 
-    private final ProdottoRepository prodottoRepository;
-    private final PacchettoRepository pacchettoRepository;
-    private final ProdottoTrasformatoRepository prodottoTrasformatoRepository;
-    private final VisitaInvitoRepository visitaInvitoRepository;
-    private final FieraRepository fieraRepository;
+    private final ProdottoService prodottoService;
+    private final PacchettoService pacchettoService;
+    private final ProdottoTrasformatoService trasformatoService;
+    private final VisitaInvitoService visitaInvitoService;
+    private final FieraService fieraService;
 
-    public MarketplaceWebController(ProdottoRepository prodottoRepository,
-                                    PacchettoRepository pacchettoRepository,
-                                    ProdottoTrasformatoRepository prodottoTrasformatoRepository,
-                                    VisitaInvitoRepository visitaInvitoRepository, FieraRepository fieraRepository) {
-        this.prodottoRepository = prodottoRepository;
-        this.pacchettoRepository = pacchettoRepository;
-        this.prodottoTrasformatoRepository = prodottoTrasformatoRepository;
-        this.visitaInvitoRepository = visitaInvitoRepository;
-        this.fieraRepository = fieraRepository;
+    public MarketplaceWebController(ProdottoService prodottoService,
+                                    PacchettoService pacchettoService,
+                                    ProdottoTrasformatoService trasformatoService,
+                                    VisitaInvitoService visitaInvitoService,
+                                    FieraService fieraService) {
+        this.prodottoService = prodottoService;
+        this.pacchettoService = pacchettoService;
+        this.trasformatoService = trasformatoService;
+        this.visitaInvitoService = visitaInvitoService;
+        this.fieraService = fieraService;
     }
 
     @GetMapping
     public String mostraMarketplace(Model model) {
-        List<ProdottoEntity> prodotti = prodottoRepository.findByStato(StatoProdotto.APPROVATO);
-        List<PacchettoEntity> pacchetti = pacchettoRepository.findByStato(StatoProdotto.APPROVATO);
-        List<ProdottoTrasformatoEntity> trasformati = prodottoTrasformatoRepository.findByStato(StatoProdotto.APPROVATO);
-        List<VisitaInvitoEntity> visite = visitaInvitoRepository.findByStato(StatoEvento.PUBBLICATA);
-        List<FieraEntity> fiere = fieraRepository.findByStato(StatoEvento.PUBBLICATA);
+        List<ProdottoDto> prodotti = prodottoService.getProdottiByStato(StatoProdotto.APPROVATO);
+        List<PacchettoDto> pacchetti = pacchettoService.getPacchettiByStato(StatoProdotto.APPROVATO);
+        List<ProdottoTrasformatoDto> trasformati = trasformatoService.getProdottiTrasformatiByStato(StatoProdotto.APPROVATO);
+        List<VisitaInvitoDto> visite = visitaInvitoService.getVisiteByStato(StatoEvento.PUBBLICATA);
+        List<FieraDto> fiere = fieraService.getFiereByStato(StatoEvento.PUBBLICATA);
 
         model.addAttribute("prodotti", prodotti);
         model.addAttribute("pacchetti", pacchetti);
@@ -51,7 +55,7 @@ public class MarketplaceWebController {
 
     @GetMapping("/prodotto/{id}")
     public String mostraDettagliProdotto(@PathVariable Long id, Model model) {
-        ProdottoEntity prodotto = prodottoRepository.findById(id)
+        ProdottoDto prodotto = prodottoService.findDtoById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Prodotto non trovato"));
         model.addAttribute("elemento", prodotto);
         model.addAttribute("tipo", "prodotto");
@@ -60,43 +64,16 @@ public class MarketplaceWebController {
 
     @GetMapping("/pacchetto/{id}")
     public String mostraDettagliPacchetto(@PathVariable Long id, Model model) {
-        PacchettoEntity pacchetto = pacchettoRepository.findById(id)
+        PacchettoDto dto = pacchettoService.findDtoById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pacchetto non trovato"));
-
-        // converto inline in DTO
-        PacchettoViewDto dto = new PacchettoViewDto();
-        dto.setId(pacchetto.getId());
-        dto.setNome(pacchetto.getNome());
-        dto.setDescrizione(pacchetto.getDescrizione());
-        dto.setQuantita(pacchetto.getQuantita());
-        dto.setPrezzo(pacchetto.getPrezzo());
-        dto.setIndirizzo(pacchetto.getIndirizzo());
-        dto.setCreatoDa(pacchetto.getCreatoDa());
-        dto.setStato(pacchetto.getStato().name());
-        dto.setCommento(pacchetto.getCommento());
-
-        if (pacchetto.getCertificati() != null) {
-            dto.setCertificati(List.of(pacchetto.getCertificati().split(",")));
-        }
-        if (pacchetto.getFoto() != null) {
-            dto.setFoto(List.of(pacchetto.getFoto().split(",")));
-        }
-
-        dto.setProdottiNomi(
-                pacchetto.getProdotti().stream()
-                        .map(ProdottoEntity::getNome) // solo i nomi
-                        .toList()
-        );
-
         model.addAttribute("elemento", dto);
         model.addAttribute("tipo", "pacchetto");
         return "marketplace/dettagli";
     }
 
-
     @GetMapping("/trasformato/{id}")
     public String mostraDettagliTrasformato(@PathVariable Long id, Model model) {
-        ProdottoTrasformatoEntity trasformato = prodottoTrasformatoRepository.findById(id)
+        ProdottoTrasformatoDto trasformato = trasformatoService.findDtoById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Prodotto trasformato non trovato"));
         model.addAttribute("elemento", trasformato);
         model.addAttribute("tipo", "trasformato");
@@ -105,7 +82,7 @@ public class MarketplaceWebController {
 
     @GetMapping("/visita/{id}")
     public String mostraDettagliVisita(@PathVariable Long id, Model model) {
-        VisitaInvitoEntity visita = visitaInvitoRepository.findById(id)
+        VisitaInvitoDto visita = visitaInvitoService.findDtoById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Visita non trovata"));
         model.addAttribute("elemento", visita);
         model.addAttribute("tipo", "visita");
@@ -114,7 +91,7 @@ public class MarketplaceWebController {
 
     @GetMapping("/fiera/{id}")
     public String mostraDettagliFiera(@PathVariable Long id, Model model) {
-        FieraEntity fiera = fieraRepository.findById(id)
+        FieraDto fiera = fieraService.findDtoById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Fiera non trovata"));
         model.addAttribute("elemento", fiera);
         model.addAttribute("tipo", "fiera");

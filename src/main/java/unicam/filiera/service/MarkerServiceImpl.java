@@ -2,6 +2,7 @@ package unicam.filiera.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import unicam.filiera.dto.MarkerDto;
 import unicam.filiera.entity.MarkerEntity;
 import unicam.filiera.repository.MarkerRepository;
 
@@ -20,26 +21,28 @@ public class MarkerServiceImpl implements MarkerService {
     }
 
     @Override
-    public MarkerEntity saveMarker(MarkerEntity marker) {
-        // 🔎 controllo duplicato sulla label
-        Optional<MarkerEntity> existing = markerRepository.findByLabel(marker.getLabel());
+    public MarkerDto saveMarker(MarkerDto dto) {
+        // controllo duplicato sulla label
+        Optional<MarkerEntity> existing = markerRepository.findByLabel(dto.getLabel());
         if (existing.isPresent()) {
-            return existing.get(); // restituisco il marker già esistente
+            return mapToDto(existing.get()); // restituisco il marker già esistente
         }
-        return markerRepository.save(marker);
+        MarkerEntity saved = markerRepository.save(mapToEntity(dto));
+        return mapToDto(saved);
     }
 
     @Override
-    public List<MarkerEntity> saveMarkers(List<MarkerEntity> markers) {
-        // salvo solo quelli non già presenti
-        return markers.stream()
+    public List<MarkerDto> saveMarkers(List<MarkerDto> dtos) {
+        return dtos.stream()
                 .map(this::saveMarker) // usa logica di deduplica
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<MarkerEntity> getAllMarkers() {
-        return markerRepository.findAll();
+    public List<MarkerDto> getAllMarkers() {
+        return markerRepository.findAll().stream()
+                .map(this::mapToDto)
+                .toList();
     }
 
     @Override
@@ -50,5 +53,29 @@ public class MarkerServiceImpl implements MarkerService {
     @Override
     public void clearMarkers() {
         markerRepository.deleteAll();
+    }
+
+    // =======================
+    // MAPPER interni al Service
+    // =======================
+
+    private MarkerDto mapToDto(MarkerEntity e) {
+        return new MarkerDto(
+                e.getId(),
+                e.getLat(),
+                e.getLng(),
+                e.getLabel(),
+                e.getColor()
+        );
+    }
+
+    private MarkerEntity mapToEntity(MarkerDto dto) {
+        MarkerEntity e = new MarkerEntity();
+        e.setId(dto.getId());
+        e.setLat(dto.getLat());
+        e.setLng(dto.getLng());
+        e.setLabel(dto.getLabel());
+        e.setColor(dto.getColor());
+        return e;
     }
 }

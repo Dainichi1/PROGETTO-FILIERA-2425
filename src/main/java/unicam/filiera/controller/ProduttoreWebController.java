@@ -33,7 +33,7 @@ public class ProduttoreWebController extends AbstractCreationController<Prodotto
                                    UtenteRepository utenteRepo,
                                    EliminazioneProfiloService eliminazioneProfiloService,
                                    RichiestaEliminazioneProfiloRepository richiestaRepo) {
-        super(utenteRepo, eliminazioneProfiloService, richiestaRepo); // gestito in Abstract
+        super(utenteRepo, eliminazioneProfiloService, richiestaRepo);
         this.prodottoService = prodottoService;
         this.visitaInvitoService = visitaInvitoService;
         this.prenotazioneVisitaService = prenotazioneVisitaService;
@@ -63,8 +63,9 @@ public class ProduttoreWebController extends AbstractCreationController<Prodotto
 
     @Override
     protected void loadDashboardLists(Model model, String username) {
-        List<Prodotto> prodotti = prodottoService.getProdottiCreatiDa(username);
-        model.addAttribute("prodotti", prodotti);
+        List<ProdottoDto> prodottiDto = prodottoService.getProdottiCreatiDa(username);
+
+        model.addAttribute("prodotti", prodottiDto);
         model.addAttribute("visiteDisponibili",
                 visitaInvitoService.getVisiteByRuoloDestinatario("produttore"));
         model.addAttribute("prenotazioni",

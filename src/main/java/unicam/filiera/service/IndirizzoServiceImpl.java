@@ -5,8 +5,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
-import unicam.filiera.dto.IndirizzoDto;
-import unicam.filiera.dto.GeocodedIndirizzoDto;
+import unicam.filiera.dto.*;
 import unicam.filiera.model.*;
 
 import java.net.URLEncoder;
@@ -53,16 +52,16 @@ public class IndirizzoServiceImpl implements IndirizzoService {
                 .collect(Collectors.toList()));
 
         // Fiere PUBBLICATE
-        result.addAll(fieraService.getFierePubblicate().stream()
+        result.addAll(fieraService.getFiereByStato(StatoEvento.PUBBLICATA).stream()
                 .map(f -> new IndirizzoDto(f.getId(), f.getIndirizzo(), "Fiera", f.getNome()))
-                .collect(Collectors.toList()));
+                .toList());
 
-        // Visite PUBBLICATE
-        result.addAll(visitaInvitoService.getVisiteByRuoloDestinatario("ALL").stream()
+        // Visite PUBBLICATE (usa DTO!)
+        result.addAll(visitaInvitoService.getVisiteByStato(StatoEvento.PUBBLICATA).stream()
                 .map(v -> new IndirizzoDto(v.getId(), v.getIndirizzo(), "Visita", v.getNome()))
                 .collect(Collectors.toList()));
 
-        // Prodotti Trasformati APPROVATI
+        // Prodotti Trasformati APPROVATI (usa DTO!)
         result.addAll(prodottoTrasformatoService.getProdottiTrasformatiByStato(StatoProdotto.APPROVATO).stream()
                 .map(pt -> new IndirizzoDto(pt.getId(), pt.getIndirizzo(), "Prodotto Trasformato", pt.getNome()))
                 .collect(Collectors.toList()));
@@ -75,7 +74,6 @@ public class IndirizzoServiceImpl implements IndirizzoService {
         double[] coords = geocode(indirizzo.getIndirizzo());
 
         if (coords == null) {
-            // ritorno DTO con lat/lng null → frontend lo intercetta
             return new GeocodedIndirizzoDto(
                     indirizzo.getId(),
                     indirizzo.getIndirizzo(),
@@ -97,30 +95,42 @@ public class IndirizzoServiceImpl implements IndirizzoService {
     }
 
     /**
-     * Geocoding via Nominatim con AddressParts e varianti.
+     * Geocoding via Nominatim con AddressParts e varianti intelligenti.
      */
     private double[] geocode(String indirizzo) {
         try {
             Set<String> varianti = new LinkedHashSet<>();
 
+            // Creo sempre un AddressParts con raw
             AddressParts parts = new AddressParts.Builder()
                     .raw(indirizzo)
                     .country("Italia")
                     .build();
 
+            // Variante completa
             String base = parts.toQueryString();
             varianti.add(base);
 
+            // Variante senza CAP
             String noCap = base.replaceAll("\\b[0-9]{5}\\b", "").trim();
             if (!noCap.equals(base)) varianti.add(noCap);
 
+            // Variante senza sigla provincia (es. AN, TO, BS)
             String noProvincia = base.replaceAll("\\b[A-Z]{2}\\b", "").trim();
             if (!noProvincia.equals(base)) varianti.add(noProvincia);
 
-            if (parts.looksGeocodable() && base.contains(",")) {
-                String[] split = base.split(",");
-                String city = split[split.length - 2].trim();
-                varianti.add(city + ", Italia");
+            // Variante solo città + Italia
+            if (parts.looksGeocodable() && parts.toQueryString().contains(",")) {
+                String[] split = parts.toQueryString().split(",");
+                String city = split.length > 1 ? split[split.length - 2].trim() : null;
+                if (city != null && !city.isBlank()) {
+                    varianti.add(city + ", Italia");
+                }
+            }
+
+            // Variante solo raw + Italia
+            if (indirizzo != null && !indirizzo.isBlank()) {
+                varianti.add(indirizzo + ", Italia");
             }
 
             HttpHeaders headers = new HttpHeaders();
@@ -140,7 +150,11 @@ public class IndirizzoServiceImpl implements IndirizzoService {
                     Map<String, Object> location = response.getBody().get(0);
                     double lat = Double.parseDouble((String) location.get("lat"));
                     double lon = Double.parseDouble((String) location.get("lon"));
+
+                    System.out.println("✅ Geocoding OK per [" + indirizzo + "] → " + lat + "," + lon + " con variante: " + variante);
                     return new double[]{lat, lon};
+                } else {
+                    System.out.println("⚠️ Nessun risultato per variante: " + variante);
                 }
             }
 
@@ -148,9 +162,7 @@ public class IndirizzoServiceImpl implements IndirizzoService {
             System.err.println("❌ Errore geocoding per [" + indirizzo + "]: " + e.getMessage());
         }
 
-        // ⚠️ Nessun risultato → ritorno null
         return null;
     }
 
 }
-

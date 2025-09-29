@@ -17,6 +17,8 @@ import unicam.filiera.service.PrenotazioneVisitaService;
 import unicam.filiera.service.ProdottoService;
 import unicam.filiera.service.VisitaInvitoService;
 
+import java.util.List;
+
 @Controller
 @RequestMapping("/distributore")
 public class DistributoreWebController extends AbstractCreationController<PacchettoDto> {
@@ -34,7 +36,7 @@ public class DistributoreWebController extends AbstractCreationController<Pacche
                                      UtenteRepository utenteRepo,
                                      EliminazioneProfiloService eliminazioneProfiloService,
                                      RichiestaEliminazioneProfiloRepository richiestaRepo) {
-        super(utenteRepo, eliminazioneProfiloService, richiestaRepo); // gestisce utente + eliminazione profilo
+        super(utenteRepo, eliminazioneProfiloService, richiestaRepo);
         this.pacchettoService = pacchettoService;
         this.prodottoService = prodottoService;
         this.visitaInvitoService = visitaInvitoService;
@@ -65,7 +67,9 @@ public class DistributoreWebController extends AbstractCreationController<Pacche
 
     @Override
     protected void loadDashboardLists(Model model, String username) {
-        model.addAttribute("pacchetti", pacchettoService.getPacchettiViewByCreatore(username));
+        List<PacchettoDto> pacchettiDto = pacchettoService.getPacchettiCreatiDa(username);
+
+        model.addAttribute("pacchetti", pacchettiDto);
         model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
         model.addAttribute("visiteDisponibili", visitaInvitoService.getVisiteByRuoloDestinatario("distributore"));
         model.addAttribute("prenotazioni", prenotazioneVisitaService.getPrenotazioniByVenditore(username));

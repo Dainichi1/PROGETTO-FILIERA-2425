@@ -1,14 +1,12 @@
 package unicam.filiera.model;
 
-import java.util.Objects;
-
 /**
  * Rappresenta un indirizzo suddiviso in parti (via, civico, CAP, città, provincia, paese).
  * Utile per normalizzare gli indirizzi prima del geocoding.
  */
 public final class AddressParts {
 
-    private final String raw;        // Indirizzo completo se già presente
+    private final String raw;        // Indirizzo completo grezzo
     private final String street;     // Via / Corso / Piazza
     private final String houseNumber;// Numero civico
     private final String postcode;   // CAP
@@ -25,37 +23,47 @@ public final class AddressParts {
         this.city = trimOrNull(b.city);
         this.province = trimOrNull(b.province);
         this.region = trimOrNull(b.region);
-        this.country = trimOrNull(b.country);
+        this.country = coalesce(b.country, "Italia"); // default Italia
     }
 
     /**
      * Genera una stringa indirizzo da usare nel geocoding.
+     * Priorità:
+     * 1) Se via + città → costruisco un indirizzo pulito
+     * 2) Altrimenti uso il raw
+     * 3) Fallback: solo paese
      */
     public String toQueryString() {
-        if (raw != null && !raw.isBlank()) {
-            return raw;
+        boolean hasStreet = street != null && !street.isBlank();
+        boolean hasCity = city != null && !city.isBlank();
+
+        if (hasStreet || hasCity) {
+            String via = join(" ", street, houseNumber); // es. "Via Roma 10"
+            return join(", ",
+                    via,
+                    join(" ", postcode, city, province),
+                    join(" ", region),
+                    country
+            );
         }
 
-        String via = join(" ", street, houseNumber); // es. "Corso Vittorio Emanuele II 45"
+        if (raw != null && !raw.isBlank()) {
+            return raw + ", " + country;
+        }
 
-        return join(", ",
-                via,
-                join(" ", postcode, city, province),
-                join(" ", region),
-                coalesce(country, "Italia") // fallback default
-        );
+        return country; // ultima difesa
     }
 
     /**
      * Controlla se ci sono informazioni minime per tentare un geocoding.
      */
     public boolean looksGeocodable() {
-        if (raw != null && !raw.isBlank()) return true;
         boolean hasStreet = street != null && !street.isBlank();
         boolean hasCity = city != null && !city.isBlank();
-        return hasStreet && hasCity;
+        return (raw != null && !raw.isBlank()) || hasStreet || hasCity;
     }
 
+    // === Utility interne ===
     private static String trimOrNull(String s) {
         return (s == null) ? null : s.trim();
     }

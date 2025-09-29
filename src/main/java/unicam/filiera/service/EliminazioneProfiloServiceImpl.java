@@ -45,8 +45,6 @@ public class EliminazioneProfiloServiceImpl implements EliminazioneProfiloServic
                         dto.getUsername(), StatoRichiestaEliminazioneProfilo.IN_ATTESA
                 ).isPresent();
 
-        log.info("[Eliminazione] Esiste già richiesta IN_ATTESA per {} ? {}", dto.getUsername(), giaPresente);
-
         if (giaPresente) {
             throw new IllegalStateException("Esiste già una richiesta IN_ATTESA per l’utente " + dto.getUsername());
         }
@@ -62,18 +60,18 @@ public class EliminazioneProfiloServiceImpl implements EliminazioneProfiloServic
     }
 
     @Override
-    public List<RichiestaEliminazioneProfilo> getRichiesteByStato(StatoRichiestaEliminazioneProfilo stato) {
+    public List<RichiestaEliminazioneProfiloDto> getRichiesteByStato(StatoRichiestaEliminazioneProfilo stato) {
         log.debug("[Eliminazione] Recupero richieste con stato={}", stato);
         return richiestaRepo.findByStato(stato).stream()
-                .map(this::mapToDomain)
+                .map(this::mapToDto)
                 .toList();
     }
 
     @Override
-    public List<RichiestaEliminazioneProfilo> getRichiesteByUtente(String username) {
+    public List<RichiestaEliminazioneProfiloDto> getRichiesteByUtente(String username) {
         log.debug("[Eliminazione] Recupero richieste per utente={}", username);
         return richiestaRepo.findByUsername(username).stream()
-                .map(this::mapToDomain)
+                .map(this::mapToDto)
                 .toList();
     }
 
@@ -97,16 +95,12 @@ public class EliminazioneProfiloServiceImpl implements EliminazioneProfiloServic
         log.info("[Eliminazione] Stato aggiornato: id={}, username={}, nuovoStato={}",
                 entity.getId(), entity.getUsername(), entity.getStato());
 
-        RichiestaEliminazioneProfilo richiesta = mapToDomain(entity);
-
         // notifiche + eliminazione utente se approvata
         if (nuovoStato == StatoRichiestaEliminazioneProfilo.RIFIUTATA) {
-            log.info("[Eliminazione] Richiesta {} RIFIUTATA, username={}", id, entity.getUsername());
-            notifier.notificaRifiutata(richiesta);
+            notifier.notificaRifiutata(mapToDomain(entity));
         } else if (nuovoStato == StatoRichiestaEliminazioneProfilo.APPROVATA) {
-            log.info("[Eliminazione] Richiesta {} APPROVATA, elimino utente={}", id, entity.getUsername());
             utenteRepo.deleteById(entity.getUsername());
-            notifier.notificaApprovata(richiesta);
+            notifier.notificaApprovata(mapToDomain(entity));
         }
     }
 
@@ -120,7 +114,7 @@ public class EliminazioneProfiloServiceImpl implements EliminazioneProfiloServic
                 .build();
     }
 
-    public RichiestaEliminazioneProfiloDto mapToDto(RichiestaEliminazioneProfiloEntity e) {
+    private RichiestaEliminazioneProfiloDto mapToDto(RichiestaEliminazioneProfiloEntity e) {
         return RichiestaEliminazioneProfiloDto.builder()
                 .id(e.getId())
                 .username(e.getUsername())

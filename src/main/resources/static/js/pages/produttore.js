@@ -175,6 +175,20 @@ document.addEventListener("DOMContentLoaded", () => {
         prodottoCrud.submitSocialPost();
     });
 
+    // Bottone Social Feed
+    document.getElementById("btnSocialFeed")?.addEventListener("click", () => {
+        crudUtils.openSocialFeed();
+    });
+
+// Toggle sezioni
+    document.getElementById("btnVisite")?.addEventListener("click", () => {
+        toggleUtils.toggleSection("visiteSection");
+    });
+    document.getElementById("btnPrenotazioni")?.addEventListener("click", () => {
+        toggleUtils.toggleSection("prenotazioniSection");
+    });
+
+
     // ================== ELIMINA PROFILO ==================
     const btnDeleteProfile = document.getElementById("btnDeleteProfile");
     if (btnDeleteProfile) {
@@ -182,6 +196,8 @@ document.addEventListener("DOMContentLoaded", () => {
             modalUtils.openModal("deleteProfileModal");
         });
     }
+
+
 
     const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
     if (confirmDeleteBtn) {

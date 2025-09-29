@@ -1,6 +1,6 @@
 package unicam.filiera.service;
 
-import unicam.filiera.entity.MarkerEntity;
+import unicam.filiera.dto.MarkerDto;
 
 import java.util.List;
 
@@ -9,17 +9,17 @@ public interface MarkerService {
     /**
      * Salva un singolo marker
      */
-    MarkerEntity saveMarker(MarkerEntity marker);
+    MarkerDto saveMarker(MarkerDto dto);
 
     /**
      * Salva una lista di marker
      */
-    List<MarkerEntity> saveMarkers(List<MarkerEntity> markers);
+    List<MarkerDto> saveMarkers(List<MarkerDto> dtos);
 
     /**
      * Restituisce tutti i marker persistiti
      */
-    List<MarkerEntity> getAllMarkers();
+    List<MarkerDto> getAllMarkers();
 
     /**
      * Elimina un marker specifico

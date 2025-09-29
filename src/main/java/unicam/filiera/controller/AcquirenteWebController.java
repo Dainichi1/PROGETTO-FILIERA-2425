@@ -6,12 +6,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import unicam.filiera.dto.PacchettoViewDto;
+import unicam.filiera.dto.PacchettoDto;
+import unicam.filiera.dto.ProdottoTrasformatoDto;
 import unicam.filiera.dto.RichiestaEliminazioneProfiloDto;
 import unicam.filiera.entity.ProdottoEntity;
 import unicam.filiera.entity.RichiestaEliminazioneProfiloEntity;
 import unicam.filiera.entity.UtenteEntity;
 import unicam.filiera.model.Acquirente;
+import unicam.filiera.model.StatoEvento;
 import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.model.StatoRichiestaEliminazioneProfilo;
 import unicam.filiera.repository.*;
@@ -81,10 +83,10 @@ public class AcquirenteWebController {
                     model.addAttribute("prodotti", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
 
                     // Pacchetti approvati
-                    List<PacchettoViewDto> pacchettiDto = pacchettoService.getPacchettiByStato(StatoProdotto.APPROVATO)
+                    List<PacchettoDto> pacchettiDto = pacchettoService.getPacchettiByStato(StatoProdotto.APPROVATO)
                             .stream()
                             .map(p -> {
-                                PacchettoViewDto dto = new PacchettoViewDto();
+                                PacchettoDto dto = new PacchettoDto();
                                 dto.setId(p.getId());
                                 dto.setNome(p.getNome());
                                 dto.setDescrizione(p.getDescrizione());
@@ -92,13 +94,14 @@ public class AcquirenteWebController {
                                 dto.setPrezzo(p.getPrezzo());
                                 dto.setIndirizzo(p.getIndirizzo());
                                 dto.setCreatoDa(p.getCreatoDa());
-                                dto.setStato(p.getStato().name());
+                                dto.setStato(p.getStato());
                                 dto.setCommento(p.getCommento());
-                                dto.setCertificati(p.getCertificati() != null ? p.getCertificati() : List.of());
-                                dto.setFoto(p.getFoto() != null ? p.getFoto() : List.of());
+                                dto.setCertificatiCsv(p.getCertificatiCsv());
+                                dto.setFotoCsv(p.getFotoCsv());
+
                                 dto.setProdottiNomi(
                                         p.getProdottiIds().stream()
-                                                .map(id -> prodottoService.getProdottoById(id))
+                                                .map(prodottoService::getProdottoById)
                                                 .flatMap(Optional::stream)
                                                 .map(ProdottoEntity::getNome)
                                                 .toList()
@@ -108,8 +111,28 @@ public class AcquirenteWebController {
                             .toList();
                     model.addAttribute("pacchetti", pacchettiDto);
 
-                    // Trasformati approvati
-                    model.addAttribute("trasformati", trasformatoService.getProdottiTrasformatiByStato(StatoProdotto.APPROVATO));
+// ================== TRASFORMATI APPROVATI ==================
+                    List<ProdottoTrasformatoDto> trasformatiDto = trasformatoService.getProdottiTrasformatiByStato(StatoProdotto.APPROVATO)
+                            .stream()
+                            .map(t -> {
+                                ProdottoTrasformatoDto dto = new ProdottoTrasformatoDto();
+                                dto.setId(t.getId());
+                                dto.setNome(t.getNome());
+                                dto.setDescrizione(t.getDescrizione());
+                                dto.setQuantita(t.getQuantita());
+                                dto.setPrezzo(t.getPrezzo());
+                                dto.setIndirizzo(t.getIndirizzo());
+                                dto.setCreatoDa(t.getCreatoDa());
+                                dto.setStato(t.getStato());
+                                dto.setCommento(t.getCommento());
+                                dto.setCertificatiCsv(t.getCertificatiCsv());
+                                dto.setFotoCsv(t.getFotoCsv());
+
+                                dto.setFasiProduzione(t.getFasiProduzione());
+                                return dto;
+                            })
+                            .toList();
+                    model.addAttribute("trasformati", trasformatiDto);
 
                     // Acquisti utente
                     model.addAttribute("acquisti",
@@ -120,7 +143,7 @@ public class AcquirenteWebController {
                     );
 
                     // Fiere e prenotazioni
-                    model.addAttribute("fiere", fieraService.getFierePubblicate());
+                    model.addAttribute("fiere", fieraService.getFiereByStato(StatoEvento.PUBBLICATA));
                     model.addAttribute("prenotazioniFiere", prenotazioneFieraService.getPrenotazioniByAcquirente(username));
 
                     return "dashboard/acquirente";

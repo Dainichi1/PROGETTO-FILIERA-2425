@@ -14,7 +14,6 @@ import unicam.filiera.repository.FieraRepository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class FieraServiceImpl implements FieraService {
@@ -32,90 +31,72 @@ public class FieraServiceImpl implements FieraService {
 
     @Override
     public void creaFiera(FieraDto dto, String creatore) {
-        log.info(">>> Richiesta di creazione nuova fiera da parte di [{}]", creatore);
-        log.debug("Dati DTO ricevuti: {}", dto);
+        log.info(">>> Creazione nuova fiera da parte di [{}]", creatore);
 
         Fiera fiera = FieraFactory.creaFiera(dto, creatore);
-        fiera.setStato(StatoEvento.PUBBLICATA);
-        log.debug("Oggetto dominio creato: {}", fiera);
+        fiera.setStato(StatoEvento.PUBBLICATA); // default
 
         FieraEntity entity = mapToEntity(fiera, dto, null);
-        log.info("Salvataggio entity in DB: {}", entity);
-
         repository.save(entity);
 
-        log.info("Fiera [{}] salvata correttamente con ID={}", entity.getNome(), entity.getId());
         notifier.notificaTutti(fiera, "NUOVA_FIERA_PUBBLICATA");
     }
 
     @Override
     public void aggiornaFiera(Long id, FieraDto dto, String creatore) {
-        log.info(">>> Richiesta di aggiornamento fiera id={} da parte di [{}]", id, creatore);
-
-        FieraEntity existing = repository.findById(id)
+        var existing = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Fiera non trovata per la modifica"));
 
         if (!existing.getCreatoDa().equals(creatore)) {
-            log.warn("Tentativo non autorizzato di aggiornamento da [{}]", creatore);
             throw new SecurityException("Non autorizzato a modificare questa fiera");
         }
-
-        log.debug("Entity esistente trovata: {}", existing);
 
         Fiera updated = FieraFactory.creaFiera(dto, creatore);
         updated.setStato(StatoEvento.PUBBLICATA);
 
         FieraEntity entity = mapToEntity(updated, dto, existing.getId());
-        log.info("Aggiornamento entity in DB: {}", entity);
-
         repository.save(entity);
 
-        log.info("Fiera [{}] aggiornata correttamente (ID={})", entity.getNome(), entity.getId());
         notifier.notificaTutti(updated, "FIERA_AGGIORNATA");
     }
 
     @Override
-    public List<Fiera> getFiereByCreatore(String creatore) {
-        log.debug("Recupero fiere per creatore [{}]", creatore);
+    public List<FieraDto> getFiereByCreatore(String creatore) {
         return repository.findByCreatoDa(creatore)
                 .stream()
-                .map(this::mapToDomain)
-                .collect(Collectors.toList());
+                .map(this::mapToDto)
+                .toList();
     }
 
     @Override
     public Optional<FieraEntity> findEntityById(Long id) {
-        log.debug("Ricerca fiera per ID={}", id);
         return repository.findById(id);
     }
 
     @Override
-    public void eliminaById(Long id, String username) {
-        log.info(">>> Richiesta di eliminazione fiera id={} da parte di [{}]", id, username);
-
-        FieraEntity entity = repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Fiera non trovata"));
-
-        if (!username.equals(entity.getCreatoDa())) {
-            log.warn("Tentativo non autorizzato di eliminazione da [{}]", username);
-            throw new SecurityException("Non autorizzato a eliminare questa fiera");
-        }
-
-        Fiera dominio = mapToDomain(entity);
-        repository.delete(entity);
-
-        log.info("Fiera eliminata con successo: ID={}, Nome={}", entity.getId(), entity.getNome());
-        notifier.notificaTutti(dominio, "FIERA_ELIMINATA");
+    public Optional<FieraDto> findDtoById(Long id) {
+        return repository.findById(id).map(this::mapToDto);
     }
 
     @Override
-    public List<Fiera> getFierePubblicate() {
-        log.debug("Recupero fiere con stato PUBBLICATA");
+    public void eliminaById(Long id, String username) {
+        var entity = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Fiera non trovata"));
 
-        return repository.findAll().stream()
-                .filter(f -> f.getStato() == StatoEvento.PUBBLICATA)
-                .map(this::mapToDomain)
-                .collect(Collectors.toList());
+        if (!username.equals(entity.getCreatoDa())) {
+            throw new SecurityException("Non autorizzato a eliminare questa fiera");
+        }
+
+        repository.delete(entity);
+        notifier.notificaTutti(mapToDomain(entity), "FIERA_ELIMINATA");
+    }
+
+    @Override
+    public List<FieraDto> getFiereByStato(StatoEvento stato) {
+        return repository.findByStato(stato)
+                .stream()
+                .map(this::mapToDto)
+                .toList();
     }
 
     // =======================
@@ -131,7 +112,7 @@ public class FieraServiceImpl implements FieraService {
         e.setDataInizio(fiera.getDataInizio());
         e.setDataFine(fiera.getDataFine());
         e.setCreatoDa(fiera.getCreatoDa());
-        e.setStato(StatoEvento.PUBBLICATA); // sempre PUBBLICATA
+        e.setStato(fiera.getStato() != null ? fiera.getStato() : StatoEvento.PUBBLICATA);
         e.setPrezzo(fiera.getPrezzo());
         return e;
     }
@@ -145,8 +126,23 @@ public class FieraServiceImpl implements FieraService {
                 .dataInizio(e.getDataInizio())
                 .dataFine(e.getDataFine())
                 .creatoDa(e.getCreatoDa())
-                .stato(StatoEvento.PUBBLICATA) // sempre PUBBLICATA
+                .stato(e.getStato())
                 .prezzo(e.getPrezzo())
                 .build();
+    }
+
+    private FieraDto mapToDto(FieraEntity e) {
+        FieraDto dto = new FieraDto();
+        dto.setId(e.getId());
+        dto.setNome(e.getNome());
+        dto.setDescrizione(e.getDescrizione());
+        dto.setIndirizzo(e.getIndirizzo());
+        dto.setDataInizio(e.getDataInizio());
+        dto.setDataFine(e.getDataFine());
+        dto.setCreatoDa(e.getCreatoDa());
+        dto.setStato(e.getStato());
+        dto.setPrezzo(e.getPrezzo());
+        dto.setTipo(unicam.filiera.dto.EventoTipo.FIERA);
+        return dto;
     }
 }

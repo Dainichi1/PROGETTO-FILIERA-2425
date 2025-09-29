@@ -219,17 +219,17 @@ public class ItemController {
     private void loadDashboardLists(Model model, ItemTipo tipo, String username) {
         switch (tipo) {
             case PRODOTTO -> {
-                List<Prodotto> prodotti = prodottoService.getProdottiCreatiDa(username);
+                List<ProdottoDto> prodotti = prodottoService.getProdottiCreatiDa(username);
                 model.addAttribute("prodotti", prodotti);
             }
             case PACCHETTO -> {
-                List<Pacchetto> pacchetti = pacchettoService.getPacchettiCreatiDa(username);
+                List<PacchettoDto> pacchetti = pacchettoService.getPacchettiCreatiDa(username);
                 model.addAttribute("pacchetti", pacchetti);
                 model.addAttribute("prodottiApprovati",
                         prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
             }
             case TRASFORMATO -> {
-                List<ProdottoTrasformato> trasformati =
+                List<ProdottoTrasformatoDto> trasformati =
                         trasformatoService.getProdottiTrasformatiCreatiDa(username);
                 model.addAttribute("trasformati", trasformati);
                 model.addAttribute("prodottiApprovati",

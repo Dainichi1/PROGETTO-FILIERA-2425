@@ -3,6 +3,7 @@ package unicam.filiera.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import unicam.filiera.dto.PacchettoDto;
 import unicam.filiera.dto.ProdottoTrasformatoDto;
 import unicam.filiera.entity.FaseProduzioneEmbeddable;
 import unicam.filiera.entity.ProdottoTrasformatoEntity;
@@ -97,21 +98,21 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
     }
 
     @Override
-    public List<ProdottoTrasformato> getProdottiTrasformatiCreatiDa(String creatore) {
+    public List<ProdottoTrasformatoDto> getProdottiTrasformatiCreatiDa(String creatore) {
         return repository.findByCreatoDa(creatore)
                 .stream()
                 .filter(e -> e.getFasiProduzione() != null && e.getFasiProduzione().size() >= 2)
-                .map(this::mapToDomain)
-                .collect(Collectors.toList());
+                .map(this::mapToDto)
+                .toList();
     }
 
     @Override
-    public List<ProdottoTrasformato> getProdottiTrasformatiByStato(StatoProdotto stato) {
+    public List<ProdottoTrasformatoDto> getProdottiTrasformatiByStato(StatoProdotto stato) {
         return repository.findByStato(stato)
                 .stream()
                 .filter(e -> e.getFasiProduzione() != null && e.getFasiProduzione().size() >= 2)
-                .map(this::mapToDomain)
-                .collect(Collectors.toList());
+                .map(this::mapToDto)
+                .toList();
     }
 
     @Override
@@ -167,6 +168,12 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
         notifier.notificaTutti(dominio, "ELIMINATO_PRODOTTO_TRASFORMATO");
     }
 
+    @Override
+    public Optional<ProdottoTrasformatoDto> findDtoById(Long id) {
+        return repository.findById(id)
+                .map(this::mapToDto); // usa già il mapper interno
+    }
+
 
 
     // =======================
@@ -218,6 +225,37 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
                 .build();
     }
 
+    private ProdottoTrasformatoDto mapToDto(ProdottoTrasformatoEntity e) {
+        ProdottoTrasformatoDto dto = new ProdottoTrasformatoDto();
+        dto.setId(e.getId());
+        dto.setTipo(unicam.filiera.dto.ItemTipo.TRASFORMATO);
+        dto.setNome(e.getNome());
+        dto.setDescrizione(e.getDescrizione());
+        dto.setIndirizzo(e.getIndirizzo());
+        dto.setPrezzo(e.getPrezzo());
+        dto.setQuantita(e.getQuantita());
+        dto.setOriginalName(e.getNome()); // opzionale
+        dto.setCertificatiCsv(e.getCertificati());
+        dto.setFotoCsv(e.getFoto());
+        dto.setStato(e.getStato());
+        dto.setCreatoDa(e.getCreatoDa());
+        dto.setCommento(e.getCommento());
+
+        // map fasi
+        dto.setFasiProduzione(
+                e.getFasiProduzione() == null ? List.of() :
+                        e.getFasiProduzione().stream()
+                                .map(f -> new ProdottoTrasformatoDto.FaseProduzioneDto(
+                                        f.getDescrizioneFase(),
+                                        f.getProduttoreUsername(),
+                                        f.getProdottoOrigineId()
+                                ))
+                                .toList()
+        );
+        return dto;
+    }
+
+
     private List<FaseProduzioneEmbeddable> toEmbeddableList(List<FaseProduzione> fasi) {
         return (fasi == null) ? List.of() :
                 fasi.stream()
@@ -259,9 +297,21 @@ public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoServic
 
     private String salvaMultipartFile(MultipartFile multipartFile, String destDir) {
         try {
-            String filename = UUID.randomUUID() + "_" + multipartFile.getOriginalFilename();
+            // 1. Nome originale
+            String original = multipartFile.getOriginalFilename();
+
+            // 2. Rimpiazzo spazi e caratteri strani
+            String safeName = original == null ? "file"
+                    : original.replaceAll("\\s+", "_")
+                    .replaceAll("[^a-zA-Z0-9._-]", "");
+
+            // 3. UUID per evitare conflitti
+            String filename = UUID.randomUUID() + "_" + safeName;
+
+            // 4. Salvataggio fisico
             Path path = Paths.get(destDir, filename);
             Files.copy(multipartFile.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
+
             return filename;
         } catch (IOException e) {
             throw new RuntimeException("Errore nel salvataggio del file " + multipartFile.getOriginalFilename(), e);

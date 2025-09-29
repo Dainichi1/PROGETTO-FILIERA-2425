@@ -12,6 +12,7 @@ import unicam.filiera.dto.ItemTipo;
 import unicam.filiera.dto.PrenotazioneVisitaDto;
 import unicam.filiera.dto.ProdottoDto;
 import unicam.filiera.dto.ProdottoTrasformatoDto;
+import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.repository.RichiestaEliminazioneProfiloRepository;
 import unicam.filiera.repository.UtenteRepository;
 import unicam.filiera.service.EliminazioneProfiloService;
@@ -42,7 +43,7 @@ public class TrasformatoreWebController extends AbstractCreationController<Prodo
                                       UtenteRepository utenteRepo,
                                       EliminazioneProfiloService eliminazioneProfiloService,
                                       RichiestaEliminazioneProfiloRepository richiestaRepo) {
-        super(utenteRepo, eliminazioneProfiloService, richiestaRepo); // delega a base
+        super(utenteRepo, eliminazioneProfiloService, richiestaRepo);
         this.trasformatoService = trasformatoService;
         this.prodottoService = prodottoService;
         this.utenteService = utenteService;
@@ -75,7 +76,7 @@ public class TrasformatoreWebController extends AbstractCreationController<Prodo
     @Override
     protected void loadDashboardLists(Model model, String username) {
         model.addAttribute("trasformati", trasformatoService.getProdottiTrasformatiCreatiDa(username));
-        model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(unicam.filiera.model.StatoProdotto.APPROVATO));
+        model.addAttribute("prodottiApprovati", prodottoService.getProdottiByStato(StatoProdotto.APPROVATO));
         model.addAttribute("visiteDisponibili", visitaInvitoService.getVisiteByRuoloDestinatario("trasformatore"));
         model.addAttribute("produttori", utenteService.getProduttori());
         model.addAttribute("prenotazioni", prenotazioneVisitaService.getPrenotazioniByVenditore(username));
@@ -103,14 +104,6 @@ public class TrasformatoreWebController extends AbstractCreationController<Prodo
     @GetMapping("/prodotti/{username}")
     @ResponseBody
     public List<ProdottoDto> getProdottiApprovatiByProduttore(@PathVariable String username) {
-        return prodottoService.getProdottiApprovatiByProduttore(username)
-                .stream()
-                .map(p -> {
-                    ProdottoDto dto = new ProdottoDto();
-                    dto.setId(p.getId());
-                    dto.setNome(p.getNome());
-                    return dto;
-                })
-                .toList();
+        return prodottoService.getProdottiApprovatiByProduttore(username);
     }
 }

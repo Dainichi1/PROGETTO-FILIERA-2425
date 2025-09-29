@@ -7,11 +7,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import unicam.filiera.dto.PacchettoViewDto;
+import unicam.filiera.dto.PacchettoDto;
+import unicam.filiera.dto.ProdottoDto;
+import unicam.filiera.dto.ProdottoTrasformatoDto;
 import unicam.filiera.dto.RichiestaEliminazioneProfiloDto;
 import unicam.filiera.entity.RichiestaEliminazioneProfiloEntity;
 import unicam.filiera.entity.UtenteEntity;
-import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.ProdottoTrasformato;
 import unicam.filiera.model.StatoProdotto;
 import unicam.filiera.model.StatoRichiestaEliminazioneProfilo;
@@ -65,9 +66,10 @@ public class CuratoreWebController {
                 () -> log.warn("[Dashboard Curatore] Utente {} non trovato in DB!", username)
         );
 
-        List<Prodotto> prodottiInAttesa = prodottoService.getProdottiByStato(StatoProdotto.IN_ATTESA);
-        List<PacchettoViewDto> pacchettiInAttesa = pacchettoService.getPacchettiViewByStato(StatoProdotto.IN_ATTESA);
-        List<ProdottoTrasformato> trasformatiInAttesa = prodottoTrasformatoService.getProdottiTrasformatiByStato(StatoProdotto.IN_ATTESA);
+        // ora usiamo DTO invece del domain model
+        List<ProdottoDto> prodottiInAttesa = prodottoService.getProdottiByStato(StatoProdotto.IN_ATTESA);
+        List<PacchettoDto> pacchettiInAttesa = pacchettoService.getPacchettiByStato(StatoProdotto.IN_ATTESA);
+        List<ProdottoTrasformatoDto> trasformatiInAttesa = prodottoTrasformatoService.getProdottiTrasformatiByStato(StatoProdotto.IN_ATTESA);
 
         model.addAttribute("prodotti", prodottiInAttesa);
         model.addAttribute("pacchetti", pacchettiInAttesa);

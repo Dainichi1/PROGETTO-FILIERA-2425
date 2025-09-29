@@ -4,11 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import unicam.filiera.dto.MarkerDto;
-import unicam.filiera.entity.MarkerEntity;
 import unicam.filiera.service.MarkerService;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/gestore/markers/api")
@@ -26,17 +24,7 @@ public class MarkerController {
      */
     @GetMapping
     public ResponseEntity<List<MarkerDto>> getAllMarkers() {
-        List<MarkerDto> markers = markerService.getAllMarkers().stream()
-                .map(m -> new MarkerDto(
-                        m.getId(),
-                        m.getLat(),
-                        m.getLng(),
-                        m.getLabel(),
-                        m.getColor()
-                ))
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(markers);
+        return ResponseEntity.ok(markerService.getAllMarkers());
     }
 
     /**
@@ -44,21 +32,7 @@ public class MarkerController {
      */
     @PostMapping
     public ResponseEntity<MarkerDto> saveMarker(@RequestBody MarkerDto dto) {
-        MarkerEntity entity = new MarkerEntity();
-        entity.setLat(dto.getLat());
-        entity.setLng(dto.getLng());
-        entity.setLabel(dto.getLabel());
-        entity.setColor(dto.getColor());
-
-        MarkerEntity saved = markerService.saveMarker(entity);
-
-        return ResponseEntity.ok(new MarkerDto(
-                saved.getId(),
-                saved.getLat(),
-                saved.getLng(),
-                saved.getLabel(),
-                saved.getColor()
-        ));
+        return ResponseEntity.ok(markerService.saveMarker(dto));
     }
 
     /**
@@ -66,26 +40,7 @@ public class MarkerController {
      */
     @PostMapping("/batch")
     public ResponseEntity<List<MarkerDto>> saveMarkers(@RequestBody List<MarkerDto> dtos) {
-        List<MarkerEntity> entities = dtos.stream().map(dto -> {
-            MarkerEntity entity = new MarkerEntity();
-            entity.setLat(dto.getLat());
-            entity.setLng(dto.getLng());
-            entity.setLabel(dto.getLabel());
-            entity.setColor(dto.getColor());
-            return entity;
-        }).collect(Collectors.toList());
-
-        List<MarkerDto> saved = markerService.saveMarkers(entities).stream()
-                .map(m -> new MarkerDto(
-                        m.getId(),
-                        m.getLat(),
-                        m.getLng(),
-                        m.getLabel(),
-                        m.getColor()
-                ))
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.ok(markerService.saveMarkers(dtos));
     }
 
     /**

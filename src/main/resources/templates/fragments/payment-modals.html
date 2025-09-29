@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<body>
+<div th:fragment="payment-modals">
+
+  <!-- Modale scelta metodo di pagamento -->
+  <div id="paymentChoiceModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>💳 Seleziona metodo di pagamento</h3>
+      <form id="paymentForm">
+        <label for="paymentMethod">Metodo di pagamento:</label>
+        <select id="paymentMethod" name="paymentMethod" required>
+          <option value="">-- Seleziona --</option>
+          <option value="CARTA_DI_CREDITO">Carta di credito</option>
+          <option value="BONIFICO">Bonifico</option>
+          <option value="PAGAMENTO_ALLA_CONSEGNA">Pagamento alla consegna</option>
+        </select>
+
+        <div style="margin-top: 1rem;">
+          <button type="submit" class="btn-primary">Conferma</button>
+          <button type="button" class="btn-close-modal" data-target="paymentChoiceModal">Annulla</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modale conferma acquisto -->
+  <div id="confirmPurchaseModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>🛒 Conferma acquisto</h3>
+
+      <p id="confirmPurchaseDetails">
+        Vuoi procedere con l’acquisto dell’elemento selezionato?
+      </p>
+
+      <div style="margin-top: 1rem;">
+        <button id="btnConfirmPurchase" class="btn-primary">Conferma</button>
+        <button type="button" class="btn-close-modal" data-target="confirmPurchaseModal">
+          Annulla
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale successo acquisto -->
+  <div id="purchaseSuccessModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>✅ Acquisto completato</h3>
+      <p id="purchaseSuccessMessage">Il tuo ordine è stato confermato con successo.</p>
+      <button class="btn-close-modal" data-target="purchaseSuccessModal">Chiudi</button>
+    </div>
+  </div>
+
+  <!-- Modale errore acquisto -->
+  <div id="purchaseErrorModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>❌ Errore</h3>
+      <p id="purchaseErrorMessage">Si è verificato un errore durante l’acquisto.</p>
+      <button class="btn-close-modal" data-target="purchaseErrorModal">Chiudi</button>
+    </div>
+  </div>
+
+  <!-- Nessun item selezionato -->
+  <div id="noItemSelectedModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>⚠ Errore</h3>
+      <p>Seleziona prima un elemento dal carrello per procedere all’acquisto.</p>
+      <button class="btn-close-modal" data-target="noItemSelectedModal">Chiudi</button>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

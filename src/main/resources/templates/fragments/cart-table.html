@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<body>
+<div th:fragment="cart-table">
+    <div class="table-container">
+        <h3>🧺 Il tuo Carrello</h3>
+        <table class="acquirente-table">
+            <thead>
+            <tr>
+                <th>Tipo</th>
+                <th>Nome</th>
+                <th>Quantità</th>
+                <th>Prezzo unitario (€)</th>
+                <th>Totale (€)</th>
+                <th>Aggiorna</th>
+                <th>Elimina</th>
+                <th>Seleziona</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- Riga placeholder (vuoto all’inizio, poi popoleremo via backend/JS) -->
+            <tr>
+                <td colspan="8" style="text-align:center; font-style: italic;">
+                    Il carrello è vuoto.
+                </td>
+            </tr>
+            </tbody>
+        </table>
+
+        <!-- Bottone Acquista -->
+        <div style="margin-top: 1rem; text-align: right;">
+            <button id="btnAcquista" type="button" disabled>💳 Acquista</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>

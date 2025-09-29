@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ================== MODALI ELIMINAZIONE ================== -->
+<div th:fragment="delete-modals(itemName)">
+    <div id="deleteErrorModal" class="modal">
+        <div class="modal-content">
+            <p>Puoi eliminare solo [[${itemName}]] in attesa o rifiutati.</p>
+            <button type="button" class="btn-close-modal" data-target="deleteErrorModal">OK</button>
+        </div>
+    </div>
+
+    <div id="deleteConfirmModal" class="modal">
+        <div class="modal-content">
+            <p id="deleteConfirmMessage"></p>
+            <button id="btnConfirmDelete" type="button">Sì</button>
+            <button type="button" class="btn-close-modal" data-target="deleteConfirmModal">No</button>
+        </div>
+    </div>
+
+    <div id="deleteSuccessModal" class="modal">
+        <div class="modal-content">
+            <p id="deleteSuccessMessage"></p>
+            <button type="button" class="btn-close-modal" data-target="deleteSuccessModal">OK</button>
+        </div>
+    </div>
+
+    <div id="deleteGenericErrorModal" class="modal">
+        <div class="modal-content">
+            <p id="deleteGenericErrorMessage"></p>
+            <button type="button" class="btn-close-modal" data-target="deleteGenericErrorModal">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================== MODALI MODIFICA ================== -->
+<div th:fragment="edit-error-modal(itemName)">
+    <div id="editErrorModal" class="modal">
+        <div class="modal-content">
+            <p>Puoi modificare solo [[${itemName}]] rifiutati.</p>
+            <button type="button" class="btn-close-modal" data-target="editErrorModal">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================== CREAZIONE/UPDATE GENERICI ================== -->
+<div th:fragment="create-update-modals(entityName, redirectPath)">
+    <div id="createConfirmModal" class="modal">
+        <div class="modal-content">
+            <p th:text="|Inviare ${entityName} al Curatore per approvazione?|"></p>
+            <button id="btnConfirmCreate" type="button">Sì</button>
+            <button type="button" class="btn-close-modal" data-target="createConfirmModal">No</button>
+        </div>
+    </div>
+
+    <div id="createSuccessModal" class="modal">
+        <div class="modal-content">
+            <p id="createSuccessMessage"></p>
+            <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+        </div>
+    </div>
+
+    <div id="updateConfirmModal" class="modal">
+        <div class="modal-content">
+            <p th:text="|Sei sicuro di voler aggiornare e rinviare ${entityName} al Curatore?|"></p>
+            <button id="btnConfirmUpdate" type="button">Sì</button>
+            <button type="button" class="btn-close-modal" data-target="updateConfirmModal">No</button>
+        </div>
+    </div>
+
+    <div id="updateSuccessModal" class="modal">
+        <div class="modal-content">
+            <p id="updateSuccessMessage"></p>
+            <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================== MODALE SOCIAL FEED ================== -->
+<div th:fragment="social-feed-modal">
+    <div id="socialFeedModal" class="modal">
+        <div class="modal-content">
+            <h3>📢 Social Feed</h3>
+            <div id="socialPostsContainer" style="max-height:400px; overflow-y:auto; margin-top:10px;">
+                <!-- I post saranno caricati dinamicamente via JS -->
+            </div>
+            <div class="modal-buttons" style="margin-top:15px;">
+                <button type="button" class="btn-close-modal" data-target="socialFeedModal">Chiudi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================== MODALI PRENOTAZIONE VISITA ================== -->
+<div th:fragment="prenotazione-visita-modals(redirectPath)">
+    <div id="prenotazioneVisitaModal" class="modal">
+        <div class="modal-content">
+            <h3>Prenota una visita</h3>
+            <form id="prenotazioneVisitaForm" th:action="@{/prenotazioni-visite/prenota}" method="post">
+                <input type="hidden" id="idVisita" name="idVisita"/>
+                <label for="numeroPersone">Numero persone</label>
+                <input type="number" id="numeroPersone" name="numeroPersone" min="1" required/>
+                <span id="numeroPersoneError" class="error-message"></span>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-primary">Conferma</button>
+                    <button type="button" class="btn-close-modal" data-target="prenotazioneVisitaModal">Chiudi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="prenotazioneSuccessModal" class="modal">
+        <div class="modal-content">
+            <p id="prenotazioneSuccessMessage">✅ Prenotazione effettuata con successo!</p>
+            <button type="button" class="btn-close-modal" data-target="prenotazioneSuccessModal">OK</button>
+        </div>
+    </div>
+
+    <div id="prenotazioneErrorModal" class="modal">
+        <div class="modal-content">
+            <p id="prenotazioneErrorMessage">❌ Errore durante la prenotazione.</p>
+            <button type="button" class="btn-close-modal" data-target="prenotazioneErrorModal">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================== MODALI CANCELLAZIONE PRENOTAZIONI ================== -->
+<div th:fragment="prenotazioni-delete-modals(redirectPath)">
+    <div id="prenotazioneDeleteModal" class="modal">
+        <div class="modal-content">
+            <p>Vuoi eliminare la prenotazione?</p>
+            <form id="prenotazioneDeleteForm" th:action="@{/prenotazioni/delete}" method="post">
+                <input type="hidden" id="idPrenotazioneDelete" name="idPrenotazione"/>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-danger">Sì</button>
+                    <button type="button" class="btn-close-modal" data-target="prenotazioneDeleteModal">No</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="prenotazioneDeleteSuccessModal" class="modal">
+        <div class="modal-content">
+            <p>✅ Prenotazione eliminata con successo!</p>
+            <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+        </div>
+    </div>
+
+    <div id="prenotazioneDeleteErrorModal" class="modal">
+        <div class="modal-content">
+            <p id="prenotazioneDeleteErrorText">❌ Errore durante l'eliminazione della prenotazione.</p>
+            <button type="button" class="btn-close-modal" data-target="prenotazioneDeleteErrorModal">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================== MODALI SOCIAL ================== -->
+<div th:fragment="social-modals(redirectPath)">
+    <div id="socialPostModal" class="modal">
+        <div class="modal-content">
+            <h3>Pubblica sui Social</h3>
+            <form id="socialPostForm" onsubmit="return false;">
+                <label for="postTitle">Titolo* (max 100):</label>
+                <input type="text" id="postTitle" maxlength="100" required />
+                <span class="error-message"></span>
+
+                <label for="postText">Testo* (max 1000):</label>
+                <textarea id="postText" maxlength="1000" required></textarea>
+                <span class="error-message"></span>
+
+                <div class="modal-buttons">
+                    <button id="btnOkSocialPost" type="button">OK</button>
+                    <button type="button" class="btn-close-modal" data-target="socialPostModal">Annulla</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="socialConfirmModal" class="modal">
+        <div class="modal-content">
+            <p>Sei sicuro di voler pubblicare l'annuncio sui social?</p>
+            <button id="btnConfirmSocialPost" type="button">Sì</button>
+            <button type="button" class="btn-close-modal" data-target="socialConfirmModal">No</button>
+        </div>
+    </div>
+
+    <div id="socialSuccessModal" class="modal">
+        <div class="modal-content">
+            <p>✅ Annuncio pubblicato con successo!</p>
+            <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================== MODALE SOCIAL NON DISPONIBILE ================== -->
+<div th:fragment="social-not-available-modal">
+    <div id="socialNotAvailableModal" class="modal">
+        <div class="modal-content">
+            <p id="socialNotAvailableMessage">❌ Questa opzione non è disponibile.</p>
+            <button type="button" class="btn-close-modal" data-target="socialNotAvailableModal">OK</button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

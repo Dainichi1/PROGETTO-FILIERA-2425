@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Pannello Principale - Filiera Agricola</title>
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+</head>
+<body>
+<h1>🌱 Benvenuto nella Filiera Agricola</h1>
+
+<p>Da qui puoi accedere ai servizi della piattaforma:</p>
+
+<div class="button-container">
+    <button type="button" onclick="window.location.href='/register'">📝 Registrati come nuovo utente</button>
+    <button type="button" onclick="window.location.href='/login'">🔑 Accedi (Login)</button>
+    <button type="button" onclick="window.location.href='/marketplace'">🛒 Visualizza Marketplace</button>
+    <!-- ⬇️ niente onclick: usiamo JS -->
+    <button id="btnSocialFeed" type="button">📢 Visualizza Social Network</button>
+    <button id="btnApriMappa" type="button">🌍 Visualizza mappa</button>
+</div>
+
+<hr/>
+
+<!-- Modale feed globale -->
+<div id="socialFeedModal" class="modal">
+    <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
+        <h3>📢 Social Network - Feed Globale</h3>
+        <div id="socialPostsContainer"><!-- Post via JS --></div>
+        <div style="margin-top: 15px; text-align: right;">
+            <!-- ⬇️ rimosso onclick, usiamo data-target -->
+            <button class="btn-close-modal" data-target="socialFeedModal" type="button">Chiudi</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modale mappa -->
+<div id="mapModal" class="modal">
+    <div class="modal-content large">
+        <h2>🗺️ Mappa Indirizzi</h2>
+        <div id="map" style="height: 400px; width: 100%; border-radius: 8px;"></div>
+        <div class="modal-actions">
+            <button class="btn-close-modal btn-secondary" data-target="mapModal" type="button">Chiudi</button>
+        </div>
+    </div>
+</div>
+
+<p>
+    <small>Questa piattaforma permette la gestione, valorizzazione e tracciabilità dei prodotti agricoli locali.</small>
+</p>
+
+<!-- Messaggio di successo -->
+<script th:if="${success}" th:inline="javascript">
+    alert([[${success}]]);
+    window.location.href = '/';
+</script>
+
+<!-- Usa ES modules (niente <script defer> “globali”) -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script type="module">
+    import { modalUtils }   from "/js/utils/modal-utils.js";
+    import { crudUtils }    from "/js/utils/crud-utils.js";
+    import { commonMapUtils } from "/js/utils/common-map-utils.js";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        // Social feed
+        document.getElementById("btnSocialFeed")?.addEventListener("click", () => {
+            crudUtils.openSocialFeed(); // apre la modale e popola i post
+        });
+
+        // Mappa
+        document.getElementById("btnApriMappa")?.addEventListener("click", () => {
+            commonMapUtils.mostraMappa();
+        });
+
+        // Chiudi modali
+        document.querySelectorAll(".btn-close-modal").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const target = btn.getAttribute("data-target");
+                if (target) modalUtils.closeModal(target);
+            });
+        });
+    });
+</script>
+</body>
+</html>

@@ -1,50 +1,28 @@
-// -------- FieraDto.java --------
 package unicam.filiera.dto;
 
-public class FieraDto {
-    private final String dataInizioTxt;
-    private final String dataFineTxt;
-    private final String prezzoTxt;
-    private final String descrizione;
-    private final String indirizzo;
-    private final String minPartecipantiTxt;
+import jakarta.validation.constraints.DecimalMin;
+import lombok.*;
+import unicam.filiera.model.StatoEvento;
 
-    public FieraDto(String dataInizioTxt,
-                    String dataFineTxt,
-                    String prezzoTxt,
-                    String descrizione,
-                    String indirizzo,
-                    String minPartecipantiTxt) {
-        this.dataInizioTxt = dataInizioTxt;
-        this.dataFineTxt = dataFineTxt;
-        this.prezzoTxt = prezzoTxt;
-        this.descrizione = descrizione;
-        this.indirizzo = indirizzo;
-        this.minPartecipantiTxt = minPartecipantiTxt;
-    }
+/**
+ * DTO per la creazione o modifica di una Fiera da parte dell’Animatore.
+ * Estende {@link BaseEventoDto}.
+ *
+ * Le fiere sono pubbliche e non hanno destinatari,
+ * ma includono un campo aggiuntivo: prezzo.
+ */
+@Getter
+@Setter
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+public class FieraDto extends BaseEventoDto {
 
-    public String getDataInizioTxt() {
-        return dataInizioTxt;
-    }
+    @DecimalMin(value = "0.0", inclusive = true, message = "⚠ Il prezzo non può essere negativo")
+    private Double prezzo;
 
-    public String getDataFineTxt() {
-        return dataFineTxt;
-    }
+    /** Username dell'animatore che ha creato la fiera */
+    private String creatoDa;
 
-    public String getPrezzoTxt() {
-        return prezzoTxt;
-    }
-
-    public String getDescrizione() {
-        return descrizione;
-    }
-
-    public String getIndirizzo() {
-        return indirizzo;
-    }
-
-    public String getMinPartecipantiTxt() {
-        return minPartecipantiTxt;
-    }
-
+    /** Stato della fiera (PUBBLICATA, CONCLUSA, ecc.) */
+    private StatoEvento stato;
 }

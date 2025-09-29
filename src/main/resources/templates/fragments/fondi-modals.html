@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<body>
+<!-- ================== MODALI FONDI ================== -->
+<div th:fragment="fondi-modals">
+
+  <!-- Successo aggiornamento fondi -->
+  <div id="fondiSuccessModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>✅ Operazione completata</h3>
+      <p id="fondiSuccessMessage">I fondi sono stati aggiornati correttamente.</p>
+      <button class="btn-close-modal" data-target="fondiSuccessModal">Chiudi</button>
+    </div>
+  </div>
+
+  <!-- Errore validazione importo -->
+  <div id="fondiErrorModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>⚠ Errore</h3>
+      <p id="fondiErrorMessage">Inserisci un importo valido maggiore di zero.</p>
+      <button class="btn-close-modal" data-target="fondiErrorModal">Chiudi</button>
+    </div>
+  </div>
+
+  <!-- Errore generico (es. server down, eccezione backend) -->
+  <div id="fondiGenericErrorModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>❌ Errore di sistema</h3>
+      <p id="fondiGenericErrorMessage">
+        Si è verificato un errore durante l’aggiornamento dei fondi. Riprova più tardi.
+      </p>
+      <button class="btn-close-modal" data-target="fondiGenericErrorModal">Chiudi</button>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

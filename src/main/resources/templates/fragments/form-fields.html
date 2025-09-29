@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ================== CAMPI STANDARD ================== -->
+<div th:fragment="base-fields(suffix)">
+    <!-- Nome -->
+    <label th:for="|nome-${suffix}|">Nome:</label>
+    <input type="text" th:field="*{nome}" th:id="|nome-${suffix}|"
+           th:classappend="${#fields.hasErrors('nome')} ? 'error'"
+           required />
+    <span class="error-message"
+          th:utext="${#fields.hasErrors('nome')} ? ${#strings.arrayJoin(#fields.errors('nome'), '<br/>')} : ''"></span>
+
+    <!-- Descrizione -->
+    <label th:for="|descrizione-${suffix}|">Descrizione:</label>
+    <textarea th:field="*{descrizione}" th:id="|descrizione-${suffix}|"
+              th:classappend="${#fields.hasErrors('descrizione')} ? 'error'"
+              required></textarea>
+    <span class="error-message"
+          th:utext="${#fields.hasErrors('descrizione')} ? ${#strings.arrayJoin(#fields.errors('descrizione'), '<br/>')} : ''"></span>
+
+    <!-- Quantità -->
+    <label th:for="|quantita-${suffix}|">Quantità:</label>
+    <input type="number" th:field="*{quantita}" th:id="|quantita-${suffix}|"
+           th:classappend="${#fields.hasErrors('quantita')} ? 'error'"
+           min="1" required />
+    <span class="error-message"
+          th:utext="${#fields.hasErrors('quantita')} ? ${#strings.arrayJoin(#fields.errors('quantita'), '<br/>')} : ''"></span>
+
+    <!-- Prezzo -->
+    <label th:for="|prezzo-${suffix}|">Prezzo (€):</label>
+    <input type="number" step="0.01" th:field="*{prezzo}" th:id="|prezzo-${suffix}|"
+           th:classappend="${#fields.hasErrors('prezzo')} ? 'error'"
+           min="0.01" required />
+    <span class="error-message"
+          th:utext="${#fields.hasErrors('prezzo')} ? ${#strings.arrayJoin(#fields.errors('prezzo'), '<br/>')} : ''"></span>
+
+    <!-- Indirizzo -->
+    <label th:for="|indirizzo-${suffix}|">Indirizzo:</label>
+    <input type="text" th:field="*{indirizzo}" th:id="|indirizzo-${suffix}|"
+           th:classappend="${#fields.hasErrors('indirizzo')} ? 'error'"
+           required />
+    <span class="error-message"
+          th:utext="${#fields.hasErrors('indirizzo')} ? ${#strings.arrayJoin(#fields.errors('indirizzo'), '<br/>')} : ''"></span>
+
+    <!-- Certificati -->
+    <label th:for="|certificati-${suffix}|">Certificati:</label>
+    <input type="file" th:field="*{certificati}" th:id="|certificati-${suffix}|"
+           th:classappend="${#fields.hasErrors('certificati')} ? 'error'"
+           accept=".pdf,.jpg,.jpeg,.png"
+           multiple required />
+    <span class="error-message"
+          th:utext="${#fields.hasErrors('certificati')} ? ${#strings.arrayJoin(#fields.errors('certificati'), '<br/>')} : ''"></span>
+
+    <!-- Foto -->
+    <label th:for="|foto-${suffix}|">Foto:</label>
+    <input type="file" th:field="*{foto}" th:id="|foto-${suffix}|"
+           th:classappend="${#fields.hasErrors('foto')} ? 'error'"
+           accept="image/*"
+           multiple required />
+    <span class="error-message"
+          th:utext="${#fields.hasErrors('foto')} ? ${#strings.arrayJoin(#fields.errors('foto'), '<br/>')} : ''"></span>
+</div>
+
+<!-- ================== PULSANTI E MODALI COMUNI ================== -->
+<div th:fragment="form-buttons(entityName, redirectPath)">
+    <div id="createButtons">
+        <button type="button"
+                class="btn-open-modal"
+                data-target="createConfirmModal">
+            Invia
+        </button>
+    </div>
+    <div id="updateButtons" style="display:none;">
+        <button type="button"
+                class="btn-open-modal"
+                data-target="updateConfirmModal">
+            Aggiorna
+        </button>
+    </div>
+    <button type="button"
+            class="btn-toggle-form">
+        Chiudi
+    </button>
+
+    <!-- Inclusione modali creazione/modifica -->
+    <div th:replace="fragments/modals :: create-update-modals(${entityName}, ${redirectPath})"></div>
+</div>
+
+</body>
+</html>

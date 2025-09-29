@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<head>
+    <title>Dashboard Trasformatore</title>
+    <meta charset="UTF-8"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/css/tables.css}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+</head>
+<body>
+<h1 th:text="'Benvenuto ' + (${utente?.nome ?: 'Utente'}) +
+              ', il tuo ruolo è ' + (${utente?.ruolo ?: 'Trasformatore'}) + '.'">
+    Benvenuto, il tuo ruolo è Trasformatore.
+</h1>
+
+<!-- ================== BOTTONI PRINCIPALI ================== -->
+<div class="actions-container">
+    <button type="button" class="btn-primary" id="btnSocialFeed">📢 Visualizza Social Network</button>
+    <button type="button" class="btn-primary" id="btnVisite">👀 Visualizza visite disponibili</button>
+    <button id="btnApriMappa" class="btn-primary">🌍 Visualizza mappa</button>
+    <button type="button" class="btn-primary" id="btnPrenotazioni">📅 Visualizza prenotazioni</button>
+    <button id="btnDeleteProfile" class="btn btn-danger btn-lg ms-2">
+        🗑️ Elimina profilo
+    </button>
+</div>
+
+<h2>I tuoi Prodotti Trasformati</h2>
+
+<!-- ================== TABELLA PRODOTTI ================== -->
+<div th:replace="fragments/dashboard-table :: dashboard-table(${trasformati}, 'trasformato')"></div>
+
+<!-- ================== SEZIONE VISITE ================== -->
+<div id="visiteSection" class="toggle-section">
+    <div th:replace="fragments/visite-table :: visite-table(${visiteDisponibili})"></div>
+    <div class="actions-container">
+        <button type="button" class="btn-secondary" id="btnCloseVisite">Chiudi</button>
+    </div>
+</div>
+
+<!-- ================== SEZIONE PRENOTAZIONI ================== -->
+<div id="prenotazioniSection" class="toggle-section">
+    <div th:replace="fragments/prenotazioni-table :: prenotazioni-table(${prenotazioni})"></div>
+    <div class="actions-container">
+        <button type="button" class="btn-secondary" id="btnClosePrenotazioni">Chiudi</button>
+    </div>
+</div>
+
+<!-- ================== MODALI COMUNI ================== -->
+<div th:replace="fragments/modals :: delete-modals('Prodotto Trasformato')"></div>
+<div th:replace="fragments/modals :: edit-error-modal('Prodotto Trasformato')"></div>
+<div th:replace="fragments/modals :: create-update-modals('Prodotto Trasformato','/trasformatore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-modals('/trasformatore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-feed-modal"></div>
+<div th:replace="fragments/modals :: prenotazioni-delete-modals('/trasformatore/dashboard')"></div>
+<div th:replace="fragments/modals :: prenotazione-visita-modals('/trasformatore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-not-available-modal"></div>
+<div th:replace="fragments/profile-delete-notification :: profile-delete-notification"></div>
+<!-- ================== MODALE MAPPA ================== -->
+<div id="mapModal" class="modal">
+    <div class="modal-content large">
+        <h2>🗺️ Mappa Indirizzi</h2>
+        <div id="map" style="height: 400px; width: 100%; border-radius: 8px;"></div>
+        <div class="modal-actions">
+            <button class="btn-close-modal btn-secondary" data-target="mapModal">Chiudi</button>
+        </div>
+    </div>
+</div>
+<!-- ================== MODALE ELIMINAZIONE PROFILO ================== -->
+<div th:replace="fragments/profile-delete-modal :: profile-delete-modal"></div>
+
+<hr class="section-separator"/>
+
+<!-- ================== FORM CREAZIONE TRASFORMATO ================== -->
+<button type="button" class="btn-primary" id="btnCreateTrasformato">➕ Crea Prodotto Trasformato</button>
+
+<div id="trasformatoForm" class="form-container"
+     th:style="${showForm} ? 'display:block;' : 'display:none;'">
+    <h3 id="formTitle">Nuovo Prodotto Trasformato</h3>
+    <form id="itemForm" th:action="@{/trasformatore/crea}" th:object="${trasformatoDto}"
+          method="post" enctype="multipart/form-data" novalidate>
+
+        <input type="hidden" th:field="*{id}" id="itemId"/>
+        <input type="hidden" th:field="*{tipo}" id="itemTipo" value="TRASFORMATO"/>
+
+        <!-- Campi standard -->
+        <div th:replace="fragments/form-fields :: base-fields('trasformatoDto')"></div>
+
+        <!-- Fasi di trasformazione -->
+        <div th:replace="fragments/fasi :: fasi-produzione"></div>
+
+        <!-- Pulsanti -->
+        <div th:replace="fragments/form-fields :: form-buttons('Prodotto Trasformato','/trasformatore/dashboard')"></div>
+    </form>
+</div>
+
+<!-- ================== LINK HOME ================== -->
+<p><a th:href="@{/}" class="btn-secondary">⬅ Torna alla Home</a></p>
+
+<!-- ================== SCRIPT ================== -->
+<script type="module" src="/js/pages/trasformatore.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+</body>
+</html>

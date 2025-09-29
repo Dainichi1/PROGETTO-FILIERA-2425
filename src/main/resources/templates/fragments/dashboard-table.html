@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="dashboard-table(items, itemType)">
+    <table class="table-standard">
+        <thead>
+        <tr>
+            <th>Nome</th>
+            <th>Descrizione</th>
+            <th>Quantità</th>
+            <th>Prezzo</th>
+            <th>Indirizzo</th>
+            <th>Certificati</th>
+            <th>Foto</th>
+            <th th:if="${itemType == 'pacchetto'}">Prodotti Inclusi</th>
+            <th th:if="${itemType == 'trasformato'}">Fasi Produzione</th>
+            <th>Stato</th>
+            <th>Commento</th>
+            <th>Elimina</th>
+            <th>Modifica</th>
+            <th>Social</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="item : ${items}" th:attr="data-id=${item.id}">
+            <td th:text="${item.nome}">Nome</td>
+            <td th:text="${item.descrizione}">Descrizione</td>
+            <td th:text="${item.quantita}">0</td>
+            <td th:text="${item.prezzo}">0.00</td>
+            <td th:text="${item.indirizzo}">Indirizzo</td>
+            <td>
+                <span th:if="${#strings.isEmpty(item.certificatiCsv)}">-</span>
+                <span th:if="${!#strings.isEmpty(item.certificatiCsv)}"
+                      th:each="cert : ${#strings.arraySplit(item.certificatiCsv, ',')}">
+        <a th:href="@{'/file/certificati/' + ${cert}}"
+           th:text="${cert}" target="_blank"></a><br/>
+    </span>
+            </td>
+
+            <td>
+                <span th:if="${#strings.isEmpty(item.fotoCsv)}">-</span>
+                <span th:if="${!#strings.isEmpty(item.fotoCsv)}"
+                      th:each="foto : ${#strings.arraySplit(item.fotoCsv, ',')}">
+        <a th:href="@{'/file/foto/' + ${foto}}" target="_blank">
+            <img th:src="@{'/file/foto/' + ${foto}}" alt="Foto" style="max-height:40px;"/>
+        </a>
+    </span>
+            </td>
+
+
+
+            <td th:if="${itemType == 'pacchetto'}">
+                <ul>
+                    <li th:each="nome : ${item.prodottiNomi}" th:text="${nome}"></li>
+                </ul>
+            </td>
+            <td th:if="${itemType == 'trasformato'}">
+                <ul>
+                    <li th:each="fase : ${item.fasiProduzione}">
+                        <span th:text="${fase.descrizioneFase}"></span> -
+                        <span th:text="${fase.produttoreUsername}"></span> -
+                        <span th:text="${fase.prodottoOrigineId}"></span>
+                    </li>
+                </ul>
+            </td>
+            <td th:text="${item.stato}">In attesa</td>
+            <td th:text="${item.commento}">Commento</td>
+
+            <!-- Pulsanti azione -->
+            <td>
+                <button type="button" class="btn-danger btn-delete"
+                        th:attr="data-id=${item.id},
+                                 data-stato=${item.stato},
+                                 data-nome=${item.nome}">
+                    ❌ Elimina
+                </button>
+            </td>
+            <td>
+                <button type="button" class="btn-warning btn-edit"
+                        th:attr="data-id=${item.id},
+                                 data-stato=${item.stato},
+                                 data-nome=${item.nome}">
+                    ✏️ Modifica
+                </button>
+            </td>
+            <td>
+                <button type="button" class="btn-social btn-publish"
+                        th:attr="data-id=${item.id},
+                                 data-nome=${item.nome},
+                                 data-stato=${item.stato},
+                                 data-type=${itemType}">
+                    📢 Pubblica sui Social
+                </button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

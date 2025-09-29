@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ================== MODALI CREAZIONE / UPDATE ANIMATORE ================== -->
+<div th:fragment="animatore-create-modals(redirectPath)">
+
+    <!-- === VISITA === -->
+    <div id="createConfirmModalVisita" class="modal">
+        <div class="modal-content">
+            <p>Vuoi pubblicare la visita?</p>
+            <button id="btnConfirmCreateVisita" type="button">Sì</button>
+            <button type="button" onclick="modalUtils.closeModal('createConfirmModalVisita')">No</button>
+        </div>
+    </div>
+
+    <div id="createSuccessModalVisita" class="modal">
+        <div class="modal-content">
+            <p>✅ Visita pubblicata con successo!</p>
+            <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+        </div>
+    </div>
+
+    <!-- Update -->
+    <div id="updateConfirmModalVisita" class="modal">
+        <div class="modal-content">
+            <p>Vuoi salvare le modifiche alla visita?</p>
+            <button id="btnConfirmUpdateVisita" type="button">Sì</button>
+            <button type="button" onclick="modalUtils.closeModal('updateConfirmModalVisita')">No</button>
+        </div>
+    </div>
+
+    <div id="updateSuccessModalVisita" class="modal">
+        <div class="modal-content">
+            <p>💾 Modifiche alla visita salvate con successo!</p>
+            <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+        </div>
+    </div>
+
+    <!-- === FIERA === -->
+    <div id="createConfirmModalFiera" class="modal">
+        <div class="modal-content">
+            <p>Vuoi pubblicare la fiera?</p>
+            <button id="btnConfirmCreateFiera" type="button">Sì</button>
+            <button type="button" onclick="modalUtils.closeModal('createConfirmModalFiera')">No</button>
+        </div>
+    </div>
+
+    <div id="createSuccessModalFiera" class="modal">
+        <div class="modal-content">
+            <p>✅ Fiera pubblicata con successo!</p>
+            <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+        </div>
+    </div>
+
+    <!-- Update -->
+    <div id="updateConfirmModalFiera" class="modal">
+        <div class="modal-content">
+            <p>Vuoi salvare le modifiche alla fiera?</p>
+            <button id="btnConfirmUpdateFiera" type="button">Sì</button>
+            <button type="button" onclick="modalUtils.closeModal('updateConfirmModalFiera')">No</button>
+        </div>
+    </div>
+
+    <div id="updateSuccessModalFiera" class="modal">
+        <div class="modal-content">
+            <p>💾 Modifiche alla fiera salvate con successo!</p>
+            <button type="button" class="redirect-btn" th:attr="data-redirect=${redirectPath}">OK</button>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

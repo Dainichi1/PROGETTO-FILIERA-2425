@@ -1,11 +1,16 @@
 package unicam.filiera.model;
 
+import lombok.Getter;
+import lombok.Setter;
+import unicam.filiera.dto.ItemTipo;
+
 import java.util.List;
 
 /**
- * Super‑classe astratta per gli elementi commercializzabili (Prodotto, Pacchetto, …).
+ * Super-classe astratta per gli elementi commercializzabili (Prodotto, Pacchetto, …).
  * Raccoglie i campi e la logica condivisa, così da evitare duplicazioni.
  */
+@Getter
 public abstract class Item {
 
     private final String nome;
@@ -15,13 +20,14 @@ public abstract class Item {
     private final List<String> foto;
     private final String creatoDa;
 
+    private final ItemTipo tipo;
+
+    @Setter
     private StatoProdotto stato;
+
+    @Setter
     private String commento;
 
-    /**
-     * Costruttore protetto: deve essere invocato dalle sottoclassi
-     * (es. Prodotto, Pacchetto) nel proprio builder.
-     */
     protected Item(String nome,
                    String descrizione,
                    String indirizzo,
@@ -29,7 +35,8 @@ public abstract class Item {
                    List<String> foto,
                    String creatoDa,
                    StatoProdotto stato,
-                   String commento) {
+                   String commento,
+                   ItemTipo tipo) {
         this.nome = nome;
         this.descrizione = descrizione;
         this.indirizzo = indirizzo;
@@ -38,62 +45,21 @@ public abstract class Item {
         this.creatoDa = creatoDa;
         this.stato = stato;
         this.commento = commento;
+        this.tipo = tipo;
     }
 
-    // ---- Getter ----
-    public String getNome() {
-        return nome;
-    }
-
-    public String getDescrizione() {
-        return descrizione;
-    }
-
-    public String getIndirizzo() {
-        return indirizzo;
-    }
-
-    public List<String> getCertificati() {
-        return certificati;
-    }
-
-    public List<String> getFoto() {
-        return foto;
-    }
-
-    public String getCreatoDa() {
-        return creatoDa;
-    }
-
-    public StatoProdotto getStato() {
-        return stato;
-    }
-
-    public String getCommento() {
-        return commento;
-    }
-
-    /**
-     * Permette al Curatore di aggiornare lo stato.
-     */
-    public void setStato(StatoProdotto stato) {
-        this.stato = stato;
-    }
-
-    /**
-     * Permette al Curatore di aggiungere un commento di rifiuto o approvazione.
-     */
-    public void setCommento(String commento) {
-        this.commento = commento;
-    }
+    public abstract Long getId();
+    public abstract int getQuantita();
+    public abstract double getPrezzo();
 
     @Override
     public String toString() {
         return String.format(
-                "Item[nome=%s, descr=%s, indirizzo=%s, stato=%s]",
+                "Item[nome=%s, descr=%s, indirizzo=%s, tipo=%s, stato=%s]",
                 nome,
                 descrizione,
                 indirizzo,
+                tipo != null ? tipo.name() : "N/D",
                 stato != null ? stato.name() : "N/D"
         );
     }

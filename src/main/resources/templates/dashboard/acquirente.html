@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<head>
+    <title>Dashboard Acquirente</title>
+    <meta charset="UTF-8"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/css/acquirente-tables.css}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+    <style>
+        .marketplace-section {
+            display: none;
+            margin-top: 2rem;
+        }
+
+        .actions-container button {
+            margin-right: 1rem;
+        }
+
+        .fondi-container {
+            margin: 1rem 0;
+        }
+
+        .fondi-container input {
+            width: 120px;
+            text-align: right;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ================== MESSAGGIO DI BENVENUTO ================== -->
+<h1 th:text="'Benvenuto ' + (${utente?.nome ?: 'Utente'}) +
+              ', il tuo ruolo è ' + (${utente?.ruolo ?: 'Acquirente'}) + '.'">
+    Benvenuto, il tuo ruolo è Acquirente.
+</h1>
+
+<!-- ================== INFORMAZIONI UTENTE ================== -->
+<div class="fondi-container">
+    <p id="fondiDisponibili"
+       th:text="'Fondi disponibili: ' + ${#numbers.formatDecimal(utente?.fondi ?: 0, 1, 'POINT', 2, 'COMMA')} + ' €'">
+        Fondi disponibili: 0 €
+    </p>
+    <form id="fondiForm" novalidate>
+        <input id="fondiInput" type="number" step="0.01" placeholder="Importo in €">
+        <button type="submit" id="btnAggiornaFondi">💰 Aggiorna</button>
+    </form>
+</div>
+
+<hr class="section-separator"/>
+
+<!-- ================== SEZIONE AZIONI PRINCIPALI ================== -->
+<div class="actions-container">
+    <button id="btnSocialFeed" type="button" class="btn-primary">
+        📢 Visualizza Social Network
+    </button>
+    <button id="btnVisualizzaMarketplace" type="button">🛒 Visualizza Marketplace</button>
+    <button id="btnVisualizzaCarrello" type="button">🧺 Visualizza Carrello</button>
+    <button id="btnVisualizzaAcquisti" type="button">📦 Visualizza Acquisti</button>
+    <button id="btnVisualizzaFiere" type="button">🎪 Visualizza Fiere disponibili</button>
+    <button id="btnVisualizzaPrenotazioniFiere" type="button">🎟 Visualizza ingressi prenotati</button>
+    <button id="btnDeleteProfile" class="btn btn-danger btn-lg ms-2">
+        🗑️ Elimina profilo
+    </button>
+    <button id="btnApriMappa" class="btn-primary">🌍 Visualizza mappa</button>
+</div>
+
+<!-- ================== SEZIONE MARKETPLACE ================== -->
+<div id="marketplaceSection" class="marketplace-section">
+    <div style="text-align: right; margin-bottom: 10px;">
+        <button id="btnChiudiMarketplace" type="button">❌ Chiudi</button>
+    </div>
+    <div th:replace="~{fragments/marketplace-table :: marketplace-table(
+        ${prodotti}, ${pacchetti}, ${trasformati}
+    )}"></div>
+</div>
+
+<!-- ================== SEZIONE CARRELLO ================== -->
+<div id="cartSection" class="marketplace-section">
+    <div style="text-align: right; margin-bottom: 10px;">
+        <button id="btnChiudiCarrello" type="button">❌ Chiudi</button>
+    </div>
+    <div th:replace="~{fragments/cart-table :: cart-table}"></div>
+</div>
+
+<!-- ================== SEZIONE ACQUISTI ================== -->
+<div id="acquistiSection" class="marketplace-section">
+    <div style="text-align: right; margin-bottom: 10px;">
+        <button id="btnChiudiAcquisti" type="button">❌ Chiudi</button>
+    </div>
+    <div th:replace="~{fragments/acquisti-table :: acquisti-table}"></div>
+</div>
+
+<!-- ================== SEZIONE FIERE ================== -->
+<div id="fiereSection" class="marketplace-section">
+    <div style="text-align: right; margin-bottom: 10px;">
+        <button id="btnChiudiFiere" type="button">❌ Chiudi</button>
+    </div>
+    <div th:replace="~{fragments/fiere-table :: fiere-table(${fiere})}"></div>
+</div>
+
+<!-- ================== SEZIONE PRENOTAZIONI FIERE ================== -->
+<div id="prenotazioniFiereSection" class="marketplace-section">
+    <div style="text-align: right; margin-bottom: 10px;">
+        <button id="btnChiudiPrenotazioniFiere" type="button">❌ Chiudi</button>
+    </div>
+    <div th:replace="~{fragments/prenotazioni-fiere-table :: prenotazioni-fiere-table(${prenotazioniFiere})}"></div>
+</div>
+
+<!-- ================== MODALI ================== -->
+<!-- ================== MODALE MAPPA ================== -->
+<div id="mapModal" class="modal">
+    <div class="modal-content large">
+        <h2>🗺️ Mappa Indirizzi</h2>
+        <div id="map" style="height: 400px; width: 100%; border-radius: 8px;"></div>
+        <div class="modal-actions">
+            <button class="btn-close-modal btn-secondary" data-target="mapModal">Chiudi</button>
+        </div>
+    </div>
+</div>
+<!-- Carrello -->
+<div th:replace="~{fragments/cart-modals :: cart-modals}"></div>
+
+<!-- Recensioni -->
+<div th:replace="fragments/recensioni-modals :: recensioni-modals('/acquirente/dashboard')"></div>
+
+<!-- Prenotazioni Fiera -->
+<div th:replace="~{fragments/prenotazione-fiera-modals :: prenotazione-fiera-modals('/acquirente/dashboard')}"></div>
+<div th:replace="~{fragments/prenotazione-fiera-delete-modals :: prenotazione-fiera-delete-modals}"></div>
+
+<!-- Social -->
+<div th:replace="fragments/modals :: social-feed-modal"></div>
+<div th:replace="fragments/modals :: social-not-available-modal"></div>
+
+<!-- Fondi -->
+<div th:replace="~{fragments/fondi-modals :: fondi-modals}"></div>
+
+<!-- Pagamenti -->
+<div th:replace="~{fragments/payment-modals :: payment-modals}"></div>
+
+<!-- cancellazioni -->
+<div th:replace="fragments/profile-delete-modal :: profile-delete-modal"></div>
+<div th:replace="fragments/profile-delete-notification :: profile-delete-notification"></div>
+
+<hr class="section-separator"/>
+
+<h2>Dashboard Acquirente</h2>
+<p>Qui potrai vedere i tuoi ordini, prenotazioni e fiere disponibili.</p>
+
+<p><a th:href="@{/}" class="btn-secondary">⬅ Torna alla Home</a></p>
+
+<!-- ================== SCRIPT ================== -->
+<script type="module" src="/js/utils/crud-prenotazioni-fiere-utils.js"></script>
+<script type="module" src="/js/pages/acquirente.js"></script>
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<head>
+    <title>Dashboard Produttore</title>
+    <meta charset="UTF-8"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/css/tables.css}">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+</head>
+<body>
+<h1 th:text="'Benvenuto ' + (${utente?.nome ?: 'Utente'}) +
+              ', il tuo ruolo è ' + (${utente?.ruolo ?: 'Produttore'}) + '.'">
+    Benvenuto, il tuo ruolo è Produttore.
+</h1>
+
+<!-- ================== ALERT MESSAGGI ================== -->
+<div th:if="${successMessage}" class="alert alert-success" role="alert"
+     th:text="${successMessage}"></div>
+
+<div th:if="${errorMessage}" class="alert alert-danger" role="alert"
+     th:text="${errorMessage}"></div>
+
+<!-- ================== BOTTONI PRINCIPALI ================== -->
+<div class="actions-container">
+    <button id="btnSocialFeed" type="button" class="btn-primary">📢 Visualizza Social Network</button>
+    <button id="btnVisite" type="button" class="btn-primary">👀 Visualizza visite disponibili</button>
+    <button id="btnPrenotazioni" type="button" class="btn-primary">📅 Visualizza prenotazioni</button>
+    <button id="btnDeleteProfile" class="btn btn-danger btn-lg ms-2">
+        🗑️ Richiedi eliminazione profilo
+    </button>
+    <button id="btnApriMappa" class="btn-primary">🌍 Visualizza mappa</button>
+</div>
+
+<h2>I tuoi Prodotti</h2>
+
+<!-- Tabella prodotti -->
+<div th:replace="fragments/dashboard-table :: dashboard-table(${prodotti}, 'prodotto')"></div>
+
+<!-- Sezione visite disponibili -->
+<div id="visiteSection" class="toggle-section">
+    <div th:replace="fragments/visite-table :: visite-table(${visiteDisponibili})"></div>
+    <div class="actions-container">
+        <button type="button" class="btn-secondary"
+                onclick="toggleUtils.toggleSection('visiteSection')">Chiudi</button>
+    </div>
+</div>
+
+<!-- Sezione prenotazioni -->
+<div id="prenotazioniSection" class="toggle-section">
+    <div th:replace="fragments/prenotazioni-table :: prenotazioni-table(${prenotazioni})"></div>
+    <div class="actions-container">
+        <button type="button" class="btn-secondary"
+                onclick="toggleUtils.toggleSection('prenotazioniSection')">Chiudi</button>
+    </div>
+</div>
+
+<!-- ================== MODALI COMUNI ================== -->
+<div th:replace="fragments/modals :: delete-modals('Prodotto')"></div>
+<div th:replace="fragments/modals :: edit-error-modal('Prodotto')"></div>
+<div th:replace="fragments/modals :: create-update-modals('Prodotto','/produttore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-modals('/produttore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-feed-modal"></div>
+<div th:replace="fragments/modals :: prenotazione-visita-modals('/produttore/dashboard')"></div>
+<div th:replace="fragments/modals :: prenotazioni-delete-modals('/produttore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-not-available-modal"></div>
+
+<!-- ================== MODALE MAPPA ================== -->
+<div id="mapModal" class="modal">
+    <div class="modal-content large">
+        <h2>🗺️ Mappa Indirizzi</h2>
+        <div id="map" style="height: 400px; width: 100%; border-radius: 8px;"></div>
+        <div class="modal-actions">
+            <button class="btn-close-modal btn-secondary" data-target="mapModal">Chiudi</button>
+        </div>
+    </div>
+</div>
+<!-- Modale per eliminazione profilo -->
+<div th:replace="fragments/profile-delete-modal :: profile-delete-modal"></div>
+
+<!-- Nuova notifica eliminazione profilo approvata -->
+<div th:replace="fragments/profile-delete-notification :: profile-delete-notification"></div>
+
+<hr class="section-separator"/>
+
+<!-- ================== FORM CREAZIONE PRODOTTO ================== -->
+<button type="button" id="btnCreateProdotto" class="btn-primary">
+    ➕ Crea Prodotto
+</button>
+
+<div id="prodottoForm" class="form-container"
+     th:style="${showForm} ? 'display:block;' : 'display:none;'">
+    <h3 id="formTitle">Nuovo Prodotto</h3>
+    <form id="itemForm" th:action="@{/produttore/crea}" th:object="${prodottoDto}"
+          method="post" enctype="multipart/form-data" novalidate>
+
+        <input type="hidden" th:field="*{id}" id="itemId"/>
+        <input type="hidden" th:field="*{tipo}" id="itemTipo" value="PRODOTTO"/>
+
+        <!-- Campi standard -->
+        <div th:replace="fragments/form-fields :: base-fields('prodottoDto')"></div>
+
+        <!-- Pulsanti -->
+        <div th:replace="fragments/form-fields :: form-buttons('prodotto','/produttore/dashboard')"></div>
+    </form>
+</div>
+
+<!-- ================== LINK HOME ================== -->
+<p><a th:href="@{/}" class="btn-secondary">⬅ Torna alla Home</a></p>
+
+<!-- ================== SCRIPT ================== -->
+<script type="module" src="/js/pages/produttore.js"></script>
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+</body>
+</html>

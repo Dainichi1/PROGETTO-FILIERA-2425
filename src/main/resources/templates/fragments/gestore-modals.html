@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="modals">
+    <!-- Modale 1: Nessun elemento -->
+    <div id="modalNoContent" class="modal">
+        <div class="modal-content">
+            <p>ℹ Nessun elemento presente in questa categoria.</p>
+            <button class="btn-ok">OK</button>
+        </div>
+    </div>
+
+    <!-- Modale 2: Scelta -->
+    <div id="modalChoice" class="modal">
+        <div class="modal-content">
+            <p>❓ Vuoi tornare al riepilogo o selezionare un’altra categoria?</p>
+            <button class="btn-riepilogo">⬅ Torna al riepilogo</button>
+            <button class="btn-categoria">📂 Seleziona altra categoria</button>
+        </div>
+    </div>
+
+    <!-- Modale 3: Richieste di eliminazione profilo -->
+    <div id="deletionRequestsModal" class="modal">
+        <div class="modal-content large">
+            <h2>📋 Richieste di eliminazione in attesa</h2>
+            <table id="deletionRequestsTable">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Data richiesta</th>
+                    <th>Stato</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- Popolato via JS -->
+                </tbody>
+            </table>
+            <div class="modal-actions">
+                <button class="btn-close-modal" data-target="deletionRequestsModal">Chiudi</button>
+                <button id="btnOpenDetails" class="btn-details">📑 Apri dettagli</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale 4: Nessuna selezione -->
+    <div id="noSelectionModal" class="modal">
+        <div class="modal-content">
+            <p>ℹ <strong>Seleziona una richiesta dalla lista.</strong></p>
+            <button class="btn-close-modal" data-target="noSelectionModal">OK</button>
+        </div>
+    </div>
+
+    <!-- Modale 5: Dettagli richiesta eliminazione -->
+    <div id="requestDetailsModal" class="modal">
+        <div class="modal-content large">
+            <h2>📄 Dettagli richiesta eliminazione</h2>
+            <div class="details-container">
+                <p><strong>ID:</strong> <span id="detailId">--</span></p>
+                <p><strong>Username:</strong> <span id="detailUsername">--</span></p>
+                <p><strong>Data richiesta:</strong> <span id="detailDataRichiesta">--</span></p>
+                <p><strong>Stato:</strong> <span id="detailStato">--</span></p>
+            </div>
+            <div class="modal-actions">
+                <button id="btnRejectRequest" class="btn-danger">❌ Rifiuta richiesta</button>
+                <button id="btnAcceptRequest" class="btn-primary">✅ Accetta richiesta</button>
+                <button class="btn-close-modal" data-target="requestDetailsModal">Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale conferma rifiuto -->
+    <div id="confirmRejectModal" class="modal">
+        <div class="modal-content">
+            <h3>Conferma rifiuto</h3>
+            <p>Confermi il rifiuto della richiesta?</p>
+            <div class="modal-actions">
+                <button id="btnRejectYes" class="btn-danger">Yes</button>
+                <button id="btnRejectNo" class="btn-secondary">No</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale esito rifiuto -->
+    <div id="rejectedModal" class="modal">
+        <div class="modal-content">
+            <p><strong>Richiesta rifiutata.</strong></p>
+            <button id="btnRejectedOk" class="btn-primary">OK</button>
+        </div>
+    </div>
+
+    <!-- Modale conferma accettazione -->
+    <div id="confirmAcceptModal" class="modal">
+        <div class="modal-content">
+            <h3>Conferma eliminazione</h3>
+            <p>Confermi l'eliminazione del profilo dell'utente '<span id="acceptUsername"></span>'?</p>
+            <div class="modal-actions">
+                <button id="btnAcceptYes" class="btn-primary">Yes</button>
+                <button id="btnAcceptNo" class="btn-secondary">No</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale esito accettazione -->
+    <div id="acceptedModal" class="modal">
+        <div class="modal-content">
+            <p><strong>Profilo eliminato. Richiesta approvata.</strong></p>
+            <button id="btnAcceptedOk" class="btn-primary">OK</button>
+        </div>
+    </div>
+
+    <!-- Modale: Gestione indirizzi mappa -->
+    <div id="mapAddressesModal" class="modal">
+        <div class="modal-content large">
+            <h2>🗺️ Seleziona indirizzi per la mappa</h2>
+            <p>Seleziona gli indirizzi da visualizzare come marker:</p>
+            <div id="addressListContainer" class="form-container checkbox-list">
+                <!-- Qui via JS inseriamo checkboxes degli indirizzi -->
+                <p><i>Nessun indirizzo disponibile.</i></p>
+            </div>
+            <div class="modal-actions">
+                <button id="btnConfirmAddresses" class="btn-primary">OK</button>
+                <button class="btn-close-modal btn-secondary" data-target="mapAddressesModal">Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale: Visualizza mappa -->
+    <div id="mapModal" class="modal">
+        <div class="modal-content large">
+            <h2>🗺️ Mappa Indirizzi</h2>
+            <div id="map" style="height: 400px; width: 100%; border-radius: 8px;"></div>
+            <div class="modal-actions">
+                <button class="btn-close-modal btn-secondary" data-target="mapModal">Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE: Indirizzo errato/non valido -->
+    <div id="invalidAddressModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>❌ Indirizzo non valido</h2>
+            <p id="invalidAddressMessage">
+                L’indirizzo selezionato non è stato riconosciuto o non è valido.
+            </p>
+            <div class="modal-actions">
+                <button id="btnInvalidAddressOk" class="btn btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="duplicateAddressModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Indirizzo duplicato</h2>
+            <p id="duplicateAddressMessage"></p>
+            <button id="duplicateAddressOk" class="btn">OK</button>
+        </div>
+    </div>
+
+
+</div>
+</body>
+</html>

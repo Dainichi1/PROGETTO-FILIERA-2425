@@ -1,96 +1,80 @@
 package unicam.filiera.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.*;
+import unicam.filiera.entity.PostSocialEntity;
+import unicam.filiera.model.PostSocial;
+
 import java.time.LocalDateTime;
 
+/**
+ * DTO per la creazione e visualizzazione dei Post Social.
+ * Solo titolo e testo sono compilati dall’utente,
+ * gli altri dati vengono ricostruiti dal service/factory.
+ */
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class PostSocialDto {
-    private long id;
-    private String autoreUsername;
-    private Integer idAcquisto;    // può essere null per post generici
-    private String nomeItem;
-    private String tipoItem;       // "Prodotto" | "Pacchetto" | ...
+
+    @EqualsAndHashCode.Include
+    private Long id;
+
+    private String autoreUsername;   // settato dal service
+    private Integer idAcquisto;      // opzionale
+    private String nomeItem;         // settato dal service
+    private String tipoItem;         // settato dal service
+
+    // ⚠ nuovo campo solo per input lato client
+    private String tipo;
+
+    @NotBlank(message = "⚠ Il titolo è obbligatorio")
+    @Size(max = 100, message = "⚠ Il titolo non può superare i 100 caratteri")
     private String titolo;
+
+    @NotBlank(message = "⚠ Il testo è obbligatorio")
+    @Size(max = 1000, message = "⚠ Il testo non può superare i 1000 caratteri")
     private String testo;
 
     private LocalDateTime createdAt;
 
-    // Costruttori
-    public PostSocialDto() {
+    // ====== Utility ======
+    public String getTipoEffettivo() {
+        return (tipo != null && !tipo.isBlank()) ? tipo : tipoItem;
     }
 
-    public PostSocialDto(String autoreUsername, Integer idAcquisto, String nomeItem,
-                         String tipoItem, String titolo, String testo) {
-        this.autoreUsername = autoreUsername;
-        this.idAcquisto = idAcquisto;
-        this.nomeItem = nomeItem;
-        this.tipoItem = tipoItem;
-        this.titolo = titolo;
-        this.testo = testo;
-
+    public static PostSocialDto fromEntity(PostSocialEntity entity) {
+        return fromModel(entity.toModel());
     }
 
-    // Getter/Setter
-    public long getId() {
-        return id;
+    public static PostSocialDto fromModel(PostSocial model) {
+        PostSocialDto dto = new PostSocialDto();
+        dto.setId(model.getId());
+        dto.setAutoreUsername(model.getAutoreUsername());
+        dto.setIdAcquisto(model.getIdAcquisto());
+        dto.setNomeItem(model.getNomeItem());
+        dto.setTipoItem(model.getTipoItem());
+        dto.setTitolo(model.getTitolo());
+        dto.setTesto(model.getTesto());
+        dto.setCreatedAt(model.getCreatedAt());
+        return dto;
     }
 
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public String getAutoreUsername() {
-        return autoreUsername;
-    }
-
-    public void setAutoreUsername(String autoreUsername) {
-        this.autoreUsername = autoreUsername;
-    }
-
-    public Integer getIdAcquisto() {
-        return idAcquisto;
-    }
-
-    public void setIdAcquisto(Integer idAcquisto) {
-        this.idAcquisto = idAcquisto;
-    }
-
-    public String getNomeItem() {
-        return nomeItem;
-    }
-
-    public void setNomeItem(String nomeItem) {
-        this.nomeItem = nomeItem;
-    }
-
-    public String getTipoItem() {
-        return tipoItem;
-    }
-
-    public void setTipoItem(String tipoItem) {
-        this.tipoItem = tipoItem;
-    }
-
-    public String getTitolo() {
-        return titolo;
-    }
-
-    public void setTitolo(String titolo) {
-        this.titolo = titolo;
-    }
-
-    public String getTesto() {
-        return testo;
-    }
-
-    public void setTesto(String testo) {
-        this.testo = testo;
-    }
-
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
+    @Deprecated
+    public static PostSocialEntity toEntity(PostSocialDto dto) {
+        PostSocialEntity entity = new PostSocialEntity();
+        entity.setId(dto.getId());
+        entity.setAutoreUsername(dto.getAutoreUsername());
+        entity.setIdAcquisto(dto.getIdAcquisto());
+        entity.setNomeItem(dto.getNomeItem());
+        entity.setTipoItem(dto.getTipoEffettivo()); // usa sempre il tipo effettivo
+        entity.setTitolo(dto.getTitolo());
+        entity.setTesto(dto.getTesto());
+        entity.setCreatedAt(dto.getCreatedAt());
+        return entity;
     }
 }

@@ -1,0 +1,85 @@
+
+.modal-content {
+    background: #fff;
+    padding: 20px;
+    margin: 15% auto;
+    width: 350px;
+    text-align: center;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.modal-content p {
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.modal-content button {
+    margin: 10px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: #1976d2;
+    color: white;
+    font-size: 14px;
+}
+
+.modal-content button:hover {
+    background-color: #125a9c;
+}
+
+
+
+/* Evidenziazione riga selezionata in deletionRequestsTable */
+#deletionRequestsTable tbody tr.selected,
+#deletionRequestsTable tbody tr.selected td {
+    background-color: #1976d2 !important; /* blu pieno */
+    color: #fff !important;               /* testo bianco */
+    font-weight: bold;
+    border: 2px solid #0d47a1;            /* bordo blu scuro */
+    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Hover sulle righe non selezionate */
+#deletionRequestsTable tbody tr:hover:not(.selected) {
+    background-color: #e6f2ff !important;
+    cursor: pointer;
+}
+
+/* Dettagli richiesta */
+.details-container {
+    text-align: left;
+    margin: 20px 0;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.details-container p {
+    margin: 8px 0;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+#btnRejectRequest {
+    background-color: #dc3545;
+    color: #fff;
+    font-weight: bold;
+}
+#btnRejectRequest:hover {
+    background-color: #b02a37;
+}
+
+#btnAcceptRequest {
+    background-color: #28a745;
+    color: #fff;
+    font-weight: bold;
+}
+#btnAcceptRequest:hover {
+    background-color: #1e7e34;
+}

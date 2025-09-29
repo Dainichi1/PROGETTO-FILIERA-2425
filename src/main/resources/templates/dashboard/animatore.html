@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<head>
+    <title>Dashboard Animatore</title>
+    <meta charset="UTF-8"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/css/tables.css}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+</head>
+<body>
+<h1 th:text="'Benvenuto ' + (${utente?.nome ?: 'Utente'}) +
+              ', il tuo ruolo è ' + (${utente?.ruolo ?: 'Animatore'}) + '.'">
+    Benvenuto, il tuo ruolo è Animatore.
+</h1>
+
+<!-- ================== BOTTONI PRINCIPALI ================== -->
+<div class="actions-container">
+    <button type="button" class="btn-primary" id="btnSocialFeed">
+        📢 Visualizza Social Network
+    </button>
+    <button id="btnDeleteProfile" class="btn btn-danger btn-lg ms-2">
+        🗑️ Elimina profilo
+    </button>
+    <button id="btnApriMappa" class="btn-primary">🌍 Visualizza mappa</button>
+</div>
+
+<!-- ================== SEZIONE PUBBLICATI ================== -->
+<div th:replace="fragments/animatore-table :: pubblicati-section(${visite}, ${fiere})"></div>
+
+<!-- ================== MODALI CREAZIONE EVENTI ================== -->
+<div th:replace="fragments/animatore-modals :: animatore-create-modals('/animatore/dashboard')"></div>
+
+<!-- ================== MODALI COMUNI ================== -->
+<div th:replace="fragments/modals :: delete-modals('Evento')"></div>
+<div th:replace="fragments/modals :: edit-error-modal('Evento')"></div>
+<div th:replace="fragments/modals :: create-update-modals('Evento','/animatore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-modals('/animatore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-feed-modal"></div>
+<div th:replace="fragments/modals :: prenotazione-visita-modals('/animatore/dashboard')"></div>
+<div th:replace="fragments/modals :: prenotazioni-delete-modals('/animatore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-not-available-modal"></div>
+<!-- cancellazioni -->
+<div th:replace="fragments/profile-delete-modal :: profile-delete-modal"></div>
+<div th:replace="fragments/profile-delete-notification :: profile-delete-notification"></div>
+
+<hr class="section-separator"/>
+
+<!-- ================== BOTTONI APERTURA FORM ================== -->
+<div class="actions-container">
+    <button type="button" class="btn-primary" id="btnOpenVisita">
+        ➕ Pubblica Visita ad Invito
+    </button>
+    <button type="button" class="btn-primary" id="btnOpenFiera">
+        ➕ Pubblica Fiera
+    </button>
+</div>
+
+<!-- ================== MODALE MAPPA ================== -->
+<div id="mapModal" class="modal">
+    <div class="modal-content large">
+        <h2>🗺️ Mappa Indirizzi</h2>
+        <div id="map" style="height: 400px; width: 100%; border-radius: 8px;"></div>
+        <div class="modal-actions">
+            <button class="btn-close-modal btn-secondary" data-target="mapModal">Chiudi</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================== FORM CREAZIONE VISITA ================== -->
+<div id="visitaFormContainer" class="form-container" style="display:none;">
+    <h3 id="formTitleVisita">Nuova Visita ad Invito</h3>
+    <form id="visitaForm" th:action="@{/animatore/crea-visita}" th:object="${visitaDto}"
+          method="post" novalidate>
+        <input type="hidden" th:field="*{id}" id="visitaId"/>
+        <input type="hidden" th:field="*{tipo}" id="eventoTipoVisita" value="VISITA"/>
+
+        <div th:replace="fragments/animatore-fields :: visita-fields('visitaDto')"></div>
+
+        <div id="createButtonsVisita" class="form-actions">
+            <button type="button" class="btn-primary" id="btnPubblicaVisita">✅ Pubblica</button>
+            <button type="button" class="btn-secondary" id="btnCancelVisita">❌ Annulla</button>
+        </div>
+    </form>
+</div>
+
+<!-- ================== FORM CREAZIONE FIERA ================== -->
+<div id="fieraFormContainer" class="form-container" style="display:none;">
+    <h3 id="formTitleFiera">Nuova Fiera</h3>
+    <form id="fieraForm" th:action="@{/animatore/crea-fiera}" th:object="${fieraDto}"
+          method="post" novalidate>
+        <input type="hidden" th:field="*{id}" id="fieraId"/>
+        <input type="hidden" th:field="*{tipo}" id="eventoTipoFiera" value="FIERA"/>
+
+        <div th:replace="fragments/animatore-fields :: fiera-fields('fieraDto')"></div>
+
+        <div id="createButtonsFiera" class="form-actions">
+            <button type="button" class="btn-primary" id="btnPubblicaFiera">✅ Pubblica</button>
+            <button type="button" class="btn-secondary" id="btnCancelFiera">❌ Annulla</button>
+        </div>
+    </form>
+</div>
+
+<!-- ================== LINK HOME ================== -->
+<p><a th:href="@{/}" class="btn-secondary">⬅ Torna alla Home</a></p>
+
+<!-- ================== SCRIPT ================== -->
+<script type="module" src="/js/pages/animatore.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+</body>
+</html>

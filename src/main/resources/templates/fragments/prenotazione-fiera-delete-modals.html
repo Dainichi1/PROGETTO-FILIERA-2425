@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ================== MODALI ELIMINAZIONE PRENOTAZIONE FIERA ================== -->
+<div th:fragment="prenotazione-fiera-delete-modals">
+
+  <!-- CONFERMA ELIMINAZIONE -->
+  <div id="prenotazioneFieraDeleteModal" class="modal">
+    <div class="modal-content">
+      <h3>❌ Elimina prenotazione</h3>
+      <p>Sei sicuro di voler eliminare questa prenotazione?</p>
+
+      <form id="prenotazioneFieraDeleteForm" method="post">
+        <!-- CSRF -->
+        <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
+        <!-- ID prenotazione (settato da JS) -->
+        <input type="hidden" id="idPrenotazioneFieraDelete" name="idPrenotazioneFiera"/>
+
+        <!-- Bottoni -->
+        <div class="modal-buttons">
+          <button type="submit" class="btn-danger">Conferma</button>
+          <button type="button"
+                  class="btn-close-modal"
+                  data-target="prenotazioneFieraDeleteModal">Annulla
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div id="prenotazioneFieraDeleteSuccessModal" class="modal">
+    <div class="modal-content">
+      <p>✅ Prenotazione eliminata con successo!</p>
+      <button type="button"
+              class="btn-close-modal"
+              data-target="prenotazioneFieraDeleteSuccessModal">OK
+      </button>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div id="prenotazioneFieraDeleteErrorModal" class="modal">
+    <div class="modal-content">
+      <p id="prenotazioneFieraDeleteErrorText">
+        ❌ Errore durante l’eliminazione della prenotazione.
+      </p>
+      <button type="button"
+              class="btn-close-modal"
+              data-target="prenotazioneFieraDeleteErrorModal">OK
+      </button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

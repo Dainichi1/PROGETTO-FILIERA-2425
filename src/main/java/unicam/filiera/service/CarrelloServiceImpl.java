@@ -1,98 +1,252 @@
 package unicam.filiera.service;
 
+import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import unicam.filiera.dto.CartItemDto;
 import unicam.filiera.dto.CartTotalsDto;
-import unicam.filiera.model.Item;
-import unicam.filiera.model.Pacchetto;
-import unicam.filiera.model.Prodotto;
-import unicam.filiera.util.ValidatoreAcquisto;
-import unicam.filiera.controller.MarketplaceController;  // “repo” degli item di mercato
+import unicam.filiera.dto.ItemTipo;
+import unicam.filiera.entity.PacchettoEntity;
+import unicam.filiera.entity.ProdottoEntity;
+import unicam.filiera.entity.ProdottoTrasformatoEntity;
+import unicam.filiera.model.*;
+import unicam.filiera.repository.PacchettoRepository;
+import unicam.filiera.repository.ProdottoRepository;
+import unicam.filiera.repository.ProdottoTrasformatoRepository;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
+@Service
 public class CarrelloServiceImpl implements CarrelloService {
 
-    private final MarketplaceController marketplace;
-    private final List<CartItemDto> items;
+    private static final String SESSION_KEY = "CART_ITEMS";
 
-    /**
-     * Costruttore di iniezione: riceve il controller del marketplace
-     */
-    public CarrelloServiceImpl(MarketplaceController marketplace) {
-        this.marketplace = marketplace;
-        this.items = new ArrayList<>();
-    }
+    private final ProdottoRepository prodottoRepository;
+    private final ProdottoTrasformatoRepository trasformatoRepository;
+    private final PacchettoRepository pacchettoRepository;
 
-    /**
-     * Costruttore di convenienza: usa l’istanza di default di MarketplaceController
-     */
-    public CarrelloServiceImpl() {
-        this(new MarketplaceController());
+    @Autowired
+    public CarrelloServiceImpl(ProdottoRepository prodottoRepository,
+                               ProdottoTrasformatoRepository trasformatoRepository,
+                               PacchettoRepository pacchettoRepository) {
+        this.prodottoRepository = prodottoRepository;
+        this.trasformatoRepository = trasformatoRepository;
+        this.pacchettoRepository = pacchettoRepository;
     }
 
     @Override
-    public void addItem(Item item, int quantita) {
-        ValidatoreAcquisto.validaQuantitaItem(item, quantita);
-        double prezzoUnit = (item instanceof Prodotto p)
-                ? p.getPrezzo()
-                : ((Pacchetto) item).getPrezzoTotale();
-        items.add(new CartItemDto(
-                item instanceof Prodotto ? "Prodotto" : "Pacchetto",
-                item.getNome(),
-                quantita,
-                prezzoUnit
-        ));
+    public void aggiungiItem(ItemTipo tipo, Long id, int quantita, HttpSession session) {
+        if (tipo == null) {
+            throw new IllegalArgumentException("Tipo item mancante");
+        }
+        if (quantita <= 0) {
+            throw new IllegalArgumentException("⚠ La quantità deve essere maggiore di 0");
+        }
+
+        List<CartItemDto> items = getOrInitCart(session);
+
+        Item item = caricaItem(tipo, id);
+        int disponibilitaMagazzino = item.getQuantita();
+
+        if (quantita > disponibilitaMagazzino) {
+            throw new IllegalArgumentException("⚠ Quantità richiesta superiore alla disponibilità (" + disponibilitaMagazzino + ")");
+        }
+
+        CartItemDto existing = items.stream()
+                .filter(i -> i.getId().equals(item.getId()) && i.getTipo() == tipo)
+                .findFirst()
+                .orElse(null);
+
+        if (existing != null) {
+            int nuovaQuantita = existing.getQuantita() + quantita;
+            if (nuovaQuantita > disponibilitaMagazzino) {
+                throw new IllegalArgumentException("⚠ Quantità richiesta superiore alla disponibilità (" + disponibilitaMagazzino + ")");
+            }
+
+            // aggiorna quantità e disponibilità residua
+            existing.setQuantita(nuovaQuantita);
+            existing.setDisponibilita(Math.max(0, disponibilitaMagazzino - nuovaQuantita));
+            existing.recalculateTotale();
+
+        } else {
+            CartItemDto dto = CartItemDto.builder()
+                    .tipo(tipo)
+                    .id(item.getId())
+                    .nome(item.getNome())
+                    .prezzoUnitario(item.getPrezzo())
+                    .build();
+
+            dto.setQuantita(quantita);
+            dto.setDisponibilita(Math.max(0, disponibilitaMagazzino - quantita));
+            dto.recalculateTotale();
+
+            items.add(dto);
+        }
+
+        session.setAttribute(SESSION_KEY, items);
     }
 
     @Override
-    public void updateItemQuantity(String nomeItem, int nuovaQuantita) {
-        // 1) recupera il DTO esistente
-        CartItemDto old = items.stream()
-                .filter(i -> i.getNome().equals(nomeItem))
+    public void aggiornaQuantitaItem(ItemTipo tipo, Long id, int nuovaQuantita, HttpSession session) {
+        List<CartItemDto> items = getOrInitCart(session);
+
+        CartItemDto itemCarrello = items.stream()
+                .filter(i -> i.getId().equals(id) && i.getTipo() == tipo)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Item non trovato"));
 
-        // 2) recupera l’Item “vero” dal marketplace
-        Item reale = marketplace.ottieniElementiMarketplace().stream()
-                .filter(o -> o instanceof Item it && it.getNome().equals(nomeItem))
-                .map(o -> (Item) o)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Impossibile trovare il prodotto"));
+        int disponibilitaTotale = itemCarrello.getQuantita() + itemCarrello.getDisponibilita();
 
-        // 3) validazione sul vero oggetto
-        ValidatoreAcquisto.validaQuantitaItem(reale, nuovaQuantita);
+        if (nuovaQuantita <= 0) {
+            // Se la quantità è 0 → elimino l'item dal carrello
+            items.remove(itemCarrello);
+        } else {
+            if (nuovaQuantita > disponibilitaTotale) {
+                throw new IllegalArgumentException("⚠ Quantità richiesta superiore alla disponibilità (" + disponibilitaTotale + ")");
+            }
+            // aggiorna quantità e disponibilità residua
+            itemCarrello.setQuantita(nuovaQuantita);
+            itemCarrello.setDisponibilita(disponibilitaTotale - nuovaQuantita);
+            itemCarrello.recalculateTotale();
+        }
 
-        // 4) sostituisci il DTO con la nuova quantità
-        items.remove(old);
-        items.add(new CartItemDto(
-                old.getTipo(),
-                nomeItem,
-                nuovaQuantita,
-                old.getPrezzoUnitario()
-        ));
+        session.setAttribute(SESSION_KEY, items);
+    }
+
+
+    @Override
+    public void rimuoviItem(ItemTipo tipo, Long id, HttpSession session) {
+        List<CartItemDto> items = getOrInitCart(session);
+        items.removeIf(i -> i.getId().equals(id) && i.getTipo() == tipo);
+        session.setAttribute(SESSION_KEY, items);
     }
 
     @Override
-    public void removeItem(String nomeItem) {
-        items.removeIf(i -> i.getNome().equals(nomeItem));
+    public void svuota(HttpSession session) {
+        session.setAttribute(SESSION_KEY, new ArrayList<CartItemDto>());
     }
 
     @Override
-    public List<CartItemDto> getCartItems() {
-        return List.copyOf(items);
+    public List<CartItemDto> getItems(HttpSession session) {
+        return List.copyOf(getOrInitCart(session));
     }
 
     @Override
-    public CartTotalsDto calculateTotals() {
+    public CartTotalsDto calcolaTotali(HttpSession session) {
+        List<CartItemDto> items = getOrInitCart(session);
         int totQta = items.stream().mapToInt(CartItemDto::getQuantita).sum();
         double totCost = items.stream().mapToDouble(CartItemDto::getTotale).sum();
         return new CartTotalsDto(totQta, totCost);
     }
 
     @Override
-    public void clear() {
-        items.clear();
+    public Item getItemFromDb(ItemTipo tipo, Long id) {
+        return caricaItem(tipo, id);
     }
 
+    // ======================
+    // Helpers
+    // ======================
+    @SuppressWarnings("unchecked")
+    private List<CartItemDto> getOrInitCart(HttpSession session) {
+        List<CartItemDto> items = (List<CartItemDto>) session.getAttribute(SESSION_KEY);
+        if (items == null) {
+            items = new ArrayList<>();
+            session.setAttribute(SESSION_KEY, items);
+        }
+        return items;
+    }
+
+    private Item caricaItem(ItemTipo tipo, Long id) {
+        return switch (tipo) {
+            case PRODOTTO -> prodottoRepository.findById(id)
+                    .map(this::mapToDomainProdotto)
+                    .orElseThrow(() -> new IllegalArgumentException("Prodotto non trovato"));
+            case TRASFORMATO -> trasformatoRepository.findById(id)
+                    .map(this::mapToDomainTrasformato)
+                    .orElseThrow(() -> new IllegalArgumentException("Prodotto trasformato non trovato"));
+            case PACCHETTO -> pacchettoRepository.findById(id)
+                    .map(this::mapToDomainPacchetto)
+                    .orElseThrow(() -> new IllegalArgumentException("Pacchetto non trovato"));
+        };
+    }
+
+    private Prodotto mapToDomainProdotto(ProdottoEntity e) {
+        return new Prodotto.Builder()
+                .id(e.getId())
+                .nome(e.getNome())
+                .descrizione(e.getDescrizione())
+                .indirizzo(e.getIndirizzo())
+                .quantita(e.getQuantita())
+                .prezzo(e.getPrezzo())
+                .creatoDa(e.getCreatoDa())
+                .stato(e.getStato())
+                .commento(e.getCommento())
+                .build();
+    }
+
+    private ProdottoTrasformato mapToDomainTrasformato(ProdottoTrasformatoEntity e) {
+        return new ProdottoTrasformato.Builder()
+                .id(e.getId())
+                .nome(e.getNome())
+                .descrizione(e.getDescrizione())
+                .indirizzo(e.getIndirizzo())
+                .quantita(e.getQuantita())
+                .prezzo(e.getPrezzo())
+                .creatoDa(e.getCreatoDa())
+                .stato(e.getStato())
+                .commento(e.getCommento())
+                .fasiProduzione(
+                        e.getFasiProduzione().stream()
+                                .map(f -> new FaseProduzione(
+                                        f.getDescrizioneFase(),
+                                        f.getProduttoreUsername(),
+                                        f.getProdottoOrigineId()
+                                ))
+                                .toList()
+                )
+                .build();
+    }
+
+    private Pacchetto mapToDomainPacchetto(PacchettoEntity e) {
+        // ProdottiIds dal Set<ProdottoEntity>
+        List<Long> prodottiIds = e.getProdotti() != null
+                ? e.getProdotti().stream()
+                .map(ProdottoEntity::getId)
+                .filter(Objects::nonNull)
+                .toList()
+                : List.of();
+
+        // Converte CSV certificati -> List<String>
+        List<String> certificatiList = (e.getCertificati() != null && !e.getCertificati().isBlank())
+                ? Arrays.stream(e.getCertificati().split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList())
+                : List.of();
+
+        // Converte CSV foto -> List<String>
+        List<String> fotoList = (e.getFoto() != null && !e.getFoto().isBlank())
+                ? Arrays.stream(e.getFoto().split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList())
+                : List.of();
+
+        return new Pacchetto.Builder()
+                .id(e.getId())
+                .nome(e.getNome())
+                .descrizione(e.getDescrizione())
+                .indirizzo(e.getIndirizzo())
+                .quantita(e.getQuantita())
+                .prezzo(e.getPrezzo())
+                .creatoDa(e.getCreatoDa())
+                .stato(e.getStato())
+                .commento(e.getCommento())
+                .prodottiIds(prodottiIds)
+                .certificati(certificatiList)
+                .foto(fotoList)
+                .build();
+    }
 }

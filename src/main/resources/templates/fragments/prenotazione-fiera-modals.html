@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ================== MODALI PRENOTAZIONE FIERA ================== -->
+<div th:fragment="prenotazione-fiera-modals(redirectPath)">
+
+    <!-- CREAZIONE / PRENOTAZIONE -->
+    <div id="prenotazioneFieraModal" class="modal">
+        <div class="modal-content">
+            <h3>🎪 Prenota un ingresso alla fiera</h3>
+            <form id="prenotazioneFieraForm"
+                  th:action="@{/prenotazioni-fiere/prenota}"
+                  method="post"
+                  novalidate>
+
+                <!-- CSRF -->
+                <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
+
+                <!-- ID fiera (settato da JS quando clicco il bottone) -->
+                <input type="hidden" id="idFiera" name="idFiera"/>
+
+                <!-- Numero persone -->
+                <label for="numeroPersoneFiera">Numero persone</label>
+                <input type="number"
+                       id="numeroPersoneFiera"
+                       name="numeroPersone"
+                       min="1"
+
+                       required/>
+                <span id="numeroPersoneFieraError" class="error-message"></span>
+
+                <!-- Bottoni -->
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-primary">Conferma</button>
+                    <button type="button"
+                            class="btn-close-modal"
+                            data-target="prenotazioneFieraModal">Chiudi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div id="prenotazioneFieraSuccessModal" class="modal">
+        <div class="modal-content">
+            <p id="prenotazioneFieraSuccessMessage">
+                ✅ Prenotazione alla fiera effettuata con successo!
+            </p>
+            <button type="button"
+                    class="redirect-btn"
+                    th:attr="data-redirect=${redirectPath}">OK
+            </button>
+        </div>
+    </div>
+
+    <!-- ERROR -->
+    <div id="prenotazioneFieraErrorModal" class="modal">
+        <div class="modal-content">
+            <p id="prenotazioneFieraErrorMessage">
+                ❌ Errore durante la prenotazione alla fiera.
+            </p>
+            <button type="button"
+                    class="btn-close-modal"
+                    data-target="prenotazioneFieraErrorModal">OK
+            </button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

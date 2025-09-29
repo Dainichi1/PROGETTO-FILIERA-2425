@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<head>
+    <title>Login</title>
+    <meta charset="UTF-8"/>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2rem;
+        }
+
+        h1 {
+            color: #2c3e50;
+        }
+
+        form div {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: inline-block;
+            width: 150px;
+            font-weight: bold;
+        }
+
+        input, select {
+            padding: 0.3rem;
+            width: 200px;
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            background-color: #2c7be5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #1a5bbf;
+        }
+
+        .error-box {
+            border: 1px solid red;
+            background: #ffe6e6;
+            color: red;
+            padding: 0.8rem;
+            margin-bottom: 1.2rem;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+<h1>Login</h1>
+
+<!-- Messaggi di errore -->
+<div th:if="${error}" class="error-box" th:text="${error}"></div>
+
+<form th:action="@{/doLogin}" method="post">
+    <!-- CSRF di Spring -->
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+    <div>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required/>
+    </div>
+
+    <div>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required/>
+    </div>
+
+    <div>
+        <label for="ruolo">Ruolo:</label>
+        <select id="ruolo" name="ruolo">
+            <option value="">-- seleziona --</option>
+            <option value="PRODUTTORE">Produttore</option>
+            <option value="ACQUIRENTE">Acquirente</option>
+            <option value="CURATORE">Curatore</option>
+            <option value="DISTRIBUTORE_TIPICITA">Distributore</option>
+            <option value="TRASFORMATORE">Trasformatore</option>
+            <option value="ANIMATORE">Animatore</option>
+            <option value="GESTORE_PIATTAFORMA">Gestore</option>
+        </select>
+    </div>
+
+    <div>
+        <button type="submit">Accedi</button>
+    </div>
+</form>
+
+<p><a th:href="@{/}">Torna alla Home</a></p>
+</body>
+</html>

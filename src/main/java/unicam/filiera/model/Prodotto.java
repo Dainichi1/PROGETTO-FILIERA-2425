@@ -1,16 +1,22 @@
 package unicam.filiera.model;
 
+import lombok.Getter;
+import unicam.filiera.dto.ItemTipo;
+
+import java.util.Collections;
 import java.util.List;
 
 /**
  * Un singolo prodotto messo in vendita.
  * <p>Estende {@link Item} ereditandone campi e logica comuni.</p>
  */
+@Getter
 public class Prodotto extends Item {
 
     /* --- campi specifici --- */
     private final int quantita;
     private final double prezzo;
+    private final Long id;
 
     /* --- costruttore privato, invocato dal Builder --- */
     private Prodotto(Builder b) {
@@ -18,23 +24,16 @@ public class Prodotto extends Item {
                 b.nome,
                 b.descrizione,
                 b.indirizzo,
-                b.certificati,
-                b.foto,
+                b.certificati == null ? List.of() : Collections.unmodifiableList(List.copyOf(b.certificati)),
+                b.foto == null ? List.of() : Collections.unmodifiableList(List.copyOf(b.foto)),
                 b.creatoDa,
                 b.stato,
-                b.commento
+                b.commento,
+                ItemTipo.PRODOTTO
         );
         this.quantita = b.quantita;
         this.prezzo = b.prezzo;
-    }
-
-    /* --- getter specifici --- */
-    public int getQuantita() {
-        return quantita;
-    }
-
-    public double getPrezzo() {
-        return prezzo;
+        this.id = b.id;
     }
 
     /* ------------------------------------------------------------------ */
@@ -44,6 +43,7 @@ public class Prodotto extends Item {
      */
     public static class Builder {
         /* campi comuni (Item) */
+        private Long id;
         private String nome;
         private String descrizione;
         private String indirizzo;
@@ -58,73 +58,34 @@ public class Prodotto extends Item {
         private double prezzo;
 
         /* ------- metodi ‘with’ ------- */
-        public Builder nome(String n) {
-            this.nome = n;
-            return this;
-        }
-
-        public Builder descrizione(String d) {
-            this.descrizione = d;
-            return this;
-        }
-
-        public Builder indirizzo(String i) {
-            this.indirizzo = i;
-            return this;
-        }
-
-        public Builder certificati(List<String> c) {
-            this.certificati = c;
-            return this;
-        }
-
-        public Builder foto(List<String> f) {
-            this.foto = f;
-            return this;
-        }
-
-        public Builder creatoDa(String u) {
-            this.creatoDa = u;
-            return this;
-        }
-
-        public Builder stato(StatoProdotto s) {
-            this.stato = s;
-            return this;
-        }
-
-        public Builder commento(String c) {
-            this.commento = c;
-            return this;
-        }
-
-        public Builder quantita(int q) {
-            this.quantita = q;
-            return this;
-        }
-
-        public Builder prezzo(double p) {
-            this.prezzo = p;
-            return this;
-        }
+        public Builder id(Long i) { this.id = i; return this; }
+        public Builder nome(String n) { this.nome = n; return this; }
+        public Builder descrizione(String d) { this.descrizione = d; return this; }
+        public Builder indirizzo(String i) { this.indirizzo = i; return this; }
+        public Builder certificati(List<String> c) { this.certificati = c; return this; }
+        public Builder foto(List<String> f) { this.foto = f; return this; }
+        public Builder creatoDa(String u) { this.creatoDa = u; return this; }
+        public Builder stato(StatoProdotto s) { this.stato = s; return this; }
+        public Builder commento(String c) { this.commento = c; return this; }
+        public Builder quantita(int q) { this.quantita = q; return this; }
+        public Builder prezzo(double p) { this.prezzo = p; return this; }
 
         /* ------- build() ------- */
         public Prodotto build() {
             if (nome == null || descrizione == null || creatoDa == null || stato == null)
                 throw new IllegalStateException("Campi obbligatori mancanti");
+            if (quantita < 0)
+                throw new IllegalStateException("La quantità non può essere negativa");
+            if (prezzo <= 0)
+                throw new IllegalStateException("Il prezzo deve essere maggiore di 0");
             return new Prodotto(this);
         }
     }
 
-
-
     /* ------------------------------------------------------------------ */
 
-
-        @Override
-        public String toString() {
-            return getNome() + " - " + getIndirizzo();
-        }
-
-
+    @Override
+    public String toString() {
+        return getNome() + " - " + getIndirizzo();
+    }
 }

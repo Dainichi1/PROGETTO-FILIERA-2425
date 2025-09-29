@@ -1,105 +1,159 @@
 package unicam.filiera.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import unicam.filiera.dto.VisitaInvitoDto;
-import unicam.filiera.model.VisitaInvito;
+import unicam.filiera.entity.VisitaInvitoEntity;
+import unicam.filiera.factory.VisitaInvitoFactory;
 import unicam.filiera.model.StatoEvento;
-import unicam.filiera.model.observer.VisitaInvitoNotifier;
-import unicam.filiera.dao.VisitaInvitoDAO;
-import unicam.filiera.dao.JdbcVisitaInvitoDAO;
-import unicam.filiera.util.ValidatoreVisitaInvito;
+import unicam.filiera.model.VisitaInvito;
+import unicam.filiera.observer.VisitaInvitoNotifier;
+import unicam.filiera.repository.VisitaInvitoRepository;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Optional;
 
-/**
- * Implementazione JDBC di VisitaInvitoService.
- */
+@Service
 public class VisitaInvitoServiceImpl implements VisitaInvitoService {
-    private final VisitaInvitoDAO dao;
+
+    private static final Logger log = LoggerFactory.getLogger(VisitaInvitoServiceImpl.class);
+
+    private final VisitaInvitoRepository repository;
     private final VisitaInvitoNotifier notifier;
 
-    /**
-     * Iniezione di dipendenza (utile per i test)
-     */
-    public VisitaInvitoServiceImpl(VisitaInvitoDAO dao) {
-        this.dao = dao;
-        this.notifier = VisitaInvitoNotifier.getInstance();
-    }
-
-    /**
-     * Costruttore di convenienza per l’app reale
-     */
-    public VisitaInvitoServiceImpl() {
-        this(JdbcVisitaInvitoDAO.getInstance());
+    @Autowired
+    public VisitaInvitoServiceImpl(VisitaInvitoRepository repository, VisitaInvitoNotifier notifier) {
+        this.repository = repository;
+        this.notifier = notifier;
     }
 
     @Override
-    public void creaVisitaInvito(VisitaInvitoDto dto, String organizzatore) {
-        // 1) parsing controllato di date, prezzo e partecipanti
-        LocalDateTime inizio;
-        try {
-            inizio = LocalDate.parse(dto.getDataInizioTxt())
-                    .atStartOfDay();
-        } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("⚠ Data di inizio non valida (usa il formato YYYY-MM-DD)");
+    public void creaVisita(VisitaInvitoDto dto, String creatore) {
+        log.info(">>> Creazione nuova visita da parte di [{}]", creatore);
+
+        var visita = VisitaInvitoFactory.creaVisita(dto, creatore);
+        visita.setStato(StatoEvento.PUBBLICATA); // default
+
+        VisitaInvitoEntity entity = mapToEntity(visita, dto, null);
+        repository.save(entity);
+
+        notifier.notificaTutti(visita, "NUOVA_VISITA_PUBBLICATA");
+    }
+
+    @Override
+    public void aggiornaVisita(Long id, VisitaInvitoDto dto, String creatore) {
+        var existing = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Visita non trovata per la modifica"));
+
+        if (!existing.getCreatoDa().equals(creatore)) {
+            throw new SecurityException("Non autorizzato a modificare questa visita");
         }
 
-        LocalDateTime fine;
-        try {
-            fine = LocalDate.parse(dto.getDataFineTxt())
-                    .atStartOfDay();
-        } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("⚠ Data di fine non valida (usa il formato YYYY-MM-DD)");
+        var updated = VisitaInvitoFactory.creaVisita(dto, creatore);
+        updated.setStato(StatoEvento.PUBBLICATA);
+
+        VisitaInvitoEntity entity = mapToEntity(updated, dto, existing.getId());
+        repository.save(entity);
+
+        notifier.notificaTutti(updated, "VISITA_AGGIORNATA");
+    }
+
+    @Override
+    public List<VisitaInvitoDto> getVisiteByCreatore(String creatore) {
+        return repository.findByCreatoDa(creatore)
+                .stream()
+                .map(this::mapToDto)
+                .toList();
+    }
+
+    @Override
+    public List<VisitaInvitoDto> getVisiteByStato(StatoEvento stato) {
+        return repository.findByStato(stato)
+                .stream()
+                .map(this::mapToDto)
+                .toList();
+    }
+
+    @Override
+    public List<VisitaInvitoDto> getVisiteByRuoloDestinatario(String ruolo) {
+        return repository.findByRuoloAndStato(ruolo, StatoEvento.PUBBLICATA)
+                .stream()
+                .map(this::mapToDto)
+                .toList();
+    }
+
+    @Override
+    public Optional<VisitaInvitoEntity> findEntityById(Long id) {
+        return repository.findById(id);
+    }
+
+    @Override
+    public Optional<VisitaInvitoDto> findDtoById(Long id) {
+        return repository.findById(id).map(this::mapToDto);
+    }
+
+    @Override
+    public void eliminaById(Long id, String username) {
+        var entity = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Visita non trovata"));
+
+        if (!username.equals(entity.getCreatoDa())) {
+            throw new SecurityException("Non autorizzato a eliminare questa visita");
         }
 
-        double prezzo;
-        try {
-            prezzo = Double.parseDouble(dto.getPrezzoTxt());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("⚠ Prezzo non valido (deve essere un numero)");
-        }
+        repository.delete(entity);
+        notifier.notificaTutti(mapToDomain(entity), "VISITA_ELIMINATA");
+    }
 
-        int minPar;
-        try {
-            minPar = Integer.parseInt(dto.getMinPartecipantiTxt());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("⚠ Numero minimo di partecipanti non valido (deve essere un intero)");
-        }
+    // =======================
+    // Helpers
+    // =======================
 
-        // 2) validazioni di dominio
-        ValidatoreVisitaInvito.validaDate(inizio, fine);
-        ValidatoreVisitaInvito.validaLuogo(dto.getIndirizzo());
-        ValidatoreVisitaInvito.validaPrezzo(prezzo);
-        ValidatoreVisitaInvito.validaMinPartecipanti(minPar);
-        ValidatoreVisitaInvito.validaDestinatari(dto.getDestinatari());
+    private VisitaInvitoEntity mapToEntity(VisitaInvito visita, VisitaInvitoDto dto, Long id) {
+        VisitaInvitoEntity e = new VisitaInvitoEntity();
+        e.setId(id);
+        e.setNome(visita.getNome());
+        e.setDescrizione(visita.getDescrizione());
+        e.setIndirizzo(visita.getIndirizzo());
+        e.setDataInizio(visita.getDataInizio());
+        e.setDataFine(visita.getDataFine());
+        e.setCreatoDa(visita.getCreatoDa());
+        e.setStato(visita.getStato() != null ? visita.getStato() : StatoEvento.PUBBLICATA);
+        e.setDestinatari(String.join(",", visita.getDestinatari()));
+        return e;
+    }
 
-        // 3) costruzione del dominio già in stato PUBBLICATA
-        VisitaInvito vi = new VisitaInvito.Builder()
-                .id(0)  // verrà assegnato dal DB
-                .dataInizio(inizio)
-                .dataFine(fine)
-                .prezzo(prezzo)
-                .descrizione(dto.getDescrizione())
-                .indirizzo(dto.getIndirizzo())
-                .organizzatore(organizzatore)
-                .numeroMinPartecipanti(minPar)
-                .destinatari(dto.getDestinatari())
-                .stato(StatoEvento.PUBBLICATA)
+    private VisitaInvito mapToDomain(VisitaInvitoEntity e) {
+        return new VisitaInvito.Builder()
+                .id(e.getId())
+                .nome(e.getNome())
+                .descrizione(e.getDescrizione())
+                .indirizzo(e.getIndirizzo())
+                .dataInizio(e.getDataInizio())
+                .dataFine(e.getDataFine())
+                .creatoDa(e.getCreatoDa())
+                .stato(e.getStato())
+                .destinatari(e.getDestinatari() == null || e.getDestinatari().isBlank()
+                        ? List.of()
+                        : List.of(e.getDestinatari().split(",")))
                 .build();
-
-        // 4) persistenza
-        if (!dao.save(vi)) {
-            throw new RuntimeException("Errore durante il salvataggio della visita su invito");
-        }
-
-        // 5) notifica tutti gli osservatori
-        notifier.notificaTutti(vi, "VISITA_INVITO_PUBBLICATA");
     }
 
-    @Override
-    public List<VisitaInvito> getVisiteCreateDa(String organizzatore) {
-        return dao.findByOrganizzatore(organizzatore);
+    private VisitaInvitoDto mapToDto(VisitaInvitoEntity e) {
+        VisitaInvitoDto dto = new VisitaInvitoDto();
+        dto.setId(e.getId());
+        dto.setNome(e.getNome());
+        dto.setDescrizione(e.getDescrizione());
+        dto.setIndirizzo(e.getIndirizzo());
+        dto.setDataInizio(e.getDataInizio());
+        dto.setDataFine(e.getDataFine());
+        dto.setCreatoDa(e.getCreatoDa());
+        dto.setStato(e.getStato());
+        dto.setDestinatari(e.getDestinatari() == null || e.getDestinatari().isBlank()
+                ? List.of()
+                : List.of(e.getDestinatari().split(",")));
+        return dto;
     }
 }

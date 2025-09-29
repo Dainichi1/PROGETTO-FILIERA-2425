@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ================== MODALI CARRELLO ================== -->
+<div th:fragment="cart-modals">
+    <!-- Errore quantità <= 0 -->
+    <div id="quantityErrorModal" class="modal">
+        <div class="modal-content">
+            <p>⚠ La quantità richiesta deve essere maggiore di 0</p>
+            <button type="button" class="btn-close-modal" data-target="quantityErrorModal">OK</button>
+        </div>
+    </div>
+
+    <!-- Errore quantità > disponibilità -->
+    <div id="availabilityErrorModal" class="modal">
+        <div class="modal-content">
+            <p>⚠ Quantità richiesta superiore alla disponibilità</p>
+            <button type="button" class="btn-close-modal" data-target="availabilityErrorModal">OK</button>
+        </div>
+    </div>
+
+    <!-- Successo: item aggiunto al carrello -->
+    <div id="successAddModal" class="modal">
+        <div class="modal-content">
+            <p id="successAddMessage">✅ Item aggiunto al carrello!</p>
+            <button type="button" class="btn-close-modal" data-target="successAddModal">OK</button>
+        </div>
+    </div>
+
+    <!-- Errore generico -->
+    <div id="genericErrorModal" class="modal">
+        <div class="modal-content">
+            <p>❌ Si è verificato un errore inatteso. Riprova più tardi.</p>
+            <button type="button" class="btn-close-modal" data-target="genericErrorModal">OK</button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

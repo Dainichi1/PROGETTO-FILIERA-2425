@@ -1,38 +1,44 @@
-// unicam/filiera/service/CarrelloService.java
 package unicam.filiera.service;
 
+import jakarta.servlet.http.HttpSession;
 import unicam.filiera.dto.CartItemDto;
 import unicam.filiera.dto.CartTotalsDto;
+import unicam.filiera.dto.ItemTipo;
 import unicam.filiera.model.Item;
 
 import java.util.List;
 
 public interface CarrelloService {
-    /**
-     * Aggiunge l'item con quantità, o rilancia IllegalArgumentException
-     */
-    void addItem(Item item, int quantita);
 
     /**
-     * Aggiorna la quantità di un item esistente, o rilancia IllegalArgumentException
+     * Aggiunge un item al carrello.
      */
-    void updateItemQuantity(String nomeItem, int nuovaQuantita);
+    void aggiungiItem(ItemTipo tipo, Long id, int quantita, HttpSession session);
 
     /**
-     * Rimuove l'item dal carrello
+     * Aggiorna la quantità di un item esistente.
      */
-    void removeItem(String nomeItem);
-
-    void clear();
-
+    void aggiornaQuantitaItem(ItemTipo tipo, Long id, int nuovaQuantita, HttpSession session);
 
     /**
-     * Restituisce la lista di tutti gli item correnti
+     * Rimuove un item dal carrello.
      */
-    List<CartItemDto> getCartItems();
+    void rimuoviItem(ItemTipo tipo, Long id, HttpSession session);
 
     /**
-     * Calcola e restituisce i totali
+     * Svuota il carrello.
      */
-    CartTotalsDto calculateTotals();
+    void svuota(HttpSession session);
+
+    /**
+     * Restituisce gli item correnti.
+     */
+    List<CartItemDto> getItems(HttpSession session);
+
+    /**
+     * Calcola i totali.
+     */
+    CartTotalsDto calcolaTotali(HttpSession session);
+
+    Item getItemFromDb(ItemTipo tipo, Long id);
 }

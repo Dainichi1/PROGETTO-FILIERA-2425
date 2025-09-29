@@ -1,101 +1,44 @@
 package unicam.filiera.dto;
 
-import java.io.File;
+import jakarta.validation.constraints.Size;
+import lombok.*;
+import unicam.filiera.model.StatoProdotto;
+
 import java.util.List;
 
 /**
- * DTO per trasferire i dati di un Pacchetto (nuovo o in modifica).
+ * DTO per la creazione o modifica di un Pacchetto da parte del Distributore.
+ * La cardinalità (>= 2 prodotti APPROVATI) è verificata nei controller/service.
  */
-public class PacchettoDto {
-    /**
-     * Nome originario del pacchetto prima della modifica; null se è un nuovo pacchetto
-     */
-    private final String originalName;
-
-    private final String nome;
-    private final String descrizione;
-    private final String indirizzo;
-    private final String prezzoTxt;
-    private final String quantitaTxt;
-    private final List<String> nomiProdotti;
-    private final List<File> certificati;
-    private final List<File> foto;
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+public class PacchettoDto extends BaseItemDto {
 
     /**
-     * Costruttore per flusso “nuovo pacchetto”
+     * Prodotti selezionati che compongono il pacchetto (>= 2).
+     * Usato in fase di creazione/modifica.
      */
-    public PacchettoDto(
-            String nome,
-            String descrizione,
-            String indirizzo,
-            String prezzoTxt,
-            String quantitaTxt,
-            List<String> nomiProdotti,
-            List<File> certificati,
-            List<File> foto) {
-        this(null, nome, descrizione, indirizzo, prezzoTxt, quantitaTxt, nomiProdotti, certificati, foto);
-    }
+    @Size(min = 2, message = "⚠ Devi selezionare almeno 2 prodotti approvati")
+    private List<Long> prodottiSelezionati;
 
-    /**
-     * Costruttore completo, usato per il flusso di modifica
-     */
-    public PacchettoDto(
-            String originalName,
-            String nome,
-            String descrizione,
-            String indirizzo,
-            String prezzoTxt,
-            String quantitaTxt,
-            List<String> nomiProdotti,
-            List<File> certificati,
-            List<File> foto) {
-        this.originalName = originalName;
-        this.nome = nome;
-        this.descrizione = descrizione;
-        this.indirizzo = indirizzo;
-        this.prezzoTxt = prezzoTxt;
-        this.quantitaTxt = quantitaTxt;
-        this.nomiProdotti = List.copyOf(nomiProdotti);
-        this.certificati = List.copyOf(certificati);
-        this.foto = List.copyOf(foto);
-    }
+    // ========== Campi aggiuntivi per gestione in lettura ==========
 
-    /**
-     * @return il nome originario in caso di modifica, altrimenti null
-     */
-    public String getOriginalName() {
-        return originalName;
-    }
+    /** Username del distributore che ha creato il pacchetto */
+    private String creatoDa;
 
-    public String getNome() {
-        return nome;
-    }
+    /** Stato del pacchetto (IN_ATTESA, APPROVATO, RIFIUTATO) */
+    private StatoProdotto stato;
 
-    public String getDescrizione() {
-        return descrizione;
-    }
+    /** Eventuale commento del curatore */
+    private String commento;
 
-    public String getIndirizzo() {
-        return indirizzo;
-    }
+    /** Solo i nomi dei prodotti (per UI/marketplace) */
+    private List<String> prodottiNomi;
 
-    public String getPrezzoTxt() {
-        return prezzoTxt;
-    }
-
-    public String getQuantitaTxt() {
-        return quantitaTxt;
-    }
-
-    public List<String> getNomiProdotti() {
-        return nomiProdotti;
-    }
-
-    public List<File> getCertificati() {
-        return certificati;
-    }
-
-    public List<File> getFoto() {
-        return foto;
-    }
+    /** Solo gli ID dei prodotti (per UI/marketplace) */
+    private List<Long> prodottiIds;
 }

@@ -1,151 +1,331 @@
 package unicam.filiera.service;
 
-import unicam.filiera.dao.ProdottoTrasformatoDAO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import unicam.filiera.dto.PacchettoDto;
 import unicam.filiera.dto.ProdottoTrasformatoDto;
-import unicam.filiera.model.ProdottoTrasformato;
+import unicam.filiera.entity.FaseProduzioneEmbeddable;
+import unicam.filiera.entity.ProdottoTrasformatoEntity;
+import unicam.filiera.factory.ItemFactory;
+import unicam.filiera.factory.ProdottoTrasformatoFactory;
 import unicam.filiera.model.FaseProduzione;
+import unicam.filiera.model.ProdottoTrasformato;
 import unicam.filiera.model.StatoProdotto;
-import unicam.filiera.model.observer.ProdottoTrasformatoNotifier;
-import unicam.filiera.util.ValidatoreProdottoTrasformato;
+import unicam.filiera.observer.ProdottoTrasformatoNotifier;
+import unicam.filiera.repository.ProdottoTrasformatoRepository;
+import unicam.filiera.validation.TrasformatoValidator;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Service
 public class ProdottoTrasformatoServiceImpl implements ProdottoTrasformatoService {
 
-    private final ProdottoTrasformatoDAO dao;
+    private static final String CERT_DIR = "uploads/certificati";
+    private static final String FOTO_DIR = "uploads/foto";
+
+    private final ProdottoTrasformatoRepository repository;
     private final ProdottoTrasformatoNotifier notifier;
 
-    public ProdottoTrasformatoServiceImpl(ProdottoTrasformatoDAO dao) {
-        this.dao = dao;
-        this.notifier = ProdottoTrasformatoNotifier.getInstance();
-    }
+    @Autowired
+    public ProdottoTrasformatoServiceImpl(ProdottoTrasformatoRepository repository,
+                                          ProdottoTrasformatoNotifier notifier) {
+        this.repository = repository;
+        this.notifier = notifier;
 
-    public ProdottoTrasformatoServiceImpl() {
-        this(unicam.filiera.dao.JdbcProdottoTrasformatoDAO.getInstance());
+        new File(CERT_DIR).mkdirs();
+        new File(FOTO_DIR).mkdirs();
     }
 
     @Override
     public void creaProdottoTrasformato(ProdottoTrasformatoDto dto, String creatore) {
-        int quantita;
-        double prezzo;
-        try {
-            quantita = Integer.parseInt(dto.getQuantitaTxt());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("⚠ Quantità non valida (deve essere un intero positivo)");
-        }
-        try {
-            prezzo = Double.parseDouble(dto.getPrezzoTxt());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("⚠ Prezzo non valido (deve essere un numero)");
-        }
+        // Validazione centralizzata
+        TrasformatoValidator.valida(dto);
 
-        // Mapping delle fasi
-        List<FaseProduzione> fasi = dto.getFasiProduzione().stream()
-                .map(FaseProduzione::fromDto)
-                .collect(Collectors.toList());
+        ProdottoTrasformato prodottoTrasformato = ItemFactory.creaProdottoTrasformato(dto, creatore);
+        prodottoTrasformato.setStato(StatoProdotto.IN_ATTESA);
+        prodottoTrasformato.setCommento(null);
 
-        // Validazione completa
-        ValidatoreProdottoTrasformato.valida(dto.getNome(), dto.getDescrizione(), dto.getIndirizzo(), quantita, prezzo, fasi);
-        ValidatoreProdottoTrasformato.validaFileCaricati(dto.getCertificati().size(), dto.getFoto().size());
+        ProdottoTrasformatoEntity entity = mapToEntity(prodottoTrasformato, dto, null);
+        repository.save(entity);
 
-        // Mappatura DTO -> Model
-        ProdottoTrasformato prodotto = new ProdottoTrasformato.Builder()
-                .nome(dto.getNome())
-                .descrizione(dto.getDescrizione())
-                .quantita(quantita)
-                .prezzo(prezzo)
-                .indirizzo(dto.getIndirizzo())
-                .certificati(dto.getCertificati().stream().map(File::getName).toList())
-                .foto(dto.getFoto().stream().map(File::getName).toList())
-                .creatoDa(creatore)
-                .stato(StatoProdotto.IN_ATTESA)
-                .fasiProduzione(fasi)
-                .build();
-
-        // Salvataggio + notifiche
-        if (!dao.save(prodotto, dto.getCertificati(), dto.getFoto())) {
-            throw new RuntimeException("Errore durante il salvataggio del prodotto trasformato e dei file");
-        }
-        notifier.notificaTutti(prodotto, "NUOVO_PRODOTTO_TRASFORMATO");
+        notifier.notificaTutti(prodottoTrasformato, "NUOVO_PRODOTTO_TRASFORMATO");
     }
 
     @Override
-    public void aggiornaProdottoTrasformato(String nomeOriginale, ProdottoTrasformatoDto dto, String creatore) {
-        int quantita;
-        double prezzo;
-        try {
-            quantita = Integer.parseInt(dto.getQuantitaTxt());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("⚠ Quantità non valida (deve essere un intero positivo)");
+    public void aggiornaProdottoTrasformato(Long id, ProdottoTrasformatoDto dto, String creatore) {
+        ProdottoTrasformatoEntity existing = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Prodotto trasformato non trovato per la modifica"));
+
+        if (!existing.getCreatoDa().equals(creatore)) {
+            throw new SecurityException("Non autorizzato a modificare questo prodotto trasformato");
         }
-        try {
-            prezzo = Double.parseDouble(dto.getPrezzoTxt());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("⚠ Prezzo non valido (deve essere un numero)");
+        if (existing.getStato() != StatoProdotto.RIFIUTATO) {
+            throw new IllegalStateException("Puoi modificare solo prodotti trasformati con stato RIFIUTATO");
         }
 
-        // Controlla esistenza e stato RIFIUTATO
-        ProdottoTrasformato existing = dao.findByNomeAndCreatore(nomeOriginale, creatore);
-        ValidatoreProdottoTrasformato.validaModifica(existing);
+        // Validazione centralizzata
+        TrasformatoValidator.valida(dto);
 
-        // Mapping fasi
-        List<FaseProduzione> fasi = dto.getFasiProduzione().stream()
-                .map(FaseProduzione::fromDto)
-                .collect(Collectors.toList());
+        ProdottoTrasformato updated = ProdottoTrasformatoFactory.creaProdottoTrasformato(dto, creatore);
+        updated.setCommento(null);
+        updated.setStato(StatoProdotto.IN_ATTESA);
 
-        // Validazione aggiornata
-        ValidatoreProdottoTrasformato.valida(dto.getNome(), dto.getDescrizione(), dto.getIndirizzo(), quantita, prezzo, fasi);
-        ValidatoreProdottoTrasformato.validaFileCaricati(dto.getCertificati().size(), dto.getFoto().size());
+        ProdottoTrasformatoEntity entity = mapToEntity(updated, dto, existing.getId());
 
-        // Nuovo oggetto aggiornato
-        ProdottoTrasformato updated = new ProdottoTrasformato.Builder()
-                .nome(dto.getNome())
-                .descrizione(dto.getDescrizione())
-                .quantita(quantita)
-                .prezzo(prezzo)
-                .indirizzo(dto.getIndirizzo())
-                .certificati(dto.getCertificati().stream().map(File::getName).toList())
-                .foto(dto.getFoto().stream().map(File::getName).toList())
-                .creatoDa(creatore)
-                .stato(StatoProdotto.IN_ATTESA)
-                .commento(null)
-                .fasiProduzione(fasi)
-                .build();
+        boolean nessunCertNuovo = dto.getCertificati() == null || dto.getCertificati().stream().allMatch(MultipartFile::isEmpty);
+        boolean nessunaFotoNuova = dto.getFoto() == null || dto.getFoto().stream().allMatch(MultipartFile::isEmpty);
 
-        boolean ok = dao.update(nomeOriginale, creatore, updated, dto.getCertificati(), dto.getFoto());
-        if (!ok) throw new RuntimeException("Errore durante l'aggiornamento del prodotto trasformato");
+        if (nessunCertNuovo) {
+            entity.setCertificati(existing.getCertificati());
+        }
+        if (nessunaFotoNuova) {
+            entity.setFoto(existing.getFoto());
+        }
+
+        repository.save(entity);
 
         notifier.notificaTutti(updated, "NUOVO_PRODOTTO_TRASFORMATO");
     }
 
     @Override
-    public List<ProdottoTrasformato> getProdottiTrasformatiCreatiDa(String creatore) {
-        return dao.findByCreatore(creatore);
+    public List<ProdottoTrasformatoDto> getProdottiTrasformatiCreatiDa(String creatore) {
+        return repository.findByCreatoDa(creatore)
+                .stream()
+                .filter(e -> e.getFasiProduzione() != null && e.getFasiProduzione().size() >= 2)
+                .map(this::mapToDto)
+                .toList();
     }
 
     @Override
-    public List<ProdottoTrasformato> getProdottiTrasformatiByStato(StatoProdotto stato) {
-        return dao.findByStato(stato);
+    public List<ProdottoTrasformatoDto> getProdottiTrasformatiByStato(StatoProdotto stato) {
+        return repository.findByStato(stato)
+                .stream()
+                .filter(e -> e.getFasiProduzione() != null && e.getFasiProduzione().size() >= 2)
+                .map(this::mapToDto)
+                .toList();
     }
 
     @Override
-    public void eliminaProdottoTrasformato(String nome, String creatore) {
-        ProdottoTrasformato p = dao.findByNomeAndCreatore(nome, creatore);
-        ValidatoreProdottoTrasformato.validaEliminazione(p);
+    public Optional<ProdottoTrasformatoEntity> findEntityById(Long id) {
+        return repository.findById(id);
+    }
 
-        boolean ok = dao.deleteByNomeAndCreatore(nome, creatore);
-        if (!ok) {
-            throw new RuntimeException("Errore durante l'eliminazione di \"" + nome + "\"");
+    @Override
+    public void eliminaProdottoTrasformatoById(Long id, String creatore) {
+        ProdottoTrasformatoEntity entity = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Prodotto trasformato non trovato"));
+
+        if (!entity.getCreatoDa().equals(creatore)) {
+            throw new SecurityException("Non autorizzato a eliminare questo prodotto trasformato");
         }
-        notifier.notificaTutti(p, "ELIMINATO_PRODOTTO_TRASFORMATO");
+        if (entity.getStato() == StatoProdotto.APPROVATO) {
+            throw new IllegalStateException("Non puoi eliminare un prodotto trasformato già approvato");
+        }
+
+        ProdottoTrasformato prodotto = mapToDomain(entity);
+        repository.delete(entity);
+
+        notifier.notificaTutti(prodotto, "ELIMINATO_PRODOTTO_TRASFORMATO");
     }
 
-    /**
-     * Notifica l’esito approvazione/rifiuto dal Curatore (chiamata opzionale, tipicamente dalla Controller del curatore).
-     */
-    public void notificaApprovazioneRifiuto(ProdottoTrasformato prodotto, boolean approvato) {
-        notifier.notificaTutti(prodotto, approvato ? "APPROVATO" : "RIFIUTATO");
+    @Override
+    public void cambiaStatoProdottoTrasformato(String nome, String creatore, StatoProdotto nuovoStato, String commento) {
+        ProdottoTrasformatoEntity entity = repository.findByNomeAndCreatoDa(nome, creatore)
+                .orElseThrow(() -> new IllegalArgumentException("Prodotto trasformato non trovato"));
+
+        aggiornaStatoECommento(entity, nuovoStato, commento);
+        repository.save(entity);
+
+        ProdottoTrasformato prodotto = mapToDomain(entity);
+        notifier.notificaTutti(prodotto,
+                nuovoStato == StatoProdotto.APPROVATO ? "APPROVATO" : "RIFIUTATO");
+    }
+
+    @Override
+    public void eliminaById(Long id, String username) {
+        ProdottoTrasformatoEntity entity = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Prodotto trasformato non trovato"));
+
+        if (!username.equals(entity.getCreatoDa())) {
+            throw new SecurityException("Non autorizzato a eliminare questo prodotto trasformato");
+        }
+        if (entity.getStato() == StatoProdotto.APPROVATO) {
+            throw new IllegalStateException("Si possono eliminare solo item IN_ATTESA o RIFIUTATO");
+        }
+
+        ProdottoTrasformato dominio = mapToDomain(entity);
+        repository.delete(entity);
+        notifier.notificaTutti(dominio, "ELIMINATO_PRODOTTO_TRASFORMATO");
+    }
+
+    @Override
+    public Optional<ProdottoTrasformatoDto> findDtoById(Long id) {
+        return repository.findById(id)
+                .map(this::mapToDto); // usa già il mapper interno
+    }
+
+
+
+    // =======================
+    // Mapping Helpers
+    // =======================
+
+    private ProdottoTrasformatoEntity mapToEntity(ProdottoTrasformato prodotto, ProdottoTrasformatoDto dto, Long id) {
+        ProdottoTrasformatoEntity e = new ProdottoTrasformatoEntity();
+        String certs = toCsv(dto.getCertificati(), CERT_DIR);
+        String fotos = toCsv(dto.getFoto(), FOTO_DIR);
+        e.setId(id);
+        e.setNome(prodotto.getNome());
+        e.setDescrizione(prodotto.getDescrizione());
+        e.setIndirizzo(prodotto.getIndirizzo());
+        e.setQuantita(prodotto.getQuantita());
+        e.setPrezzo(prodotto.getPrezzo());
+        e.setCreatoDa(prodotto.getCreatoDa());
+        e.setStato(prodotto.getStato());
+        e.setCommento(prodotto.getCommento());
+        e.setFasiProduzione(toEmbeddableList(prodotto.getFasiProduzione()));
+        e.setCertificati((certs == null || certs.isBlank()) ? null : certs);
+        e.setFoto((fotos == null || fotos.isBlank()) ? null : fotos);
+        return e;
+    }
+
+    private ProdottoTrasformato mapToDomain(ProdottoTrasformatoEntity e) {
+        int quantita = e.getQuantita();
+        if (quantita < 0) {
+            throw new IllegalStateException("La quantità del prodotto trasformato non può essere negativa");
+        }
+
+        return new ProdottoTrasformato.Builder()
+                .id(e.getId())
+                .nome(e.getNome())
+                .descrizione(e.getDescrizione())
+                .indirizzo(e.getIndirizzo())
+                .quantita(quantita) // 0 ammesso (esaurito), negativo no
+                .prezzo(e.getPrezzo())
+                .creatoDa(e.getCreatoDa())
+                .stato(e.getStato())
+                .commento(e.getCommento())
+                .certificati(e.getCertificati() == null || e.getCertificati().isBlank()
+                        ? List.of()
+                        : List.of(e.getCertificati().split(",")))
+                .foto(e.getFoto() == null || e.getFoto().isBlank()
+                        ? List.of()
+                        : List.of(e.getFoto().split(",")))
+                .fasiProduzione(toDomainList(e.getFasiProduzione()))
+                .build();
+    }
+
+    private ProdottoTrasformatoDto mapToDto(ProdottoTrasformatoEntity e) {
+        ProdottoTrasformatoDto dto = new ProdottoTrasformatoDto();
+        dto.setId(e.getId());
+        dto.setTipo(unicam.filiera.dto.ItemTipo.TRASFORMATO);
+        dto.setNome(e.getNome());
+        dto.setDescrizione(e.getDescrizione());
+        dto.setIndirizzo(e.getIndirizzo());
+        dto.setPrezzo(e.getPrezzo());
+        dto.setQuantita(e.getQuantita());
+        dto.setOriginalName(e.getNome()); // opzionale
+        dto.setCertificatiCsv(e.getCertificati());
+        dto.setFotoCsv(e.getFoto());
+        dto.setStato(e.getStato());
+        dto.setCreatoDa(e.getCreatoDa());
+        dto.setCommento(e.getCommento());
+
+        // map fasi
+        dto.setFasiProduzione(
+                e.getFasiProduzione() == null ? List.of() :
+                        e.getFasiProduzione().stream()
+                                .map(f -> new ProdottoTrasformatoDto.FaseProduzioneDto(
+                                        f.getDescrizioneFase(),
+                                        f.getProduttoreUsername(),
+                                        f.getProdottoOrigineId()
+                                ))
+                                .toList()
+        );
+        return dto;
+    }
+
+
+    private List<FaseProduzioneEmbeddable> toEmbeddableList(List<FaseProduzione> fasi) {
+        return (fasi == null) ? List.of() :
+                fasi.stream()
+                        .filter(f -> f != null
+                                && f.getDescrizioneFase() != null && !f.getDescrizioneFase().isBlank()
+                                && f.getProduttoreUsername() != null && !f.getProduttoreUsername().isBlank()
+                                && f.getProdottoOrigineId() != null)
+                        .map(f -> new FaseProduzioneEmbeddable(
+                                f.getDescrizioneFase(),
+                                f.getProduttoreUsername(),
+                                f.getProdottoOrigineId()
+                        ))
+                        .collect(Collectors.toList());
+    }
+
+    private List<FaseProduzione> toDomainList(List<FaseProduzioneEmbeddable> fasi) {
+        return fasi == null ? List.of() :
+                fasi.stream()
+                        .map(f -> new FaseProduzione(
+                                f.getDescrizioneFase(),
+                                f.getProduttoreUsername(),
+                                f.getProdottoOrigineId()
+                        ))
+                        .collect(Collectors.toList());
+    }
+
+    // =======================
+    // File Helpers
+    // =======================
+
+    private String toCsv(List<MultipartFile> files, String dir) {
+        return (files == null || files.isEmpty())
+                ? null
+                : files.stream()
+                .filter(f -> f != null && !f.isEmpty())
+                .map(file -> salvaMultipartFile(file, dir))
+                .collect(Collectors.joining(","));
+    }
+
+    private String salvaMultipartFile(MultipartFile multipartFile, String destDir) {
+        try {
+            // 1. Nome originale
+            String original = multipartFile.getOriginalFilename();
+
+            // 2. Rimpiazzo spazi e caratteri strani
+            String safeName = original == null ? "file"
+                    : original.replaceAll("\\s+", "_")
+                    .replaceAll("[^a-zA-Z0-9._-]", "");
+
+            // 3. UUID per evitare conflitti
+            String filename = UUID.randomUUID() + "_" + safeName;
+
+            // 4. Salvataggio fisico
+            Path path = Paths.get(destDir, filename);
+            Files.copy(multipartFile.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
+
+            return filename;
+        } catch (IOException e) {
+            throw new RuntimeException("Errore nel salvataggio del file " + multipartFile.getOriginalFilename(), e);
+        }
+    }
+
+    // =======================
+    // Stato Helper
+    // =======================
+
+    private void aggiornaStatoECommento(ProdottoTrasformatoEntity entity, StatoProdotto nuovoStato, String commento) {
+        entity.setStato(nuovoStato);
+        entity.setCommento(nuovoStato == StatoProdotto.RIFIUTATO
+                ? (commento != null && !commento.isBlank() ? commento : null)
+                : null);
     }
 }

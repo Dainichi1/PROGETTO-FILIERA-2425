@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ================== VISITE + FIERE RACCHIUSE ================== -->
+<div th:fragment="pubblicati-section(visite, fiere)">
+    <!-- Bottone toggle -->
+    <button id="togglePubblicatiBtn" type="button" class="btn-primary">
+        📋 Visualizza visite/fiere pubblicate
+    </button>
+
+    <!-- Contenitore delle tabelle (inizialmente nascosto) -->
+    <div id="pubblicatiContainer" style="display: none; margin-top: 20px;">
+
+        <!-- Bottone Pubblica Avviso -->
+        <button id="btnPubblicaAvviso" type="button" class="btn-secondary" disabled>
+            📢 Pubblica avviso su social
+        </button>
+
+        <!-- VISITE -->
+        <h2>📋 Le tue Visite ad Invito</h2>
+        <table class="table-standard">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Descrizione</th>
+                <th>Indirizzo</th>
+                <th>Data Inizio</th>
+                <th>Data Fine</th>
+                <th>Destinatari</th>
+                <th>Stato</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="visita : ${visite}"
+                th:attr="data-id=${visita.id}, data-type='VISITA'"
+                class="selectable-row">
+                <td th:text="${visita.id}">ID</td>
+                <td th:text="${visita.nome}">Nome</td>
+                <td th:text="${visita.descrizione}">Descrizione</td>
+                <td th:text="${visita.indirizzo}">Indirizzo</td>
+                <td th:text="${visita.dataInizio}">2025-01-01</td>
+                <td th:text="${visita.dataFine}">2025-01-02</td>
+                <td>
+                    <ul>
+                        <li th:each="d : ${visita.destinatari}" th:text="${d}"></li>
+                    </ul>
+                </td>
+                <td th:text="${visita.stato}">PUBBLICATA</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <!-- FIERE -->
+        <h2>📋 Le tue Fiere</h2>
+        <table class="table-standard">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Descrizione</th>
+                <th>Indirizzo</th>
+                <th>Data Inizio</th>
+                <th>Data Fine</th>
+                <th>Stato</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="fiera : ${fiere}"
+                th:attr="data-id=${fiera.id}, data-type='FIERA'"
+                class="selectable-row">
+                <td th:text="${fiera.id}">ID</td>
+                <td th:text="${fiera.nome}">Nome</td>
+                <td th:text="${fiera.descrizione}">Descrizione</td>
+                <td th:text="${fiera.indirizzo}">Indirizzo</td>
+                <td th:text="${fiera.dataInizio}">2025-03-10</td>
+                <td th:text="${fiera.dataFine}">2025-03-15</td>
+                <td th:text="${fiera.stato}">PUBBLICATA</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>

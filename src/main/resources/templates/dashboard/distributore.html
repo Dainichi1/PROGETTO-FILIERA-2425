@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="it">
+<head>
+    <title>Dashboard Distributore</title>
+    <meta charset="UTF-8"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/css/tables.css}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+</head>
+<body>
+<h1 th:text="'Benvenuto ' + (${utente?.nome ?: 'Utente'}) +
+              ', il tuo ruolo è ' + (${utente?.ruolo ?: 'Distributore'}) + '.'">
+    Benvenuto, il tuo ruolo è Distributore.
+</h1>
+
+<!-- ================== BOTTONI PRINCIPALI ================== -->
+<div class="actions-container">
+    <button type="button" class="btn-primary" id="btnSocialFeed">📢 Visualizza Social Network</button>
+    <button type="button" class="btn-primary" id="btnVisite">👀 Visualizza visite disponibili</button>
+    <button type="button" class="btn-primary" id="btnPrenotazioni">📅 Visualizza prenotazioni</button>
+    <button id="btnApriMappa" class="btn-primary">🌍 Visualizza mappa</button>
+    <button id="btnDeleteProfile" class="btn btn-danger btn-lg ms-2">
+        🗑️ Richiedi eliminazione profilo
+    </button>
+</div>
+
+<h2>I tuoi Pacchetti</h2>
+
+<!-- Tabella pacchetti -->
+<div th:replace="fragments/dashboard-table :: dashboard-table(${pacchetti}, 'pacchetto')"></div>
+
+<!-- Tabella visite disponibili (nascosta di default) -->
+<div id="visiteSection" class="toggle-section">
+    <div th:replace="fragments/visite-table :: visite-table(${visiteDisponibili})"></div>
+    <div class="actions-container">
+        <button type="button" class="btn-secondary" onclick="toggleUtils.toggleSection('visiteSection')">Chiudi</button>
+    </div>
+</div>
+
+<!-- Sezione prenotazioni (inizialmente nascosta) -->
+<div id="prenotazioniSection" class="toggle-section">
+    <div th:replace="fragments/prenotazioni-table :: prenotazioni-table(${prenotazioni})"></div>
+    <div class="actions-container">
+        <button type="button" class="btn-secondary" onclick="toggleUtils.toggleSection('prenotazioniSection')">Chiudi</button>
+    </div>
+</div>
+
+<!-- ================= MODALI COMUNI ================= -->
+<div th:replace="fragments/modals :: delete-modals('Pacchetto')"></div>
+<div th:replace="fragments/modals :: edit-error-modal('Pacchetto')"></div>
+<div th:replace="fragments/modals :: create-update-modals('Pacchetto','/distributore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-modals('/distributore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-feed-modal"></div>
+<div th:replace="fragments/modals :: prenotazioni-delete-modals('/distributore/dashboard')"></div>
+<div th:replace="fragments/modals :: prenotazione-visita-modals('/distributore/dashboard')"></div>
+<div th:replace="fragments/modals :: social-not-available-modal"></div>
+<!-- Nuova notifica eliminazione profilo approvata -->
+<div th:replace="fragments/profile-delete-notification :: profile-delete-notification"></div>
+<!-- ================= MODALE ELIMINAZIONE PROFILO ================= -->
+<div th:replace="fragments/profile-delete-modal :: profile-delete-modal"></div>
+<!-- ================== MODALE MAPPA ================== -->
+<div id="mapModal" class="modal">
+    <div class="modal-content large">
+        <h2>🗺️ Mappa Indirizzi</h2>
+        <div id="map" style="height: 400px; width: 100%; border-radius: 8px;"></div>
+        <div class="modal-actions">
+            <button class="btn-close-modal btn-secondary" data-target="mapModal">Chiudi</button>
+        </div>
+    </div>
+</div>
+<hr class="section-separator"/>
+
+<!-- ================== FORM CREAZIONE PACCHETTO ================== -->
+<button type="button" class="btn-primary" id="btnCreatePacchetto">➕ Crea Pacchetto</button>
+
+<div id="pacchettoForm" class="form-container"
+     th:style="${showForm} ? 'display:block;' : 'display:none;'">
+    <h3 id="formTitle">Nuovo Pacchetto</h3>
+    <form id="packageForm" th:action="@{/distributore/crea}" th:object="${pacchettoDto}"
+          method="post" enctype="multipart/form-data" novalidate>
+
+        <input type="hidden" th:field="*{id}" id="itemId"/>
+        <input type="hidden" th:field="*{tipo}" id="itemTipo" value="PACCHETTO"/>
+
+        <!-- Campi standard -->
+        <div th:replace="fragments/form-fields :: base-fields('pacchettoDto')"></div>
+
+        <!-- Campo specifico Pacchetto -->
+        <label>Seleziona Prodotti Approvati (minimo 2):</label>
+        <div class="checkbox-list"
+             th:classappend="${#fields.hasErrors('prodottiSelezionati')} ? 'error'">
+            <div th:each="prodotto : ${prodottiApprovati}">
+                <label>
+                    <input type="checkbox" th:field="*{prodottiSelezionati}" th:value="${prodotto.id}"/>
+                    <span th:text="${prodotto.nome}">Nome prodotto</span>
+                </label>
+            </div>
+        </div>
+        <span class="error-message"
+              th:utext="${#fields.hasErrors('prodottiSelezionati')} ?
+                        ${#strings.arrayJoin(#fields.errors('prodottiSelezionati'), '<br/>')} : ''">
+        </span>
+
+        <!-- Pulsanti -->
+        <div th:replace="fragments/form-fields :: form-buttons('Pacchetto','/distributore/dashboard')"></div>
+    </form>
+</div>
+
+<!-- ================== LINK HOME ================== -->
+<p><a th:href="@{/}" class="btn-secondary">⬅ Torna alla Home</a></p>
+
+<!-- ================= SCRIPT ================== -->
+<script type="module" src="/js/pages/distributore.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+</body>
+</html>

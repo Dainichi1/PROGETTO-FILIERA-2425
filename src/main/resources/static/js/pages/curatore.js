@@ -1,5 +1,6 @@
 import { crudUtils } from "../utils/crud-utils.js";
 import { modalUtils } from "../utils/modal-utils.js";
+import {commonMapUtils} from "../utils/common-map-utils.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     // === ELIMINA PROFILO ===
@@ -142,4 +143,11 @@ document.addEventListener("DOMContentLoaded", () => {
             if (target) modalUtils.closeModal(target);
         });
     });
+
+    // Bottone mappa
+    document.getElementById("btnApriMappa")
+        ?.addEventListener("click", () => {
+            console.log("🌍 Apertura mappa Produttore");
+            commonMapUtils.mostraMappa();
+        });
 });

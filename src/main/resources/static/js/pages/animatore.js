@@ -5,6 +5,7 @@ import {crudUtilsAnimatore} from "../utils/crud-utils-animatore.js";
 import {socialSelectionUtils} from "../utils/social-selection-utils.js";
 import {crudUtils} from "../utils/crud-utils.js";
 import {csrfUtils} from "../utils/csrf-utils.js";
+import {commonMapUtils} from "../utils/common-map-utils.js";
 
 // ================== CRUD VISITA ==================
 const visitaCrud = crudUtilsAnimatore({
@@ -115,6 +116,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btnOpenFiera")
         ?.addEventListener("click", () => fieraCrud.toggleForm(true));
 
+    // Bottone mappa
+    document.getElementById("btnApriMappa")
+        ?.addEventListener("click", () => {
+            console.log("🌍 Apertura mappa Produttore");
+            commonMapUtils.mostraMappa();
+        });
     // ================== ELIMINA PROFILO ==================
     const btnDeleteProfile = document.getElementById("btnDeleteProfile");
     if (btnDeleteProfile) {

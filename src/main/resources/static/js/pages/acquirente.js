@@ -7,8 +7,43 @@ import { fondiUtils } from "../utils/crud-fondi-utils.js";
 import { csrfUtils } from "../utils/csrf-utils.js";
 import { formUtils } from "../utils/form-utils.js";
 import { prenotazioniFiereUtils } from "../utils/crud-prenotazioni-fiere-utils.js";
+import {commonMapUtils} from "../utils/common-map-utils.js";
 
 window.toggleUtils = toggleUtils;
+
+// ================== FUNZIONE MOSTRA MAPPA==================
+let mapInstance = null;
+let markersLayer = null;
+
+function mostraMappa() {
+    modalUtils.openModal("mapModal");
+
+    if (!mapInstance) {
+        mapInstance = L.map("map").setView([41.8719, 12.5674], 6); // centro Italia
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "&copy; <a href='https://www.openstreetmap.org/'>OpenStreetMap</a> contributors"
+        }).addTo(mapInstance);
+        markersLayer = L.layerGroup().addTo(mapInstance);
+    }
+
+    markersLayer.clearLayers();
+
+    fetch("/gestore/markers/api")
+        .then(r => r.json())
+        .then(savedMarkers => {
+            if (!Array.isArray(savedMarkers)) return;
+            let bounds = [];
+            savedMarkers.forEach(m => {
+                const marker = L.marker([m.lat, m.lng]).addTo(markersLayer);
+                marker.bindPopup(`<strong>${m.label}</strong>`);
+                bounds.push([m.lat, m.lng]);
+            });
+            if (bounds.length > 0) {
+                mapInstance.fitBounds(bounds, { padding: [50, 50] });
+            }
+        })
+        .catch(err => console.error("❌ Errore caricamento marker:", err));
+}
 
 // ================== INIT ==================
 document.addEventListener("DOMContentLoaded", () => {
@@ -307,6 +342,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    // Bottone mappa
+    document.getElementById("btnApriMappa")
+        ?.addEventListener("click", () => {
+            console.log("🌍 Apertura mappa Produttore");
+            commonMapUtils.mostraMappa();
+        });
     // ================== ELIMINA PROFILO ==================
     const btnDeleteProfile = document.getElementById("btnDeleteProfile");
     if (btnDeleteProfile) {

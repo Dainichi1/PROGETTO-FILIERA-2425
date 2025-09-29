@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Dashboard Curatore</title>
     <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
@@ -68,6 +69,8 @@
     <button id="btnSocialFeed" type="button" class="btn-primary">
         📢 Visualizza Social Network
     </button>
+</div>
+<div><button id="btnApriMappa" class="btn-primary">🌍 Visualizza mappa</button>
 </div>
 
 
@@ -230,6 +233,16 @@
 <div th:replace="fragments/modals :: social-feed-modal"></div>
 <div th:replace="fragments/modals :: social-not-available-modal"></div>
 
+<!-- ================== MODALE MAPPA ================== -->
+<div id="mapModal" class="modal">
+    <div class="modal-content large">
+        <h2>🗺️ Mappa Indirizzi</h2>
+        <div id="map" style="height: 400px; width: 100%; border-radius: 8px;"></div>
+        <div class="modal-actions">
+            <button class="btn-close-modal btn-secondary" data-target="mapModal">Chiudi</button>
+        </div>
+    </div>
+</div>
 
 <p><a th:href="@{/}">⬅ Torna alla Home</a></p>
 
@@ -265,6 +278,7 @@
 
 <!-- Script curatore (gestione eliminazione profilo ecc.) -->
 <script type="module" src="/js/pages/curatore.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 </body>
 </html>

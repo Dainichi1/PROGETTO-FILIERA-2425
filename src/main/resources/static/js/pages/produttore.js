@@ -4,6 +4,7 @@ import {toggleUtils} from "../utils/toggle-utils.js";
 import {formUtils} from "../utils/form-utils.js";
 import {modalUtils} from "../utils/modal-utils.js";
 import {prenotazioniUtils} from "../utils/crud-prenotazioni-utils.js";
+import {commonMapUtils} from "../utils/common-map-utils.js";
 
 window.toggleUtils = toggleUtils;
 
@@ -89,7 +90,7 @@ const prodottoCrud = crudUtils.createInstance({
     deleteSuccessMessageId: "deleteSuccessMessage",
     deleteGenericErrorMessageId: "deleteGenericErrorMessage",
 
-    labels: {itemName: "Prodotto"},
+    labels: { itemName: "Prodotto" },
 
     validateFn: clientValidateProdotto,
 
@@ -104,19 +105,14 @@ const prodottoCrud = crudUtils.createInstance({
 
 // ================== INIZIALIZZAZIONE ==================
 document.addEventListener("DOMContentLoaded", () => {
-    // Social Feed
-    document.getElementById("btnSocialFeed")?.addEventListener("click", () => {
-        crudUtils.openSocialFeed();
-    });
+    console.log("▶ Dashboard Produttore pronta");
 
-    // Toggle sezioni
-    document.getElementById("btnVisite")?.addEventListener("click", () => {
-        toggleUtils.toggleSection("visiteSection");
-    });
-
-    document.getElementById("btnPrenotazioni")?.addEventListener("click", () => {
-        toggleUtils.toggleSection("prenotazioniSection");
-    });
+    // Bottone mappa
+    document.getElementById("btnApriMappa")
+        ?.addEventListener("click", () => {
+            console.log("🌍 Apertura mappa Produttore");
+            commonMapUtils.mostraMappa();
+        });
 
     // Pulsanti tabella prodotti
     document.querySelectorAll(".btn-delete").forEach(btn => {

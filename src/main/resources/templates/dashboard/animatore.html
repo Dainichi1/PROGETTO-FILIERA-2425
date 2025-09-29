@@ -7,6 +7,7 @@
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <link rel="stylesheet" th:href="@{/css/dashboard.css}">
     <link rel="stylesheet" th:href="@{/css/tables.css}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 </head>
 <body>
 <h1 th:text="'Benvenuto ' + (${utente?.nome ?: 'Utente'}) +
@@ -22,6 +23,7 @@
     <button id="btnDeleteProfile" class="btn btn-danger btn-lg ms-2">
         🗑️ Elimina profilo
     </button>
+    <button id="btnApriMappa" class="btn-primary">🌍 Visualizza mappa</button>
 </div>
 
 <!-- ================== SEZIONE PUBBLICATI ================== -->
@@ -53,6 +55,17 @@
     <button type="button" class="btn-primary" id="btnOpenFiera">
         ➕ Pubblica Fiera
     </button>
+</div>
+
+<!-- ================== MODALE MAPPA ================== -->
+<div id="mapModal" class="modal">
+    <div class="modal-content large">
+        <h2>🗺️ Mappa Indirizzi</h2>
+        <div id="map" style="height: 400px; width: 100%; border-radius: 8px;"></div>
+        <div class="modal-actions">
+            <button class="btn-close-modal btn-secondary" data-target="mapModal">Chiudi</button>
+        </div>
+    </div>
 </div>
 
 <!-- ================== FORM CREAZIONE VISITA ================== -->
@@ -94,6 +107,7 @@
 
 <!-- ================== SCRIPT ================== -->
 <script type="module" src="/js/pages/animatore.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 </body>
 </html>

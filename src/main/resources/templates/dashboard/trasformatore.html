@@ -7,6 +7,7 @@
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <link rel="stylesheet" th:href="@{/css/dashboard.css}">
     <link rel="stylesheet" th:href="@{/css/tables.css}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 </head>
 <body>
 <h1 th:text="'Benvenuto ' + (${utente?.nome ?: 'Utente'}) +
@@ -18,6 +19,7 @@
 <div class="actions-container">
     <button type="button" class="btn-primary" id="btnSocialFeed">📢 Visualizza Social Network</button>
     <button type="button" class="btn-primary" id="btnVisite">👀 Visualizza visite disponibili</button>
+    <button id="btnApriMappa" class="btn-primary">🌍 Visualizza mappa</button>
     <button type="button" class="btn-primary" id="btnPrenotazioni">📅 Visualizza prenotazioni</button>
     <button id="btnDeleteProfile" class="btn btn-danger btn-lg ms-2">
         🗑️ Elimina profilo
@@ -55,7 +57,16 @@
 <div th:replace="fragments/modals :: prenotazione-visita-modals('/trasformatore/dashboard')"></div>
 <div th:replace="fragments/modals :: social-not-available-modal"></div>
 <div th:replace="fragments/profile-delete-notification :: profile-delete-notification"></div>
-
+<!-- ================== MODALE MAPPA ================== -->
+<div id="mapModal" class="modal">
+    <div class="modal-content large">
+        <h2>🗺️ Mappa Indirizzi</h2>
+        <div id="map" style="height: 400px; width: 100%; border-radius: 8px;"></div>
+        <div class="modal-actions">
+            <button class="btn-close-modal btn-secondary" data-target="mapModal">Chiudi</button>
+        </div>
+    </div>
+</div>
 <!-- ================== MODALE ELIMINAZIONE PROFILO ================== -->
 <div th:replace="fragments/profile-delete-modal :: profile-delete-modal"></div>
 
@@ -89,6 +100,7 @@
 
 <!-- ================== SCRIPT ================== -->
 <script type="module" src="/js/pages/trasformatore.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 </body>
 </html>

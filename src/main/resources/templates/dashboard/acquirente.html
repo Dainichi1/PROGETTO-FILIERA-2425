@@ -7,6 +7,7 @@
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <link rel="stylesheet" th:href="@{/css/dashboard.css}">
     <link rel="stylesheet" th:href="@{/css/acquirente-tables.css}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
     <style>
         .marketplace-section {
@@ -64,6 +65,7 @@
     <button id="btnDeleteProfile" class="btn btn-danger btn-lg ms-2">
         🗑️ Elimina profilo
     </button>
+    <button id="btnApriMappa" class="btn-primary">🌍 Visualizza mappa</button>
 </div>
 
 <!-- ================== SEZIONE MARKETPLACE ================== -->
@@ -109,6 +111,16 @@
 </div>
 
 <!-- ================== MODALI ================== -->
+<!-- ================== MODALE MAPPA ================== -->
+<div id="mapModal" class="modal">
+    <div class="modal-content large">
+        <h2>🗺️ Mappa Indirizzi</h2>
+        <div id="map" style="height: 400px; width: 100%; border-radius: 8px;"></div>
+        <div class="modal-actions">
+            <button class="btn-close-modal btn-secondary" data-target="mapModal">Chiudi</button>
+        </div>
+    </div>
+</div>
 <!-- Carrello -->
 <div th:replace="~{fragments/cart-modals :: cart-modals}"></div>
 
@@ -143,6 +155,8 @@
 <!-- ================== SCRIPT ================== -->
 <script type="module" src="/js/utils/crud-prenotazioni-fiere-utils.js"></script>
 <script type="module" src="/js/pages/acquirente.js"></script>
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 </body>
 </html>

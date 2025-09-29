@@ -5,6 +5,7 @@ import { formUtils } from "../utils/form-utils.js";
 import { modalUtils } from "../utils/modal-utils.js";
 import { prenotazioniUtils } from "../utils/crud-prenotazioni-utils.js";
 import { socialSelectionUtils } from "../utils/social-selection-utils.js";
+import {commonMapUtils} from "../utils/common-map-utils.js";
 
 // ================== VALIDAZIONE TRASFORMATO ==================
 function clientValidateTrasformato() {
@@ -236,6 +237,13 @@ document.addEventListener("DOMContentLoaded", () => {
             sel.innerHTML = `<option value="">(Errore nel caricamento)</option>`;
         }
     });
+
+    // Bottone mappa
+    document.getElementById("btnApriMappa")
+        ?.addEventListener("click", () => {
+            console.log("🌍 Apertura mappa Produttore");
+            commonMapUtils.mostraMappa();
+        });
 
     socialSelectionUtils.init({
         rowSelector: ".selectable-row",

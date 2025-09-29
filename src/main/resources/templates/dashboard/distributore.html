@@ -7,6 +7,7 @@
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <link rel="stylesheet" th:href="@{/css/dashboard.css}">
     <link rel="stylesheet" th:href="@{/css/tables.css}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 </head>
 <body>
 <h1 th:text="'Benvenuto ' + (${utente?.nome ?: 'Utente'}) +
@@ -19,6 +20,7 @@
     <button type="button" class="btn-primary" id="btnSocialFeed">📢 Visualizza Social Network</button>
     <button type="button" class="btn-primary" id="btnVisite">👀 Visualizza visite disponibili</button>
     <button type="button" class="btn-primary" id="btnPrenotazioni">📅 Visualizza prenotazioni</button>
+    <button id="btnApriMappa" class="btn-primary">🌍 Visualizza mappa</button>
     <button id="btnDeleteProfile" class="btn btn-danger btn-lg ms-2">
         🗑️ Richiedi eliminazione profilo
     </button>
@@ -58,7 +60,16 @@
 <div th:replace="fragments/profile-delete-notification :: profile-delete-notification"></div>
 <!-- ================= MODALE ELIMINAZIONE PROFILO ================= -->
 <div th:replace="fragments/profile-delete-modal :: profile-delete-modal"></div>
-
+<!-- ================== MODALE MAPPA ================== -->
+<div id="mapModal" class="modal">
+    <div class="modal-content large">
+        <h2>🗺️ Mappa Indirizzi</h2>
+        <div id="map" style="height: 400px; width: 100%; border-radius: 8px;"></div>
+        <div class="modal-actions">
+            <button class="btn-close-modal btn-secondary" data-target="mapModal">Chiudi</button>
+        </div>
+    </div>
+</div>
 <hr class="section-separator"/>
 
 <!-- ================== FORM CREAZIONE PACCHETTO ================== -->
@@ -102,6 +113,7 @@
 
 <!-- ================= SCRIPT ================== -->
 <script type="module" src="/js/pages/distributore.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 </body>
 </html>

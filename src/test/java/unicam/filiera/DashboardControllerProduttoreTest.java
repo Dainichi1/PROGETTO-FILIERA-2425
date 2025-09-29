@@ -8,6 +8,7 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.test.context.support.WithMockUser;
 import unicam.filiera.entity.UtenteEntity;
 import unicam.filiera.model.Ruolo;
 import unicam.filiera.repository.UtenteRepository;
@@ -30,7 +31,8 @@ class DashboardControllerProduttoreTest {
     private UtenteRepository repo;
 
     @Test
-    void quandoProduttoreEsiste_alloraMostraDashboardProduttore() throws Exception {
+    @WithMockUser(username = "produttore1", roles = {"PRODUTTORE"})
+    void quandoProduttoreEsiste_alloraRedirectDashboardProduttore() throws Exception {
         UtenteEntity produttore = new UtenteEntity();
         produttore.setUsername("produttore1");
         produttore.setPassword("pass123");
@@ -39,10 +41,9 @@ class DashboardControllerProduttoreTest {
         produttore.setRuolo(Ruolo.PRODUTTORE);
         repo.save(produttore);
 
-        mockMvc.perform(get("/dashboard/produttore1"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("dashboard/produttore"))
-                .andExpect(model().attributeExists("utente"));
+        mockMvc.perform(get("/dashboard"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/produttore/dashboard"));
 
         UtenteEntity e = repo.findById("produttore1").orElseThrow();
         assertThat(e.getRuolo()).isEqualTo(Ruolo.PRODUTTORE);
@@ -50,14 +51,16 @@ class DashboardControllerProduttoreTest {
     }
 
     @Test
+    @WithMockUser(username = "sconosciuto", roles = {"PRODUTTORE"})
     void quandoUtenteNonEsiste_alloraMostraErrore() throws Exception {
-        mockMvc.perform(get("/dashboard/sconosciuto"))
+        mockMvc.perform(get("/dashboard"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("error/utente_non_trovato"));
     }
 
     @Test
-    void quandoAcquirenteEsiste_alloraMostraDashboardAcquirente() throws Exception {
+    @WithMockUser(username = "acquirente1", roles = {"ACQUIRENTE"})
+    void quandoAcquirenteEsiste_alloraRedirectDashboardAcquirente() throws Exception {
         UtenteEntity acquirente = new UtenteEntity();
         acquirente.setUsername("acquirente1");
         acquirente.setPassword("pwd");
@@ -66,10 +69,9 @@ class DashboardControllerProduttoreTest {
         acquirente.setRuolo(Ruolo.ACQUIRENTE);
         repo.save(acquirente);
 
-        mockMvc.perform(get("/dashboard/acquirente1"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("dashboard/acquirente"))
-                .andExpect(model().attributeExists("utente"));
+        mockMvc.perform(get("/dashboard"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/acquirente/dashboard"));
 
         UtenteEntity e = repo.findById("acquirente1").orElseThrow();
         assertThat(e.getRuolo()).isEqualTo(Ruolo.ACQUIRENTE);
@@ -77,7 +79,8 @@ class DashboardControllerProduttoreTest {
     }
 
     @Test
-    void quandoUtenteHaRuoloNonGestito_alloraMostraDashboardGenerico() throws Exception {
+    @WithMockUser(username = "animatore1", roles = {"ANIMATORE"})
+    void quandoAnimatoreEsiste_alloraRedirectDashboardAnimatore() throws Exception {
         UtenteEntity animatore = new UtenteEntity();
         animatore.setUsername("animatore1");
         animatore.setPassword("pwd");
@@ -86,10 +89,9 @@ class DashboardControllerProduttoreTest {
         animatore.setRuolo(Ruolo.ANIMATORE);
         repo.save(animatore);
 
-        mockMvc.perform(get("/dashboard/animatore1"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("dashboard/generico"))
-                .andExpect(model().attributeExists("utente"));
+        mockMvc.perform(get("/dashboard"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/animatore/dashboard"));
 
         UtenteEntity e = repo.findById("animatore1").orElseThrow();
         assertThat(e.getRuolo()).isEqualTo(Ruolo.ANIMATORE);

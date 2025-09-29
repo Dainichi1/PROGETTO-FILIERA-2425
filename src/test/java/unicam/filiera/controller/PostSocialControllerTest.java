@@ -57,7 +57,7 @@ class PostSocialControllerTest {
                 .thenReturn(validDto);
 
         mockMvc.perform(post("/api/social/pubblica/1")
-                        .with(csrf()) // ✅ aggiunto
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validDto)))
                 .andExpect(status().isOk())
@@ -74,7 +74,7 @@ class PostSocialControllerTest {
         dto.setTesto("Testo valido");
 
         mockMvc.perform(post("/api/social/pubblica/1")
-                        .with(csrf()) // ✅ aggiunto
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
@@ -89,7 +89,7 @@ class PostSocialControllerTest {
         dto.setTesto(""); // vuoto
 
         mockMvc.perform(post("/api/social/pubblica/1")
-                        .with(csrf()) // ✅ aggiunto
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
@@ -103,7 +103,7 @@ class PostSocialControllerTest {
                 .thenThrow(new IllegalArgumentException("Item non trovato"));
 
         mockMvc.perform(post("/api/social/pubblica/99")
-                        .with(csrf()) // ✅ aggiunto
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validDto)))
                 .andExpect(status().isBadRequest())

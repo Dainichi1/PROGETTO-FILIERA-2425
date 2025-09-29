@@ -15,7 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import unicam.filiera.entity.UtenteEntity;
 import unicam.filiera.model.Prodotto;
 import unicam.filiera.model.Ruolo;
-import unicam.filiera.model.observer.OsservatoreProdotto;
+import unicam.filiera.observer.OsservatoreProdotto;
 import unicam.filiera.repository.ProdottoRepository;
 import unicam.filiera.repository.UtenteRepository;
 
@@ -103,9 +103,10 @@ class ProdottoNotifierIntegrationTest {
                         .param("quantita", "10")
                         .param("prezzo", "2.5")
                         .param("indirizzo", "Via Roma"))
-                .andExpect(status().isOk())
-                .andExpect(model().attributeExists("successMessage"))
-                .andExpect(view().name("dashboard/produttore"));
+                .andExpect(status().is3xxRedirection())                // <-- invece di isOk()
+                .andExpect(redirectedUrl("/produttore/dashboard"))     // <-- verifica redirect
+                .andExpect(flash().attribute("createSuccessMessage",
+                        "Prodotto inviato al Curatore con successo"));
 
         // Verifica che l’osservatore sia stato notificato
         assertThat(spyOsservatore.getLastEvento()).isEqualTo("NUOVO_PRODOTTO");

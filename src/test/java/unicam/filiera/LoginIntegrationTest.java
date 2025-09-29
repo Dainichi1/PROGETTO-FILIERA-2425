@@ -44,7 +44,7 @@ class LoginIntegrationTest {
     @Test
     void loginCorrettoConRuoloProduttore() throws Exception {
         mockMvc.perform(post("/doLogin")
-                        .with(csrf()) // 👈 aggiunge CSRF token
+                        .with(csrf()) // aggiunge CSRF token
                         .param("username", "user")
                         .param("password", "pass")
                         .param("ruolo", "PRODUTTORE"))

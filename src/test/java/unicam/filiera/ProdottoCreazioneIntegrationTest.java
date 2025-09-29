@@ -72,10 +72,9 @@ class ProdottoCreazioneIntegrationTest {
                         "descrizione",
                         "quantita",
                         "prezzo",
-                        "indirizzo",
-                        "certificati",
-                        "foto"
+                        "indirizzo"
                 ))
+                .andExpect(model().attribute("showForm", true))
                 .andExpect(view().name("dashboard/produttore"));
 
         assertThat(prodottoRepo.findAll()).isEmpty();
@@ -83,7 +82,7 @@ class ProdottoCreazioneIntegrationTest {
 
     @Test
     @WithMockUser(username = "prod1", roles = {"PRODUTTORE"})
-    void quandoMancaUpload_alloraMostraErrori() throws Exception {
+    void quandoMancaUpload_alloraMostraErrore() throws Exception {
         mockMvc.perform(multipart("/produttore/crea")
                         .with(csrf())
                         .param("nome", "Mela")
@@ -92,12 +91,10 @@ class ProdottoCreazioneIntegrationTest {
                         .param("prezzo", "2.5")
                         .param("indirizzo", "Via Roma"))
                 .andExpect(status().isOk())
-                .andExpect(model().attributeHasFieldErrors(
-                        "prodottoDto",
-                        "certificati",
-                        "foto"
-                ))
-                .andExpect(view().name("dashboard/produttore"));
+                .andExpect(view().name("dashboard/produttore"))
+                .andExpect(model().attribute("errorMessage",
+                        "Errore durante creazione prodottoDto: ⚠ Devi caricare almeno un certificato"))
+                .andExpect(model().attribute("showForm", true));
 
         assertThat(prodottoRepo.findAll()).isEmpty();
     }
@@ -105,8 +102,10 @@ class ProdottoCreazioneIntegrationTest {
     @Test
     @WithMockUser(username = "prod1", roles = {"PRODUTTORE"})
     void quandoDatiValidi_alloraCreaProdotto() throws Exception {
-        MockMultipartFile cert = new MockMultipartFile("certificati", "cert.pdf", "application/pdf", "fake".getBytes());
-        MockMultipartFile foto = new MockMultipartFile("foto", "foto.jpg", "image/jpeg", "fake".getBytes());
+        MockMultipartFile cert = new MockMultipartFile(
+                "certificati", "cert.pdf", "application/pdf", "fake".getBytes());
+        MockMultipartFile foto = new MockMultipartFile(
+                "foto", "foto.jpg", "image/jpeg", "fake".getBytes());
 
         mockMvc.perform(multipart("/produttore/crea")
                         .file(cert)
@@ -117,10 +116,10 @@ class ProdottoCreazioneIntegrationTest {
                         .param("quantita", "10")
                         .param("prezzo", "2.5")
                         .param("indirizzo", "Via Roma"))
-                .andExpect(status().isOk())
-                .andExpect(model().attributeDoesNotExist("errorMessage"))
-                .andExpect(model().attributeExists("successMessage"))
-                .andExpect(view().name("dashboard/produttore"));
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/produttore/dashboard"))
+                .andExpect(flash().attribute("createSuccessMessage",
+                        "Prodotto inviato al Curatore con successo"));
 
         List<ProdottoEntity> prodotti = prodottoRepo.findAll();
         assertThat(prodotti).hasSize(1);
